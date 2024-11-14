@@ -34,7 +34,7 @@ To manage topics, right-click the minimap icon to open the options window and se
 
 ## To-Do List:
 
-- [ ] Ensure that when a person already in the list sends a new message, their old entry is removed and they are moved to the top of the list.
+- [x] Ensure that when a person already in the list sends a new message, their old entry is removed and they are moved to the top of the list.
 - [ ] Add support for multiple channels.
 - [ ] Expand options (e.g., placeholder number adjustments, etc.).
 - [ ] Consider removing placeholders entirely and implement a dynamic list that grows as needed.
