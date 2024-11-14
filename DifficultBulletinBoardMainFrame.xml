@@ -1,0 +1,90 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Main Frame -->
+    <Frame name="DifficultBulletinBoardMainFrame" parent="UIParent" hidden="true" movable="true" enableMouse="true" clampedToScreen="true">
+        <Size>
+            <AbsDimension x="1000" y="700"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"/>
+
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="LEFT"
+                            text="Difficult Bulletin Board">
+                    <Size>
+                        <AbsDimension x="0" y="0"/> <!-- x is width, y is height (font size) -->
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOP" relativeTo="$parent">
+                            <Offset>
+                                <AbsDimension x="0" y="-6"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <!-- Close Button -->
+        <Frames>
+            <Button name="$parent_CloseButton" inherits="UIPanelCloseButton">
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="DifficultBulletinBoardMainFrame" relativePoint="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="3" y="3"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoardMainFrame:Hide();
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- Scroll Frame -->
+            <ScrollFrame name="MyScrollFrame" enableMouseWheel="true" inherits="UIPanelScrollFrameTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-38"/>
+                        </Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="-26" y="10"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+
+                <!-- ScrollChild (content frame) -->
+                <ScrollChild name="$parent_ScrollChild">
+                    <Frame name="DifficultBulletinBoardMainFrame_ScrollChild_ContentFrame" parent="$parent_ScrollFrame">
+                        <Size>
+                            <AbsDimension x="980" y="2000"/>
+                        </Size>
+
+                    </Frame>
+                </ScrollChild>
+            </ScrollFrame>
+        </Frames>
+
+        <!-- Scripts for Dragging -->
+        <Scripts>
+            <OnMouseDown>
+                if not DifficultBulletinBoardMainFrame.isMoving then
+                DifficultBulletinBoardMainFrame:StartMoving();
+                DifficultBulletinBoardMainFrame.isMoving = true;
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                if DifficultBulletinBoardMainFrame.isMoving then
+                DifficultBulletinBoardMainFrame:StopMovingOrSizing();
+                DifficultBulletinBoardMainFrame.isMoving = false;
+                end
+            </OnMouseUp>
+        </Scripts>
+    </Frame>
+</Ui>

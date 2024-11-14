@@ -1,0 +1,92 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Main Frame -->
+    <Frame name="DifficultBulletinBoardOptionFrame" parent="UIParent" hidden="true" movable="true" enableMouse="true"
+           clampedToScreen="true">
+        <Size>
+            <AbsDimension x="500" y="700"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+
+        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"/>
+
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="LEFT"
+                            text="Difficult Bulletin Board Options">
+                    <Size>
+                        <AbsDimension x="0" y="0"/> <!-- x is width, y is height (font size) -->
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOP" relativeTo="$parent">
+                            <Offset>
+                                <AbsDimension x="0" y="-6"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <!-- Close Button -->
+        <Frames>
+            <Button name="DifficultBulletinBoard_Option_CloseButton" inherits="UIPanelCloseButton">
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="DifficultBulletinBoardOptionFrame" relativePoint="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="3" y="3"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoardOptionFrame:Hide();
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- ScrollFrame is in .lua -->
+
+
+            <Button name="$parent_MyButton" inherits="UIPanelButtonTemplate" text="Save and Reload">
+                <Size>
+                    <AbsDimension x="130" y="40"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="10"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+
+                <!-- Optional OnClick Script -->
+                <Scripts>
+                    <OnClick>
+                        DEFAULT_CHAT_FRAME:AddMessage("Button Clicked!");
+                        DifficultBulletinBoard_SaveVariablesAndReload()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+        </Frames>
+
+
+        <!-- Scripts for Dragging -->
+        <Scripts>
+            <OnMouseDown>
+                if not DifficultBulletinBoardOptionFrame.isMoving then
+                DifficultBulletinBoardOptionFrame:StartMoving();
+                DifficultBulletinBoardOptionFrame.isMoving = true;
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                if DifficultBulletinBoardOptionFrame.isMoving then
+                DifficultBulletinBoardOptionFrame:StopMovingOrSizing();
+                DifficultBulletinBoardOptionFrame.isMoving = false;
+                end
+            </OnMouseUp>
+        </Scripts>
+    </Frame>
+</Ui>

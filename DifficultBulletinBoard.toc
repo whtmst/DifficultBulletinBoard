@@ -1,0 +1,11 @@
+## Interface: 11200
+## Title: Difficult Bulletin Board
+## Notes: Bulletin Board for Turtle WoW
+## SavedVariables: DifficultBulletinBoardSavedVariables
+## Author: Difficult
+
+icon.tga
+DifficultBulletinBoardMinimapButton.xml
+DifficultBulletinBoardOptionFrame.xml
+DifficultBulletinBoardMainFrame.xml
+DifficultBulletinBoard.lua
