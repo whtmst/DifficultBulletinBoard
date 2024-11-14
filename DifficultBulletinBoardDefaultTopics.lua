@@ -37,11 +37,11 @@ DifficultBulletinBoard.defaultTopics = {
     { name = "Ragefire Chasm", selected = true, tags = { "rfc", "ragefire", "chasm" } }
 }
 
-function DifficultBulletinBoard.deepCopyDefaultTopics(original)
+function DifficultBulletinBoard.deepCopy(original)
     local copy = {}
     for key, value in pairs(original) do
         if type(value) == "table" then
-            copy[key] = DifficultBulletinBoard.deepCopyDefaultTopics(value)
+            copy[key] = DifficultBulletinBoard.deepCopy(value)
         else
             copy[key] = value
         end

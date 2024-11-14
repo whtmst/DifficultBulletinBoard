@@ -100,7 +100,6 @@ local function createTopicList()
             topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or { FontStrings = {} }
 
             for i = 1, numberOfPlaceholders do
-                local currentTime = date("%H:%M:%S")
 
                 -- create Name column
                 local nameColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", "OVERLAY", "GameFontNormal")
@@ -175,6 +174,45 @@ local function UpdateFirstPlaceholderAndShiftDown(topic, name, message)
     firstFontString[3]:SetText(currentTime or "No Time")
 end
 
+-- Updates the specified placeholder for a topic with new name, message, and timestamp,
+-- then moves the updated entry to the top of the list, shifting other entries down.
+local function UpdateTopicPlaceholderWithShift(topic, name, message, index)
+    local topicData = topicPlaceholders[topic]
+    local FontStringsList = {}
+
+    if not topicData or not topicData.FontStrings then
+        print("No FontStrings found for topic:", topic)
+        return nil
+    end
+
+    for i, row in ipairs(topicData.FontStrings) do
+        local entryList = {}
+
+        for j, fontString in ipairs(row) do
+            local text = fontString:GetText()
+            table.insert(entryList, text)
+        end
+
+        table.insert(FontStringsList, entryList)
+    end
+
+    local currentTime = date("%H:%M:%S")
+    FontStringsList[index][1] = name
+    FontStringsList[index][2] = message
+    FontStringsList[index][3] = currentTime
+
+    local tempFontStringsList = table.remove(FontStringsList, index)
+    table.insert(FontStringsList, 1, tempFontStringsList)
+
+    for i = 1, numberOfPlaceholders, 1 do
+        local currentFontString = topicData.FontStrings[i]
+
+        currentFontString[1]:SetText(FontStringsList[i][1])
+        currentFontString[2]:SetText(FontStringsList[i][2])
+        currentFontString[3]:SetText(FontStringsList[i][3])
+    end
+end
+
 SLASH_DIFFICULTBB1 = "/dbb"
 SlashCmdList["DIFFICULTBB"] = function()
     DifficultBulletinBoard_ToggleMainFrame()
@@ -186,7 +224,7 @@ local function loadSavedVariables()
     if DifficultBulletinBoardSavedVariables.activeTopics then
         allTopics = DifficultBulletinBoardSavedVariables.activeTopics
     else
-        allTopics = DifficultBulletinBoard.deepCopyDefaultTopics(DifficultBulletinBoard.defaultTopics)
+        allTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultTopics)
         DifficultBulletinBoardSavedVariables.activeTopics = allTopics
     end
 end
@@ -307,7 +345,6 @@ local function topicPlaceholdersContainsCharacterName(topicName, characterName)
     return false, nil
 end
 
-
 local function OnChatMessage(event, arg1, arg2, arg9)
     local chatMessage = arg1
     local characterName = arg2
@@ -318,6 +355,9 @@ local function OnChatMessage(event, arg1, arg2, arg9)
     local words = splitIntoLowerWords(s)
 
     for _, topic in ipairs(allTopics) do
+        local matchFound = false  -- Flag to control breaking out of nested loops
+
+        -- TODO does this make sense still? matchFound is enough in one place?
         for _, tag in ipairs(topic.tags) do
             for _, word in ipairs(words) do
                 if word == string.lower(tag) then
@@ -325,12 +365,16 @@ local function OnChatMessage(event, arg1, arg2, arg9)
                     local found, index = topicPlaceholdersContainsCharacterName(topic.name, characterName)
                     if found then
                         print("An entry for that character already exists at " .. index)
+                        UpdateTopicPlaceholderWithShift(topic.name, characterName, chatMessage, index)
                     else
                         UpdateFirstPlaceholderAndShiftDown(topic.name, characterName, chatMessage)
                     end
+
+                    matchFound = true  -- Set the flag to true to break out of loops
                     break
                 end
             end
+            if matchFound then break end
         end
     end
 end
