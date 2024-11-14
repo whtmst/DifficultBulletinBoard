@@ -1,44 +1,8 @@
+local defaultTopics = DifficultBulletinBoard.defaultTopics
+local allTopics = {}
 local mainFrame = DifficultBulletinBoardMainFrame
 local optionFrame = DifficultBulletinBoardOptionFrame
 local string_gfind = string.gmatch or string.gfind
-
-local allTopics = {
-    { name = "Naxxramas", selected = true, tags = { "naxxramas", "naxx" } },
-    { name = "Temple of Ahn'Qiraj", selected = true, tags = { "ahn'qiraj", "ahnqiraj", "aq40", "aq" } },
-    { name = "Emerald Sanctum", selected = true, tags = { "emerald", "sanctum", "es" } },
-    { name = "Blackwing Lair", selected = true, tags = { "blackwing", "bwl" } },
-    { name = "Lower Karazhan Halls", selected = true, tags = { "karazhan", "kara", "kara10" } },
-    { name = "Onyxia's Lair", selected = true, tags = { "onyxia" } },
-    { name = "Molten Core", selected = true, tags = { "molten", "mc" } },
-    { name = "Ruins of Ahn'Qiraj", selected = true, tags = { "ruins", "ahn'qiraj", "ahnqiraj", "aq20", "aq" } },
-    { name = "Zul'Gurub", selected = true, tags = { "zul'gurub", "zulgurub", "zg" } },
-    { name = "Stormwind Vault", selected = true, tags = { "vault" } },
-    { name = "Caverns of Time: Black Morass", selected = true, tags = { "cot", "morass", "cavern", "cot:bm", "bm" } },
-    { name = "Karazhan Crypt", selected = true, tags = { "crypt", "kara", "karazhan" } },
-    { name = "Upper Blackrock Spire", selected = true, tags = { "ubrs", "blackrock", "upper", "spire" } },
-    { name = "Lower Blackrock Spire", selected = true, tags = { "lbrs", "blackrock", "lower", "spire" } },
-    { name = "Stratholme", selected = true, tags = { "strat", "stratholme" } },
-    { name = "Scholomance", selected = true, tags = { "scholo", "scholomance" } },
-    { name = "Dire Maul", selected = true, tags = { "dire", "maul", "dm", "dm:e", "dm:w", "dm:n" } },
-    { name = "Blackrock Depths", selected = true, tags = { "brd", "blackrock", "depths" } },
-    { name = "Hateforge Quarry", selected = true, tags = { "hateforge", "quarry" } },
-    { name = "The Sunken Temple", selected = true, tags = { "st", "sunken", "temple" } },
-    { name = "Zul'Farrak", selected = true, tags = { "zf", "zul'farrak", "zulfarrak" } },
-    { name = "Maraudon", selected = true, tags = { "mara", "maraudon" } },
-    { name = "Gilneas City", selected = true, tags = { "gilneas" } },
-    { name = "Uldaman", selected = true, tags = { "uldaman" } },
-    { name = "Razorfen Downs", selected = true, tags = { "razorfen", "rfd" } },
-    { name = "Scarlet Monastery", selected = true, tags = { "scarlet", "monastery", "sm", "armory", "cathedral", "library", "graveyard" } },
-    { name = "The Crescent Grove", selected = true, tags = { "crescent", "grove" } },
-    { name = "Razorfen Kraul", selected = true, tags = { "razorfen", "kraul" } },
-    { name = "Gnomeregan", selected = true, tags = { "gnomeregan", "gnomer" } },
-    { name = "The Stockade", selected = true, tags = { "stockade", "stockades", "stock", "stocks" } },
-    { name = "Blackfathom Deeps", selected = true, tags = { "bfd", "blackfathom" } },
-    { name = "Shadowfang Keep", selected = true, tags = { "sfk", "shadowfang" } },
-    { name = "The Deadmines", selected = true, tags = { "vc", "dm", "deadmine", "deadmines" } },
-    { name = "Wailing Caverns", selected = true, tags = { "wc", "wailing", "caverns" } },
-    { name = "Ragefire Chasm", selected = true, tags = { "rfc", "ragefire", "chasm" } }
-}
 
 local numberOfPlaceholders = 3
 local topicPlaceholders = {}
@@ -219,10 +183,10 @@ end
 local function loadSavedVariables()
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
 
-    -- load activeTopics from saved variables, or use allTopics as default
     if DifficultBulletinBoardSavedVariables.activeTopics then
         allTopics = DifficultBulletinBoardSavedVariables.activeTopics
     else
+        allTopics = DifficultBulletinBoard.deepCopyDefaultTopics(DifficultBulletinBoard.defaultTopics)
         DifficultBulletinBoardSavedVariables.activeTopics = allTopics
     end
 end
@@ -233,7 +197,7 @@ local function addScrollFrameToExistingUI()
     local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, -80)
     scrollFrame:SetWidth(460)
-    scrollFrame:SetHeight(560)
+    scrollFrame:SetHeight(540)
 
     local scrollChild = CreateFrame("Frame", "$parent_ScrollChild", scrollFrame)
     scrollChild:SetWidth(480)
@@ -241,7 +205,7 @@ local function addScrollFrameToExistingUI()
     scrollFrame:SetScrollChild(scrollChild)
 
     local scrollLabel = scrollFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 12, 20)
+    scrollLabel:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 12, 25)
     scrollLabel:SetText("Select the topics you want to observe")
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 end
@@ -249,7 +213,7 @@ end
 local tempTags = {}
 local function createOptions()
     local scrollChild = DifficultBulletinBoardOptionFrame_ScrollFrame_ScrollChild
-    local yOffset = -15  -- Starting vertical offset for the first checkbox
+    local yOffset = 0  -- Starting vertical offset for the first checkbox
 
     for _, topic in ipairs(allTopics) do
         local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", scrollChild, "UICheckButtonTemplate")
@@ -269,12 +233,12 @@ local function createOptions()
         topicLabel:SetText(topic.name)
         topicLabel:SetFont("Fonts\\FRIZQT__.TTF", 12)
         topicLabel:SetJustifyH("LEFT")
-        topicLabel:SetWidth(150)
+        topicLabel:SetWidth(175)
 
         -- Add a text box next to the topic label for tags input
         local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", scrollChild, "InputBoxTemplate")
         tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
-        tagsTextBox:SetWidth(150)
+        tagsTextBox:SetWidth(200)
         tagsTextBox:SetHeight(20)
         tagsTextBox:SetText(table.concat(topic.tags, " "))
         tagsTextBox:EnableMouse(true)
@@ -312,6 +276,11 @@ local function overwriteTagsForAllTopics()
             print("No tags found for topic '" .. topic.name .. "' in tempTags.")
         end
     end
+end
+
+function DifficultBulletinBoard_ResetVariablesAndReload()
+    DifficultBulletinBoardSavedVariables.activeTopics = defaultTopics
+    ReloadUI();
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()

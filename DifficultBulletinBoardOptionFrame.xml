@@ -48,23 +48,40 @@
 
             <!-- ScrollFrame is in .lua -->
 
+            <Button name="$parent_ResetButton" inherits="UIPanelButtonTemplate" text="Reset to Default">
+                <Size>
+                    <AbsDimension x="130" y="40"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="10"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoard_ResetVariablesAndReload()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
 
             <Button name="$parent_MyButton" inherits="UIPanelButtonTemplate" text="Save and Reload">
                 <Size>
                     <AbsDimension x="130" y="40"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
                         <Offset>
-                            <AbsDimension x="0" y="10"/>
+                            <AbsDimension x="-10" y="10"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
 
-                <!-- Optional OnClick Script -->
                 <Scripts>
                     <OnClick>
-                        DEFAULT_CHAT_FRAME:AddMessage("Button Clicked!");
                         DifficultBulletinBoard_SaveVariablesAndReload()
                     </OnClick>
                 </Scripts>
