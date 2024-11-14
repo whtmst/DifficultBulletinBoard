@@ -4,6 +4,23 @@
 
 ![screenshot](DifficultBulletinBoard.PNG)
 
+## Installation
+
+1. Download the addon by clicking the link below:
+   - [Download Difficult Bulletin Board](https://github.com/DeterminedPanda/DifficultBulletinBoard/archive/refs/heads/master.zip)
+
+2. Unzip the `DifficultBulletinBoard-master.zip` archive.
+
+3. Rename the directory inside the zip from `DifficultBulletinBoard-master` to `DifficultBulletinBoard`.
+
+4. Move the `DifficultBulletinBoard` folder to your World of Warcraft AddOns directory:
+   - Example path: `C:\World of Warcraft Turtle\Interface\AddOns`
+
+5. If you have WoW open, make sure to restart the game for the addon to load properly.
+
+6. To verify the installation, type `/dbb` in the game chat. If the installation was successful, the addon will open.
+
+
 ## Usage
 
 ### Accessing the Bulletin Board
