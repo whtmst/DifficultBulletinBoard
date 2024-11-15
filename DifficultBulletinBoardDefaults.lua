@@ -1,4 +1,7 @@
 DifficultBulletinBoard = DifficultBulletinBoard or {}
+
+DifficultBulletinBoard.defaultNumberOfPlaceholders = 3
+
 DifficultBulletinBoard.defaultTopics = {
     { name = "Naxxramas", selected = true, tags = { "naxxramas", "naxx" } },
     { name = "Temple of Ahn'Qiraj", selected = true, tags = { "ahn'qiraj", "ahnqiraj", "aq40", "aq" } },

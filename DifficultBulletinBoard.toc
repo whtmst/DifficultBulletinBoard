@@ -5,7 +5,7 @@
 ## Author: Difficult
 
 icon.tga
-DifficultBulletinBoardDefaultTopics.lua
+DifficultBulletinBoardDefaults.lua
 DifficultBulletinBoardMinimapButton.xml
 DifficultBulletinBoardOptionFrame.xml
 DifficultBulletinBoardMainFrame.xml
