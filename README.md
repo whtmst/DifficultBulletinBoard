@@ -32,11 +32,25 @@ The interface will show an ordered list of messages from the world chat.
 
 To manage topics, right-click the minimap icon to open the options window and select which topics to follow by selecting or unselecting the corresponding checkbox.
 
+## Troubleshooting
+
+### No Messages Show Up?
+If no messages appear on your bulletin board and no errors are displayed, make sure you are in the **world chat** by typing `/join world` in-game.
+
+### Tags List Issues?
+If your tags list seems incorrect or disorganized, try pressing the **Reset** button in the options window.  
+It’s also a good idea to reset the tags after updating the addon, as I may improve or adjust the tags list in future updates.
+
+## Contact
+
+Have feature suggestions or need further assistance? Feel free to reach out to me on <br>Discord: **justimani**  
+
+
 ## To-Do List:
 
 - [x] Ensure that when a person already in the list sends a new message, their old entry is removed and they are moved to the top of the list.
-- [ ] Add support for multiple channels.
-- [ ] Expand options (e.g., placeholder number adjustments, etc.).
-- [ ] Consider removing placeholders entirely and implement a dynamic list that grows as needed.
 - [x] Add a reset button to the options frame.
+- [ ] Expand options (e.g., placeholder number adjustments, etc.).
+- [ ] Allow users to select which channels they want to observe.
 - [ ] Implement more customization options (e.g., classic WoW border styles, etc.).
+- [ ] Consider removing placeholders entirely and implement a dynamic list that grows as needed.

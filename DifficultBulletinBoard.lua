@@ -1,4 +1,5 @@
 local defaultTopics = DifficultBulletinBoard.defaultTopics
+local defaultNumberOfPlaceholders = DifficultBulletinBoard.defaultNumberOfPlaceholders
 local allTopics = {}
 local mainFrame = DifficultBulletinBoardMainFrame
 local optionFrame = DifficultBulletinBoardOptionFrame
@@ -221,6 +222,13 @@ end
 local function loadSavedVariables()
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
 
+    if DifficultBulletinBoardSavedVariables.numberOfPlaceholders and  DifficultBulletinBoardSavedVariables.numberOfPlaceholders ~= "" then
+        numberOfPlaceholders = DifficultBulletinBoardSavedVariables.numberOfPlaceholders
+    else
+        numberOfPlaceholders = DifficultBulletinBoard.defaultNumberOfPlaceholders
+        DifficultBulletinBoardSavedVariables.numberOfPlaceholders = numberOfPlaceholders
+    end
+
     if DifficultBulletinBoardSavedVariables.activeTopics then
         allTopics = DifficultBulletinBoardSavedVariables.activeTopics
     else
@@ -229,23 +237,46 @@ local function loadSavedVariables()
     end
 end
 
-local function addScrollFrameToExistingUI()
+local function addPlaceholderOptionToExistingUI()
     local parentFrame = DifficultBulletinBoardOptionFrame
 
-    local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, -80)
-    scrollFrame:SetWidth(460)
-    scrollFrame:SetHeight(540)
+    -- Create the first FontString (label) above the scroll frame
+    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 15, -50)  -- Position at the top of the parent frame
+    scrollLabel:SetText("Set the Number of Placeholders for Each Topic:")
+    scrollLabel:SetText("Number of Placeholders per Topic:")
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 
+    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
+    placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
+    placeholderOptionTextBox:SetWidth(20)
+    placeholderOptionTextBox:SetHeight(20)
+    placeholderOptionTextBox:SetText(numberOfPlaceholders)
+    placeholderOptionTextBox:EnableMouse(true)
+    placeholderOptionTextBox:SetAutoFocus(false)
+end
+
+local function addScrollFrameToExistingUI()
+    local parentFrame = DifficultBulletinBoardOptionFrame
+    local placeholderOptionTextBox = DifficultBulletinBoard_Option_PlaceholderOption_FontString
+
+    -- Create the second FontString (label) below the first label
+    local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", placeholderOptionTextBox, "BOTTOMLEFT", 0, -25)  -- Position it below the first label
+    scrollLabel:SetText("Select the Topics you want to observe:")
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+
+    -- Create the ScrollFrame, positioning it below the second label
+    local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", scrollLabel, "BOTTOMLEFT", -10, -10)  -- Position it below the second label
+    scrollFrame:SetWidth(460)
+    scrollFrame:SetHeight(520)
+
+    -- Create the child frame inside the scroll frame
     local scrollChild = CreateFrame("Frame", "$parent_ScrollChild", scrollFrame)
     scrollChild:SetWidth(480)
-    scrollChild:SetHeight(1500)
+    scrollChild:SetHeight(1300)
     scrollFrame:SetScrollChild(scrollChild)
-
-    local scrollLabel = scrollFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 12, 25)
-    scrollLabel:SetText("Select the topics you want to observe")
-    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 end
 
 local tempTags = {}
@@ -295,9 +326,14 @@ end
 local function initializeAddon(event, arg1)
     if event == "ADDON_LOADED" and arg1 == "DifficultBulletinBoard" then
         loadSavedVariables()
-        createTopicList()
+
+        -- create option frame first so the user can update his options in case he put in some invalid data that might result in the addon crashing
+        addPlaceholderOptionToExistingUI()
         addScrollFrameToExistingUI()
         createOptions()
+
+        --create main frame afterwards
+        createTopicList()
     end
 end
 
@@ -317,11 +353,13 @@ local function overwriteTagsForAllTopics()
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
+    DifficultBulletinBoardSavedVariables.numberOfPlaceholders = defaultNumberOfPlaceholders
     DifficultBulletinBoardSavedVariables.activeTopics = defaultTopics
     ReloadUI();
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
+    DifficultBulletinBoardSavedVariables.numberOfPlaceholders = DifficultBulletinBoard_Option_PlaceholderOption_TextBox:GetText()
     overwriteTagsForAllTopics();
     ReloadUI();
 end
@@ -357,7 +395,6 @@ local function OnChatMessage(event, arg1, arg2, arg9)
     for _, topic in ipairs(allTopics) do
         local matchFound = false  -- Flag to control breaking out of nested loops
 
-        -- TODO does this make sense still? matchFound is enough in one place?
         for _, tag in ipairs(topic.tags) do
             for _, word in ipairs(words) do
                 if word == string.lower(tag) then
@@ -367,6 +404,7 @@ local function OnChatMessage(event, arg1, arg2, arg9)
                         print("An entry for that character already exists at " .. index)
                         UpdateTopicPlaceholderWithShift(topic.name, characterName, chatMessage, index)
                     else
+                        print("No entry for that character exists. Creating one...")
                         UpdateFirstPlaceholderAndShiftDown(topic.name, characterName, chatMessage)
                     end
 
@@ -374,7 +412,10 @@ local function OnChatMessage(event, arg1, arg2, arg9)
                     break
                 end
             end
-            if matchFound then break end
+
+            if matchFound then
+                break
+            end
         end
     end
 end
