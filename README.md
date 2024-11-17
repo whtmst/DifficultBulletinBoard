@@ -50,7 +50,8 @@ Have feature suggestions or need further assistance? Feel free to reach out to m
 
 - [x] Ensure that when a person already in the list sends a new message, their old entry is removed and they are moved to the top of the list.
 - [x] Add a reset button to the options frame.
-- [ ] Expand options (e.g., placeholder number adjustments, etc.).
+- [x] Expand options (e.g., placeholder number adjustments, etc.).
+- [x] Implement left-click whisper, shift-left-click /who, and right-click /invite functionality for buttons
 - [ ] Allow users to select which channels they want to observe.
 - [ ] Implement more customization options (e.g., classic WoW border styles, etc.).
 - [ ] Consider removing placeholders entirely and implement a dynamic list that grows as needed.

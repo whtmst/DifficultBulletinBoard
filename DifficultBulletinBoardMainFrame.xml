@@ -44,31 +44,8 @@
                 </Scripts>
             </Button>
 
-            <!-- Scroll Frame -->
-            <ScrollFrame name="MyScrollFrame" enableMouseWheel="true" inherits="UIPanelScrollFrameTemplate">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
-                        <Offset>
-                            <AbsDimension x="0" y="-38"/>
-                        </Offset>
-                    </Anchor>
-                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
-                        <Offset>
-                            <AbsDimension x="-26" y="10"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
+            <!-- ScrollFrame is included in DifficultBulletinBoard.lua -->
 
-                <!-- ScrollChild (content frame) -->
-                <ScrollChild name="$parent_ScrollChild">
-                    <Frame name="DifficultBulletinBoardMainFrame_ScrollChild_ContentFrame" parent="$parent_ScrollFrame">
-                        <Size>
-                            <AbsDimension x="980" y="2000"/>
-                        </Size>
-
-                    </Frame>
-                </ScrollChild>
-            </ScrollFrame>
         </Frames>
 
         <!-- Scripts for Dragging -->
