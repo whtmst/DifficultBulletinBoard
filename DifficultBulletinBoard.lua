@@ -1,3 +1,4 @@
+local version = DifficultBulletinBoard.version
 local defaultTopics = DifficultBulletinBoard.defaultTopics
 local defaultNumberOfPlaceholders = DifficultBulletinBoard.defaultNumberOfPlaceholders
 local allTopics = {}
@@ -298,6 +299,29 @@ end
 local function loadSavedVariables()
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
 
+    if DifficultBulletinBoardSavedVariables.version then
+        print("version did exist " .. DifficultBulletinBoardSavedVariables.version)
+        local savedVersion = DifficultBulletinBoardSavedVariables.version
+
+        --update the saved activeTopics if a new version of the topic list was released
+        if savedVersion < version then
+            print("version is older than the current version.")
+            print("overwriting activeTopics")
+            allTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultTopics)
+            DifficultBulletinBoardSavedVariables.activeTopics = allTopics
+            DifficultBulletinBoardSavedVariables.version = version
+            print("version is now " .. version)
+        end
+    else
+        print("version did not exist")
+        print("overwriting version")
+        DifficultBulletinBoardSavedVariables.version = version
+
+        print("overwriting activeTopics")
+        allTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultTopics)
+        DifficultBulletinBoardSavedVariables.activeTopics = allTopics
+    end
+
     if DifficultBulletinBoardSavedVariables.numberOfPlaceholders and DifficultBulletinBoardSavedVariables.numberOfPlaceholders ~= "" then
         numberOfPlaceholders = DifficultBulletinBoardSavedVariables.numberOfPlaceholders
     else
@@ -434,6 +458,7 @@ local function overwriteTagsForAllTopics()
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
+    DifficultBulletinBoardSavedVariables.version = version
     DifficultBulletinBoardSavedVariables.numberOfPlaceholders = defaultNumberOfPlaceholders
     DifficultBulletinBoardSavedVariables.activeTopics = defaultTopics
     ReloadUI();
