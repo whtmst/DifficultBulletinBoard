@@ -16,7 +16,7 @@
                 <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="LEFT"
                             text="Difficult Bulletin Board Options">
                     <Size>
-                        <AbsDimension x="0" y="0"/> <!-- x is width, y is height (font size) -->
+                        <AbsDimension x="0" y="0"/>
                     </Size>
                     <Anchors>
                         <Anchor point="TOP" relativeTo="$parent">

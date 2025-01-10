@@ -1,20 +1,10 @@
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 
-DifficultBulletinBoard.version = 1
+DifficultBulletinBoard.version = 5 
 
-DifficultBulletinBoard.defaultNumberOfPlaceholders = 3
+DifficultBulletinBoard.defaultNumberOfGroupPlaceholders = 3
 
-DifficultBulletinBoard.defaultTopics = {
-    { name = "Alchemy",                       selected = true, tags = { "alchemist", "alchemy", "alch" } },
-    { name = "Blacksmithing",                 selected = true, tags = { "blacksmithing", "blacksmith", "bs" } },
-    { name = "Enchanting",                    selected = true, tags = { "enchanting", "enchanter", "enchant" } },
-    { name = "Engineering",                   selected = true, tags = { "engineering", "engineer", "eng" } },
-    { name = "Herbalism",                     selected = true, tags = { "herbalism", "herbalist", "herb" } },
-    { name = "Leatherworking",                selected = true, tags = { "leatherworking", "leatherworker", "lw" } },
-    { name = "Mining",                        selected = true, tags = { "mining", "miner" } },
-    { name = "Tailoring",                     selected = true, tags = { "tailoring", "tailor" } },
-    { name = "Jewelcrafting",                 selected = true, tags = { "jewelcrafting", "jeweler", "jewel", "jc" } },
-    { name = "Cooking",                       selected = true, tags = { "cooking", "cook" } },
+DifficultBulletinBoard.defaultGroupTopics = {
     { name = "Naxxramas",                     selected = true, tags = { "naxxramas", "naxx" } },
     { name = "Temple of Ahn'Qiraj",           selected = true, tags = { "ahn'qiraj", "ahnqiraj", "aq40", "aq" } },
     { name = "Emerald Sanctum",               selected = true, tags = { "emerald", "sanctum", "es" } },
@@ -35,12 +25,12 @@ DifficultBulletinBoard.defaultTopics = {
     { name = "Blackrock Depths",              selected = true, tags = { "brd", "blackrock", "depths" } },
     { name = "Hateforge Quarry",              selected = true, tags = { "hateforge", "quarry", "hq", "hfq" } },
     { name = "The Sunken Temple",             selected = true, tags = { "st", "sunken", "temple" } },
-    { name = "Zul'Farrak",                    selected = true, tags = { "zf", "zul'farrak", "zulfarrak" } },
+    { name = "Zul'Farrak",                    selected = true, tags = { "zf", "zul'farrak", "zulfarrak", "farrak" } },
     { name = "Maraudon",                      selected = true, tags = { "mara", "maraudon" } },
     { name = "Gilneas City",                  selected = true, tags = { "gilneas" } },
     { name = "Uldaman",                       selected = true, tags = { "uldaman" } },
     { name = "Razorfen Downs",                selected = true, tags = { "razorfen", "downs", "rfd" } },
-    { name = "Scarlet Monastery",             selected = true, tags = { "scarlet", "monastery", "sm", "armory", "cathedral", "library", "graveyard" } },
+    { name = "Scarlet Monastery",             selected = true, tags = { "scarlet", "monastery", "sm", "armory", "cathedral", "cath", "library", "lib", "graveyard" } },
     { name = "The Crescent Grove",            selected = true, tags = { "crescent", "grove" } },
     { name = "Razorfen Kraul",                selected = true, tags = { "razorfen", "kraul" } },
     { name = "Gnomeregan",                    selected = true, tags = { "gnomeregan", "gnomer" } },
@@ -50,6 +40,28 @@ DifficultBulletinBoard.defaultTopics = {
     { name = "The Deadmines",                 selected = true, tags = { "vc", "dm", "deadmine", "deadmines" } },
     { name = "Wailing Caverns",               selected = true, tags = { "wc", "wailing", "caverns" } },
     { name = "Ragefire Chasm",                selected = true, tags = { "rfc", "ragefire", "chasm" } }
+}
+
+DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders = 5
+
+DifficultBulletinBoard.defaultProfessionTopics = {
+    { name = "Alchemy",                       selected = true, tags = { "alchemist", "alchemy", "alch" } },
+    { name = "Blacksmithing",                 selected = true, tags = { "blacksmithing", "blacksmith", "bs" } },
+    { name = "Enchanting",                    selected = true, tags = { "enchanting", "enchanter", "enchant" } },
+    { name = "Engineering",                   selected = true, tags = { "engineering", "engineer", "eng" } },
+    { name = "Herbalism",                     selected = true, tags = { "herbalism", "herbalist", "herb" } },
+    { name = "Leatherworking",                selected = true, tags = { "leatherworking", "leatherworker", "lw" } },
+    { name = "Mining",                        selected = true, tags = { "mining", "miner" } },
+    { name = "Tailoring",                     selected = true, tags = { "tailoring", "tailor" } },
+    { name = "Jewelcrafting",                 selected = true, tags = { "jewelcrafting", "jeweler", "jewel", "jc" } },
+    { name = "Cooking",                       selected = true, tags = { "cooking", "cook" } }
+}
+
+DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders = 15
+
+DifficultBulletinBoard.defaultHardcoreTopics = {
+    { name = "Deaths",                       selected = true, tags = { "tragedy"} },
+    { name = "Level Ups",                 selected = true, tags = { "level" } }
 }
 
 function DifficultBulletinBoard.deepCopy(original)
