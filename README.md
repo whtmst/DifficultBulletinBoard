@@ -1,16 +1,22 @@
 # Difficult Bulletin Board - Addon for Turtle WoW
 
-**Difficult Bulletin Board** is a World of Warcraft 1.12 addon inspired by the LFG Group Bulletin Board that reads the world chat and presents it as an ordered list in an easy-to-read UI. This addon aims to make it easier to find groups for the content you want to do.
+**Difficult Bulletin Board** is a World of Warcraft 1.12 addon inspired by the LFG Group Bulletin Board. It scans world chat and organizes messages into an easy-to-read UI, making it more convenient to find what you need.
 
-Grouping
+## Features
+
+- **Group Finder**: Easily locate groups for the content you want to do.
+- **Profession Search**: Quickly find players offering or seeking crafting services.
+- **Hardcore Messages**: Stay updated with hardcore-related events, such as deaths or level-ups.
+
+### Group Finder
 
 ![screenshot](images/groups.png)
 
-Professions
+### Profession Search
 
 ![screenshot](images/professions.png)
 
-Hardcore Messages
+### Hardcore Messages
 
 ![screenshot](images/hardcore.png)
 
