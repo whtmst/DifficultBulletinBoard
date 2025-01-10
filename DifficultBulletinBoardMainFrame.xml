@@ -14,7 +14,7 @@
                 <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="LEFT"
                             text="Difficult Bulletin Board">
                     <Size>
-                        <AbsDimension x="0" y="0"/> <!-- x is width, y is height (font size) -->
+                        <AbsDimension x="0" y="0"/>
                     </Size>
                     <Anchors>
                         <Anchor point="TOP" relativeTo="$parent">
@@ -44,9 +44,92 @@
                 </Scripts>
             </Button>
 
-            <!-- ScrollFrame is included in DifficultBulletinBoard.lua -->
+            <!-- Groups Button -->
+            <Button name="DifficultBulletinBoardMainFrameGroupsButton" enableMouse="true" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="100" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="-30"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Groups">
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        print("Groups button clicked!");
+                    </OnClick>
+                </Scripts>
+            </Button>
 
+            <!-- Professions Button -->
+            <Button name="DifficultBulletinBoardMainFrameProfessionsButton" enableMouse="true" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="100" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameGroupsButton" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Professions">
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        print("Professions button clicked!");
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- HC Messages Button -->
+            <Button name="DifficultBulletinBoardMainFrameHCMessagesButton" enableMouse="true" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="100" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameProfessionsButton" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Hardcore">
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        print("HC Messages button clicked!");
+                    </OnClick>
+                </Scripts>
+            </Button>
         </Frames>
+
+        <!-- ScrollFrames are added in DifficultBulletinBoard.lua -->
 
         <!-- Scripts for Dragging -->
         <Scripts>

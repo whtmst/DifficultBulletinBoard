@@ -1,16 +1,29 @@
 local version = DifficultBulletinBoard.version
-local defaultTopics = DifficultBulletinBoard.defaultTopics
-local defaultNumberOfPlaceholders = DifficultBulletinBoard.defaultNumberOfPlaceholders
-local allTopics = {}
+local defaultGroupTopics = DifficultBulletinBoard.defaultGroupTopics
+local defaultProfessionTopics = DifficultBulletinBoard.defaultProfessionTopics
+local defaultHardcoreTopics = DifficultBulletinBoard.defaultHardcoreTopics
+local defaultNumberOfGroupPlaceholders = DifficultBulletinBoard.defaultNumberOfGroupPlaceholders
+local defaultNumberOfProfessionPlaceholders = DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders
+local defaultNumberOfHardcorePlaceholders = DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders
+local allGroupTopics = {}
+local allProfessionTopics = {}
+local allHardcoreTopics = {}
 local mainFrame = DifficultBulletinBoardMainFrame
+local groupsButton = DifficultBulletinBoardMainFrameGroupsButton
+local professionsButton = DifficultBulletinBoardMainFrameProfessionsButton
+local hcMessagesButton = DifficultBulletinBoardMainFrameHCMessagesButton
 local optionFrame = DifficultBulletinBoardOptionFrame
 local string_gfind = string.gmatch or string.gfind
 
-local numberOfPlaceholders = 3
-local topicPlaceholders = {}
+local numberOfGroupPlaceholders = defaultNumberOfGroupPlaceholders
+local numberOfProfessionPlaceholders = defaultNumberOfProfessionPlaceholders
+local numberOfHardcorePlaceholders = defaultNumberOfHardcorePlaceholders
+local groupTopicPlaceholders = {}
+local professionTopicPlaceholders = {}
+local hardcoreTopicPlaceholders = {}
 
-local function print(string)
-    --DEFAULT_CHAT_FRAME:AddMessage(string)
+local function print(string) 
+    --DEFAULT_CHAT_FRAME:AddMessage(string) 
 end
 
 local function splitIntoLowerWords(input)
@@ -57,7 +70,7 @@ end
 function DifficultBulletinBoard_DragMinimapStart()
     local button = DifficultBulletinBoard_MinimapButtonFrame
 
-    if (IsShiftKeyDown()) and button then
+    if (IsShiftKeyDown()) and button then 
         button:StartMoving()
     end
 end
@@ -75,20 +88,24 @@ function DifficultBulletinBoard_DragMinimapStop()
     end
 end
 
-local function addScrollFrameToMainFrame()
+local scrollFrame = nil
+local function addGroupScrollFrameToMainFrame()
     local parentFrame = mainFrame
 
     -- Create the ScrollFrame
-    local scrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "DifficultBulletinBoardMainFrame_ScrollFrame",
-        parentFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() ..
+                                  "DifficultBulletinBoardMainFrame_ScrollFrame",
+                              parentFrame, "UIPanelScrollFrameTemplate")
     scrollFrame:EnableMouseWheel(true)
 
     -- Set ScrollFrame anchors
-    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -38)
+    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -80)
     scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 10)
 
     -- Create the ScrollChild (content frame)
-    local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild", scrollFrame)
+    local scrollChild = CreateFrame("Frame",
+                                    "DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild",
+                                    scrollFrame)
     scrollChild:SetHeight(2000)
     scrollChild:SetWidth(980)
 
@@ -96,18 +113,16 @@ local function addScrollFrameToMainFrame()
     scrollFrame:SetScrollChild(scrollChild)
 end
 
-
 -- function to create the placeholders and font strings for a topic
-local function createTopicList()
+local function createGroupTopicList()
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
 
     local contentFrame = DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild
 
-    for _, topic in ipairs(allTopics) do
+    for _, topic in ipairs(allGroupTopics) do
         if topic.selected then
-            local header = contentFrame:CreateFontString("$parent_" .. topic.name .. "Header", "OVERLAY",
-                "GameFontNormal")
+            local header = contentFrame:CreateFontString("$parent_" .. topic.name .. "Header", "OVERLAY", "GameFontNormal")
             header:SetText(topic.name)
             header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, yOffset)
             header:SetWidth(200)
@@ -117,14 +132,13 @@ local function createTopicList()
 
             -- Store the header Y offset for the current topic
             local topicYOffset = yOffset - 20 -- space between header and first placeholder
-            yOffset = topicYOffset - 110      -- space between headers
+            yOffset = topicYOffset - 110 -- space between headers
 
-            topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or { FontStrings = {} }
+            groupTopicPlaceholders[topic.name] = groupTopicPlaceholders[topic.name] or {FontStrings = {}}
 
-            for i = 1, numberOfPlaceholders do
+            for i = 1, numberOfGroupPlaceholders do
                 -- create Name column as a button
-                local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name",
-                    contentFrame, nil)
+                local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", contentFrame, nil)
                 nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
                 nameButton:SetWidth(150)
                 nameButton:SetHeight(14)
@@ -132,20 +146,20 @@ local function createTopicList()
                 -- Set the text of the button
                 local buttonText = nameButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
                 buttonText:SetText("-")
-                buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0) -- Align text to the left with a small offset
+                buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0)
                 buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
-                buttonText:SetTextColor(1, 1, 1)                      -- Normal color (e.g., white)
+                buttonText:SetTextColor(1, 1, 1)
                 nameButton:SetFontString(buttonText)
 
                 -- Set scripts for hover behavior
                 nameButton:SetScript("OnEnter", function()
                     buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Highlight font
-                    buttonText:SetTextColor(1, 1, 0)              -- Highlight color (e.g., yellow)
+                    buttonText:SetTextColor(1, 1, 0) -- Highlight color (e.g., yellow)
                 end)
 
                 nameButton:SetScript("OnLeave", function()
                     buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Normal font
-                    buttonText:SetTextColor(1, 1, 1)              -- Normal color (e.g., white)
+                    buttonText:SetTextColor(1, 1, 1) -- Normal color (e.g., white)
                 end)
 
                 -- Add an example OnClick handler
@@ -156,9 +170,7 @@ local function createTopicList()
                     print(pressedButton)
 
                     -- dont do anything when its a placeholder
-                    if targetName == "-" then
-                        return
-                    end
+                    if targetName == "-" then return end
 
                     if pressedButton == "LeftButton" then
                         if IsShiftKeyDown() then
@@ -171,15 +183,13 @@ local function createTopicList()
                     end
                 end)
 
-                --OnClick doesnt support right clicking... so lets just check OnMouseDown instead
+                -- OnClick doesnt support right clicking... so lets just check OnMouseDown instead
                 nameButton:SetScript("OnMouseDown", function()
                     local pressedButton = arg1
                     local targetName = nameButton:GetText()
 
                     -- dont do anything when its a placeholder
-                    if targetName == "-" then
-                        return
-                    end
+                    if targetName == "-" then return end
 
                     if pressedButton == "RightButton" then
                         ChatFrame_OpenChat("/invite " .. targetName)
@@ -187,8 +197,7 @@ local function createTopicList()
                 end)
 
                 -- create Message column
-                local messageColumn = contentFrame:CreateFontString(
-                    "$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
+                local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
                 messageColumn:SetPoint("TOPLEFT", nameButton, "TOPRIGHT", 50, 0)
                 messageColumn:SetWidth(650)
@@ -198,8 +207,7 @@ local function createTopicList()
                 messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
                 -- create Time column
-                local timeColumn = contentFrame:CreateFontString(
-                    "$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
+                local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
                 timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
                 timeColumn:SetWidth(100)
@@ -207,7 +215,226 @@ local function createTopicList()
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                table.insert(topicPlaceholders[topic.name].FontStrings, { nameButton, messageColumn, timeColumn })
+                table.insert(groupTopicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn})
+
+                -- Increment the Y-offset for the next placeholder
+                topicYOffset = topicYOffset - 18 -- space between placeholders
+            end
+
+            -- After the placeholders, adjust the main yOffset for the next topic
+            yOffset = topicYOffset - 10 -- space between topics
+        end
+    end
+end
+
+local professionScrollFrame
+local function addProfessionScrollFrameToMainFrame()
+    local parentFrame = mainFrame
+
+    -- Create the ScrollFrame
+    professionScrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "DifficultBulletinBoardMainFrame_Profession_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
+    professionScrollFrame:EnableMouseWheel(true)
+
+    -- Set ScrollFrame anchors
+    professionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -80)
+    professionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 10)
+
+    -- Create the ScrollChild (content frame)
+    local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild", professionScrollFrame)
+    scrollChild:SetHeight(2000)
+    scrollChild:SetWidth(980)
+
+    -- Attach the ScrollChild to the ScrollFrame
+    professionScrollFrame:SetScrollChild(scrollChild)
+
+    -- Default Hide, because the groups tab is shown
+    professionScrollFrame:Hide()
+end
+
+-- function to create the placeholders and font strings for a topic
+local function createProfessionTopicList()
+    -- initial Y-offset for the first header and placeholder
+    local yOffset = 0
+
+    local contentFrame =
+        DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild
+
+    for _, topic in ipairs(allProfessionTopics) do
+        if topic.selected then
+            local header = contentFrame:CreateFontString("$parent_" .. topic.name .. "Header", "OVERLAY", "GameFontNormal")
+            header:SetText(topic.name)
+            header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, yOffset)
+            header:SetWidth(200)
+            header:SetJustifyH("LEFT")
+            header:SetTextColor(1, 1, 0)
+            header:SetFont("Fonts\\FRIZQT__.TTF", 12)
+
+            -- Store the header Y offset for the current topic
+            local topicYOffset = yOffset - 20 -- space between header and first placeholder
+            yOffset = topicYOffset - 110 -- space between headers
+
+            professionTopicPlaceholders[topic.name] = professionTopicPlaceholders[topic.name] or {FontStrings = {}}
+
+            for i = 1, numberOfProfessionPlaceholders do
+                -- create Name column as a button
+                local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", contentFrame, nil)
+                nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
+                nameButton:SetWidth(150)
+                nameButton:SetHeight(14)
+
+                -- Set the text of the button
+                local buttonText = nameButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                buttonText:SetText("-")
+                buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0) -- Align text to the left with a small offset
+                buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                buttonText:SetTextColor(1, 1, 1) -- Normal color (e.g., white)
+                nameButton:SetFontString(buttonText)
+
+                -- Set scripts for hover behavior
+                nameButton:SetScript("OnEnter", function()
+                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Highlight font
+                    buttonText:SetTextColor(1, 1, 0) -- Highlight color (e.g., yellow)
+                end)
+
+                nameButton:SetScript("OnLeave", function()
+                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Normal font
+                    buttonText:SetTextColor(1, 1, 1) -- Normal color (e.g., white)
+                end)
+
+                -- Add an example OnClick handler
+                nameButton:SetScript("OnClick", function()
+                    print("Clicked on: " .. nameButton:GetText())
+                    local pressedButton = arg1
+                    local targetName = nameButton:GetText()
+                    print(pressedButton)
+
+                    -- dont do anything when its a placeholder
+                    if targetName == "-" then return end
+
+                    if pressedButton == "LeftButton" then
+                        if IsShiftKeyDown() then
+                            print("who")
+                            SendWho(targetName)
+                        else
+                            print("whisp")
+                            ChatFrame_OpenChat("/w " .. targetName)
+                        end
+                    end
+                end)
+
+                -- OnClick doesnt support right clicking... so lets just check OnMouseDown instead
+                nameButton:SetScript("OnMouseDown", function()
+                    local pressedButton = arg1
+                    local targetName = nameButton:GetText()
+
+                    -- dont do anything when its a placeholder
+                    if targetName == "-" then return end
+
+                    if pressedButton == "RightButton" then
+                        ChatFrame_OpenChat("/invite " .. targetName)
+                    end
+                end)
+
+                -- create Message column
+                local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
+                messageColumn:SetText("-")
+                messageColumn:SetPoint("TOPLEFT", nameButton, "TOPRIGHT", 50, 0)
+                messageColumn:SetWidth(650)
+                messageColumn:SetHeight(10)
+                messageColumn:SetJustifyH("LEFT")
+                messageColumn:SetTextColor(1, 1, 1)
+                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+
+                -- create Time column
+                local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
+                timeColumn:SetText("-")
+                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
+                timeColumn:SetWidth(100)
+                timeColumn:SetJustifyH("LEFT")
+                timeColumn:SetTextColor(1, 1, 1)
+                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+
+                table.insert(professionTopicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn})
+
+                -- Increment the Y-offset for the next placeholder
+                topicYOffset = topicYOffset - 18 -- space between placeholders
+            end
+
+            -- After the placeholders, adjust the main yOffset for the next topic
+            yOffset = topicYOffset - 10 -- space between topics
+        end
+    end
+end
+
+local hardcoreScrollFrame
+local function addHardcoreScrollFrameToMainFrame()
+    local parentFrame = mainFrame
+
+    -- Create the ScrollFrame
+    hardcoreScrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
+    hardcoreScrollFrame:EnableMouseWheel(true)
+
+    -- Set ScrollFrame anchors
+    hardcoreScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -80)
+    hardcoreScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 10)
+
+    -- Create the ScrollChild (content frame)
+    local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild", hardcoreScrollFrame)
+    scrollChild:SetHeight(2000)
+    scrollChild:SetWidth(980)
+
+    -- Attach the ScrollChild to the ScrollFrame
+    hardcoreScrollFrame:SetScrollChild(scrollChild)
+
+    -- Default Hide, because the groups tab is shown
+    hardcoreScrollFrame:Hide()
+end
+
+-- function to create the placeholders and font strings for a topic
+local function createHardcoreTopicList()
+    -- initial Y-offset for the first header and placeholder
+    local yOffset = 0
+
+    local contentFrame = DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild
+
+    for _, topic in ipairs(allHardcoreTopics) do
+        if topic.selected then
+            local header = contentFrame:CreateFontString("$parent_" .. topic.name ..  "Header", "OVERLAY", "GameFontNormal")
+            header:SetText(topic.name)
+            header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, yOffset)
+            header:SetWidth(200)
+            header:SetJustifyH("LEFT")
+            header:SetTextColor(1, 1, 0)
+            header:SetFont("Fonts\\FRIZQT__.TTF", 12)
+
+            -- Store the header Y offset for the current topic
+            local topicYOffset = yOffset - 20 -- space between header and first placeholder
+            yOffset = topicYOffset - 110 -- space between headers
+
+            hardcoreTopicPlaceholders[topic.name] = hardcoreTopicPlaceholders[topic.name] or {FontStrings = {}}
+
+            for i = 1, numberOfHardcorePlaceholders do
+
+                -- create Message column
+                local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
+                messageColumn:SetText("-")
+                messageColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 14, topicYOffset)
+                messageColumn:SetWidth(846)
+                messageColumn:SetHeight(14)
+                messageColumn:SetJustifyH("LEFT")
+                messageColumn:SetTextColor(1, 1, 1)
+                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+
+                -- create Time column
+                local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
+                timeColumn:SetText("-")
+                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
+                timeColumn:SetWidth(100)
+                timeColumn:SetJustifyH("LEFT")
+                timeColumn:SetTextColor(1, 1, 1)
+                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+
+                table.insert( hardcoreTopicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn})
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -220,7 +447,7 @@ local function createTopicList()
 end
 
 -- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
-local function UpdateFirstPlaceholderAndShiftDown(topic, name, message)
+local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, name, message)
     local topicData = topicPlaceholders[topic]
     if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
         print("No placeholders found for topic: " .. topic)
@@ -230,9 +457,7 @@ local function UpdateFirstPlaceholderAndShiftDown(topic, name, message)
     local currentTime = date("%H:%M:%S")
 
     local index = 0
-    for i, _ in ipairs(topicData.FontStrings) do
-        index = i
-    end
+    for i, _ in ipairs(topicData.FontStrings) do index = i end
 
     for i = index, 2, -1 do
         -- Copy the data from the previous placeholder to the current one
@@ -252,9 +477,38 @@ local function UpdateFirstPlaceholderAndShiftDown(topic, name, message)
     firstFontString[3]:SetText(currentTime or "No Time")
 end
 
+-- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
+local function UpdateFirstSystemPlaceholderAndShiftDown(topicPlaceholders, topic, message)
+    local topicData = topicPlaceholders[topic]
+    if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
+        print("No placeholders found for topic: " .. topic)
+        return
+    end
+
+    local currentTime = date("%H:%M:%S")
+
+    local index = 0
+    for i, _ in ipairs(topicData.FontStrings) do index = i end
+        for i = index, 2, -1 do
+            -- Copy the data from the previous placeholder to the current one
+            local currentFontString = topicData.FontStrings[i]
+            local previousFontString = topicData.FontStrings[i - 1]
+
+            -- Update the current placeholder with the previous placeholder's data
+            currentFontString[2]:SetText(previousFontString[2]:GetText())
+            currentFontString[3]:SetText(previousFontString[3]:GetText())
+        end
+
+    -- Update the first placeholder with the new data
+    local firstFontString = topicData.FontStrings[1]
+    firstFontString[2]:SetText(message or "No Message")
+    firstFontString[3]:SetText(currentTime or "No Time")
+end
+
 -- Updates the specified placeholder for a topic with new name, message, and timestamp,
 -- then moves the updated entry to the top of the list, shifting other entries down.
-local function UpdateTopicPlaceholderWithShift(topic, name, message, index)
+local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, name,
+                                               message, index)
     local topicData = topicPlaceholders[topic]
     local FontStringsList = {}
 
@@ -282,7 +536,7 @@ local function UpdateTopicPlaceholderWithShift(topic, name, message, index)
     local tempFontStringsList = table.remove(FontStringsList, index)
     table.insert(FontStringsList, 1, tempFontStringsList)
 
-    for i = 1, numberOfPlaceholders, 1 do
+    for i = 1, numberOfGroupPlaceholders, 1 do
         local currentFontString = topicData.FontStrings[i]
 
         currentFontString[1]:SetText(FontStringsList[i][1])
@@ -292,9 +546,8 @@ local function UpdateTopicPlaceholderWithShift(topic, name, message, index)
 end
 
 SLASH_DIFFICULTBB1 = "/dbb"
-SlashCmdList["DIFFICULTBB"] = function()
-    DifficultBulletinBoard_ToggleMainFrame()
-end
+SlashCmdList["DIFFICULTBB"] =
+    function() DifficultBulletinBoard_ToggleMainFrame() end
 
 local function loadSavedVariables()
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
@@ -303,93 +556,135 @@ local function loadSavedVariables()
         print("version did exist " .. DifficultBulletinBoardSavedVariables.version)
         local savedVersion = DifficultBulletinBoardSavedVariables.version
 
-        --update the saved activeTopics if a new version of the topic list was released
+        -- update the saved activeTopics if a new version of the topic list was released
         if savedVersion < version then
-            print("version is older than the current version.")
-            print("overwriting activeTopics")
-            allTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultTopics)
-            DifficultBulletinBoardSavedVariables.activeTopics = allTopics
+            print("version is older than the current version. overwriting activeTopics")
+
+            allGroupTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultGroupTopics)
+            DifficultBulletinBoardSavedVariables.activeGroupTopics = allGroupTopics
+
+            allProfessionTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultProfessionTopics)
+            DifficultBulletinBoardSavedVariables.activeProfessionTopics = allProfessionTopics
+
+            allHardcoreTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultHardcoreTopics)
+            DifficultBulletinBoardSavedVariables.activeHardcoreTopics = allHardcoreTopics
+
             DifficultBulletinBoardSavedVariables.version = version
             print("version is now " .. version)
         end
     else
-        print("version did not exist")
-        print("overwriting version")
+        print("version did not exist. overwriting version")
         DifficultBulletinBoardSavedVariables.version = version
 
         print("overwriting activeTopics")
-        allTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultTopics)
-        DifficultBulletinBoardSavedVariables.activeTopics = allTopics
+        allGroupTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultGroupTopics)
+        DifficultBulletinBoardSavedVariables.activeGroupTopics = allGroupTopics
+
+        allProfessionTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultProfessionTopics)
+        DifficultBulletinBoardSavedVariables.activeProfessionTopics = allProfessionTopics
+
+        allHardcoreTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultHardcoreTopics)
+        DifficultBulletinBoardSavedVariables.activeHardcoreTopics = allHardcoreTopics
     end
 
-    if DifficultBulletinBoardSavedVariables.numberOfPlaceholders and DifficultBulletinBoardSavedVariables.numberOfPlaceholders ~= "" then
-        numberOfPlaceholders = DifficultBulletinBoardSavedVariables.numberOfPlaceholders
+    if DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders and DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders ~= "" then
+        numberOfGroupPlaceholders = DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders
     else
-        numberOfPlaceholders = DifficultBulletinBoard.defaultNumberOfPlaceholders
-        DifficultBulletinBoardSavedVariables.numberOfPlaceholders = numberOfPlaceholders
+        numberOfGroupPlaceholders = DifficultBulletinBoard.defaultNumberOfGroupPlaceholders
+        DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = numberOfGroupPlaceholders
     end
 
-    if DifficultBulletinBoardSavedVariables.activeTopics then
-        allTopics = DifficultBulletinBoardSavedVariables.activeTopics
+    if DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders and DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders ~= "" then
+        numberOfProfessionPlaceholders = DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders
     else
-        allTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultTopics)
-        DifficultBulletinBoardSavedVariables.activeTopics = allTopics
+        numberOfProfessionPlaceholders = DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders
+        DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = numberOfProfessionPlaceholders
+    end
+
+    if DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders and DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders ~= "" then
+        numberOfHardcorePlaceholders = DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders
+    else
+        numberOfHardcorePlaceholders = DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders
+        DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = numberOfHardcorePlaceholders
+    end
+
+    if DifficultBulletinBoardSavedVariables.activeGroupTopics then 
+        allGroupTopics = DifficultBulletinBoardSavedVariables.activeGroupTopics
+    else
+        allGroupTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultGroupTopics)
+        DifficultBulletinBoardSavedVariables.activeGroupTopics = allGroupTopics
+    end
+
+    if DifficultBulletinBoardSavedVariables.activeProfessionTopics then
+        allProfessionTopics = DifficultBulletinBoardSavedVariables.activeProfessionTopics
+    else
+        allProfessionTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultProfessionTopics)
+        DifficultBulletinBoardSavedVariables.activeProfessionTopics = allProfessionTopics
+    end
+
+    if DifficultBulletinBoardSavedVariables.activeHardcoreTopics then
+        allHardcoreTopics = DifficultBulletinBoardSavedVariables.activeHardcoreTopics
+    else
+        allHardcoreTopics = DifficultBulletinBoard.deepCopy(DifficultBulletinBoard.defaultHardcoreTopics)
+        DifficultBulletinBoardSavedVariables.activeHardcoreTopics = allHardcoreTopics
     end
 end
 
-local function addPlaceholderOptionToOptionFrame()
-    local parentFrame = DifficultBulletinBoardOptionFrame
+local optionScrollChild = nil
+local function addScrollFrameToOptionFrame()
+    local parentFrame = optionFrame
+
+    -- Create the ScrollFrame
+    scrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:EnableMouseWheel(true)
+
+    -- Set ScrollFrame anchors
+    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -50)
+    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -27, 75)
+    scrollFrame:SetWidth(460)
+    scrollFrame:SetHeight(520)
+
+    -- Create the ScrollChild
+    optionScrollChild = CreateFrame("Frame", parentFrame:GetName() .. "_ScrollChild", scrollFrame)
+    optionScrollChild:SetWidth(480)
+    optionScrollChild:SetHeight(2000)
+    scrollFrame:SetScrollChild(optionScrollChild)
+end
+
+local function addGroupPlaceholderOptionToOptionFrame()
+    local parentFrame = optionScrollChild
 
     -- Create the first FontString (label) above the scroll frame
-    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_PlaceholderOption_FontString",
-        "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 15, -50) -- Position at the top of the parent frame
-    scrollLabel:SetText("Set the Number of Placeholders for Each Topic:")
-    scrollLabel:SetText("Number of Placeholders per Topic:")
+    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, 0)
+    scrollLabel:SetText("Number of Placeholders per Group Topic:")
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 
-    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_PlaceholderOption_TextBox",
-        parentFrame, "InputBoxTemplate")
+    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_Group_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
     placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
     placeholderOptionTextBox:SetWidth(20)
     placeholderOptionTextBox:SetHeight(20)
-    placeholderOptionTextBox:SetText(numberOfPlaceholders)
+    placeholderOptionTextBox:SetText(numberOfGroupPlaceholders)
     placeholderOptionTextBox:EnableMouse(true)
     placeholderOptionTextBox:SetAutoFocus(false)
 end
 
-local function addScrollFrameToOptionFrame()
-    local parentFrame = DifficultBulletinBoardOptionFrame
-    local placeholderOptionTextBox = DifficultBulletinBoard_Option_PlaceholderOption_FontString
+local tempGroupTags = {}
+local optionYOffset = -35 -- Starting vertical offset for the first option
+local function addGroupTopicOptions()
+    local parentFrame = optionScrollChild
 
-    -- Create the second FontString (label) below the first label
+    -- create fontstring
     local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", placeholderOptionTextBox, "BOTTOMLEFT", 0, -25) -- Position it below the first label
-    scrollLabel:SetText("Select the Topics you want to observe:")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+    scrollLabel:SetText("Select the Group Topics you want to observe:")
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 
-    -- Create the ScrollFrame, positioning it below the second label
-    local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", scrollLabel, "BOTTOMLEFT", -10, -10) -- Position it below the second label
-    scrollFrame:SetWidth(460)
-    scrollFrame:SetHeight(520)
+    optionYOffset = optionYOffset - 30
 
-    -- Create the child frame inside the scroll frame
-    local scrollChild = CreateFrame("Frame", "$parent_ScrollChild", scrollFrame)
-    scrollChild:SetWidth(480)
-    scrollChild:SetHeight(1300)
-    scrollFrame:SetScrollChild(scrollChild)
-end
-
-local tempTags = {}
-local function createOptions()
-    local scrollChild = DifficultBulletinBoardOptionFrame_ScrollFrame_ScrollChild
-    local yOffset = 0 -- Starting vertical offset for the first checkbox
-
-    for _, topic in ipairs(allTopics) do
-        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", scrollChild,
-            "UICheckButtonTemplate")
-        checkbox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    for _, topic in ipairs(allGroupTopics) do
+        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", parentFrame, "UICheckButtonTemplate")
+        checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
         checkbox:SetWidth(25)
         checkbox:SetHeight(25)
         checkbox:SetChecked(topic.selected)
@@ -400,7 +695,7 @@ local function createOptions()
         end)
 
         -- Add a label next to the checkbox displaying the topic
-        local topicLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local topicLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         topicLabel:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
         topicLabel:SetText(topic.name)
         topicLabel:SetFont("Fonts\\FRIZQT__.TTF", 12)
@@ -408,8 +703,7 @@ local function createOptions()
         topicLabel:SetWidth(175)
 
         -- Add a text box next to the topic label for tags input
-        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", scrollChild,
-            "InputBoxTemplate")
+        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame, "InputBoxTemplate")
         tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
         tagsTextBox:SetWidth(200)
         tagsTextBox:SetHeight(20)
@@ -417,14 +711,209 @@ local function createOptions()
         tagsTextBox:EnableMouse(true)
         tagsTextBox:SetAutoFocus(false)
 
-        local topicName = topic.name --save a reference for the onTextChanged event
+        local topicName = topic.name -- save a reference for the onTextChanged event
         tagsTextBox:SetScript("OnTextChanged", function()
             local enteredText = this:GetText()
-            tempTags[topicName] = splitIntoLowerWords(enteredText)
+            tempGroupTags[topicName] = splitIntoLowerWords(enteredText)
         end)
 
-        yOffset = yOffset - 30 -- Adjust the vertical offset for the next row
+        optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
     end
+end
+
+local function addProfessionPlaceholderOptionToOptionFrame()
+    local parentFrame = optionScrollChild
+
+    optionYOffset = optionYOffset - 30
+
+    -- Create the first FontString (label) above the scroll frame
+    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_Profession_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+    scrollLabel:SetText("Number of Placeholders per Profession Topic:")
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+
+    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_Profession_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
+    placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
+    placeholderOptionTextBox:SetWidth(20)
+    placeholderOptionTextBox:SetHeight(20)
+    placeholderOptionTextBox:SetText(numberOfProfessionPlaceholders)
+    placeholderOptionTextBox:EnableMouse(true)
+    placeholderOptionTextBox:SetAutoFocus(false)
+end
+
+local tempProfessionTags = {}
+local function addProfessionTopicOptions()
+    local parentFrame = optionScrollChild
+
+    optionYOffset = optionYOffset - 35
+
+    -- create fontstring
+    local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+    scrollLabel:SetText("Select the Profession Topics you want to observe:")
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+
+    optionYOffset = optionYOffset - 30
+
+    for _, topic in ipairs(allProfessionTopics) do
+        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", parentFrame, "UICheckButtonTemplate")
+        checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+        checkbox:SetWidth(25)
+        checkbox:SetHeight(25)
+        checkbox:SetChecked(topic.selected)
+
+        local currentTopic = topic
+        checkbox:SetScript("OnClick", function()
+            currentTopic.selected = checkbox:GetChecked()
+        end)
+
+        -- Add a label next to the checkbox displaying the topic
+        local topicLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        topicLabel:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
+        topicLabel:SetText(topic.name)
+        topicLabel:SetFont("Fonts\\FRIZQT__.TTF", 12)
+        topicLabel:SetJustifyH("LEFT")
+        topicLabel:SetWidth(175)
+
+        -- Add a text box next to the topic label for tags input
+        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame, "InputBoxTemplate")
+        tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
+        tagsTextBox:SetWidth(200)
+        tagsTextBox:SetHeight(20)
+        tagsTextBox:SetText(table.concat(topic.tags, " "))
+        tagsTextBox:EnableMouse(true)
+        tagsTextBox:SetAutoFocus(false)
+
+        local topicName = topic.name -- save a reference for the onTextChanged event
+        tagsTextBox:SetScript("OnTextChanged", function()
+            local enteredText = this:GetText()
+            tempProfessionTags[topicName] = splitIntoLowerWords(enteredText)
+            print(enteredText)
+            print(topicName)
+        end)
+
+        optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
+    end
+end
+
+local function addHardcorePlaceholderOptionToOptionFrame()
+    local parentFrame = optionScrollChild
+
+    optionYOffset = optionYOffset - 30
+
+    -- Create the first FontString (label) above the scroll frame
+    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_Hardcore_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+    scrollLabel:SetText("Number of Placeholders per Hardcore Topic:")
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+
+    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_Hardcore_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
+    placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
+    placeholderOptionTextBox:SetWidth(20)
+    placeholderOptionTextBox:SetHeight(20)
+    placeholderOptionTextBox:SetText(numberOfHardcorePlaceholders)
+    placeholderOptionTextBox:EnableMouse(true)
+    placeholderOptionTextBox:SetAutoFocus(false)
+end
+
+local tempHardcoreTags = {}
+local function addHardcoreTopicOptions()
+    local parentFrame = optionScrollChild
+
+    optionYOffset = optionYOffset - 35
+
+    -- create fontstring
+    local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+    scrollLabel:SetText("Select the Hardcore Topics you want to observe:")
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+
+    optionYOffset = optionYOffset - 30
+
+    for _, topic in ipairs(allHardcoreTopics) do
+        print("hardcore" .. topic.name)
+        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", parentFrame, "UICheckButtonTemplate")
+        checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+        checkbox:SetWidth(25)
+        checkbox:SetHeight(25)
+        checkbox:SetChecked(topic.selected)
+
+        local currentTopic = topic
+        checkbox:SetScript("OnClick", function()
+            currentTopic.selected = checkbox:GetChecked()
+        end)
+
+        -- Add a label next to the checkbox displaying the topic
+        local topicLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        topicLabel:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
+        topicLabel:SetText(topic.name)
+        topicLabel:SetFont("Fonts\\FRIZQT__.TTF", 12)
+        topicLabel:SetJustifyH("LEFT")
+        topicLabel:SetWidth(175)
+
+        -- Add a text box next to the topic label for tags input
+        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame, "InputBoxTemplate")
+        tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
+        tagsTextBox:SetWidth(200)
+        tagsTextBox:SetHeight(20)
+        tagsTextBox:SetText(table.concat(topic.tags, " "))
+        tagsTextBox:EnableMouse(true)
+        tagsTextBox:SetAutoFocus(false)
+
+        local topicName = topic.name -- save a reference for the onTextChanged event
+        tagsTextBox:SetScript("OnTextChanged", function()
+            local enteredText = this:GetText()
+            tempHardcoreTags[topicName] = splitIntoLowerWords(enteredText)
+        end)
+
+        optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
+    end
+end
+
+local function configureTabSwitching()
+    -- Helper function to reset button states visually
+    local function ResetButtonStates()
+        groupsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+        professionsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+        hcMessagesButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+    end
+
+    -- Set initial active button
+    ResetButtonStates()
+    groupsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+
+    groupsButton:SetScript("OnClick", function()
+        print("Clicked on groupsButton")
+
+        ResetButtonStates()
+        groupsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+
+        scrollFrame:Show()
+        professionScrollFrame:Hide()
+        hardcoreScrollFrame:Hide()
+    end)
+
+    professionsButton:SetScript("OnClick", function()
+        print("Clicked on professionsButton")
+
+        ResetButtonStates()
+        professionsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+
+        scrollFrame:Hide()
+        professionScrollFrame:Show()
+        hardcoreScrollFrame:Hide()
+    end)
+
+    hcMessagesButton:SetScript("OnClick", function()
+        print("Clicked on hcMessagesButton")
+
+        ResetButtonStates()
+        hcMessagesButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+
+        scrollFrame:Hide()
+        professionScrollFrame:Hide()
+        hardcoreScrollFrame:Show()
+    end)
 end
 
 local function initializeAddon(event, arg1)
@@ -432,25 +921,35 @@ local function initializeAddon(event, arg1)
         loadSavedVariables()
 
         -- create option frame first so the user can update his options in case he put in some invalid data that might result in the addon crashing
-        addPlaceholderOptionToOptionFrame()
         addScrollFrameToOptionFrame()
-        createOptions()
+        addGroupPlaceholderOptionToOptionFrame()
+        addGroupTopicOptions()
+        addProfessionPlaceholderOptionToOptionFrame()
+        addProfessionTopicOptions()
+        addHardcorePlaceholderOptionToOptionFrame()
+        addHardcoreTopicOptions()
 
-        --create main frame afterwards
-        addScrollFrameToMainFrame()
-        createTopicList()
+        -- create main frame afterwards
+        addGroupScrollFrameToMainFrame()
+        createGroupTopicList()
+        addProfessionScrollFrameToMainFrame()
+        createProfessionTopicList()
+        addHardcoreScrollFrameToMainFrame()
+        createHardcoreTopicList()
+
+        -- add topic group tab switching
+        configureTabSwitching()
+
     end
 end
 
-local function overwriteTagsForAllTopics()
+local function overwriteTagsForAllTopics(allTopics, tempTags)
     for _, topic in ipairs(allTopics) do
         if tempTags[topic.name] then
             local newTags = tempTags[topic.name]
             topic.tags = newTags
             print("Tags for topic '" .. topic.name .. "' have been updated:")
-            for _, tag in ipairs(newTags) do
-                print("- " .. tag)
-            end
+            for _, tag in ipairs(newTags) do print("- " .. tag) end
         else
             print("No tags found for topic '" .. topic.name .. "' in tempTags.")
         end
@@ -459,19 +958,31 @@ end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
     DifficultBulletinBoardSavedVariables.version = version
-    DifficultBulletinBoardSavedVariables.numberOfPlaceholders = defaultNumberOfPlaceholders
-    DifficultBulletinBoardSavedVariables.activeTopics = defaultTopics
+
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = defaultNumberOfGroupPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = defaultNumberOfProfessionPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = defaultNumberOfHardcorePlaceholders
+
+    DifficultBulletinBoardSavedVariables.activeGroupTopics = defaultGroupTopics
+    DifficultBulletinBoardSavedVariables.activeProfessionTopics = defaultProfessionTopics
+    DifficultBulletinBoardSavedVariables.activeHardcoreTopics = defaultHardcoreTopics
+
     ReloadUI();
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
-    DifficultBulletinBoardSavedVariables.numberOfPlaceholders = DifficultBulletinBoard_Option_PlaceholderOption_TextBox
-        :GetText()
-    overwriteTagsForAllTopics();
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoard_Option_Group_PlaceholderOption_TextBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoard_Option_Profession_PlaceholderOption_TextBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoard_Option_Hardcore_PlaceholderOption_TextBox:GetText()
+    
+    overwriteTagsForAllTopics(allGroupTopics, tempGroupTags); 
+    overwriteTagsForAllTopics(allProfessionTopics, tempProfessionTags); 
+    overwriteTagsForAllTopics(allHardcoreTopics, tempHardcoreTags); 
+
     ReloadUI();
 end
 
-local function topicPlaceholdersContainsCharacterName(topicName, characterName)
+local function topicPlaceholdersContainsCharacterName(topicPlaceholders, topicName, characterName)
     local topicData = topicPlaceholders[topicName]
     if not topicData or not topicData.FontStrings then
         print("Nothing in here yet")
@@ -490,7 +1001,38 @@ local function topicPlaceholdersContainsCharacterName(topicName, characterName)
     return false, nil
 end
 
-local function OnChatMessage(event, arg1, arg2, arg9)
+-- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
+local function analyzeChatMessage(characterName, chatMessage, words, topicList,
+                                  topicPlaceholders)
+    for _, topic in ipairs(topicList) do
+        local matchFound = false -- Flag to control breaking out of nested loops
+
+        for _, tag in ipairs(topic.tags) do
+            for _, word in ipairs(words) do
+                if word == string.lower(tag) then
+                    print("Tag '" .. tag .. "' matches Topic: " .. topic.name)
+                    local found, index =
+                        topicPlaceholdersContainsCharacterName(
+                            topicPlaceholders, topic.name, characterName)
+                    if found then
+                        print("An entry for that character already exists at " .. index)
+                        UpdateTopicPlaceholderWithShift(topicPlaceholders, topic.name, characterName, chatMessage, index)
+                    else
+                        print("No entry for that character exists. Creating one...")
+                        UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic.name, characterName, chatMessage)
+                    end
+
+                    matchFound = true -- Set the flag to true to break out of loops
+                    break
+                end
+            end
+
+            if matchFound then break end
+        end
+    end
+end
+
+local function OnChatMessage(arg1, arg2, arg9)
     local chatMessage = arg1
     local characterName = arg2
     local channelName = arg9
@@ -499,44 +1041,59 @@ local function OnChatMessage(event, arg1, arg2, arg9)
 
     local words = splitIntoLowerWords(s)
 
-    for _, topic in ipairs(allTopics) do
+    analyzeChatMessage(characterName, chatMessage, words, allGroupTopics,
+                       groupTopicPlaceholders)
+    analyzeChatMessage(characterName, chatMessage, words, allProfessionTopics,
+                       professionTopicPlaceholders)
+end
+
+-- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
+local function analyzeSystemMessage(chatMessage, words, topicList, topicPlaceholders)
+    for _, topic in ipairs(topicList) do
         local matchFound = false -- Flag to control breaking out of nested loops
 
         for _, tag in ipairs(topic.tags) do
             for _, word in ipairs(words) do
                 if word == string.lower(tag) then
                     print("Tag '" .. tag .. "' matches Topic: " .. topic.name)
-                    local found, index = topicPlaceholdersContainsCharacterName(topic.name, characterName)
-                    if found then
-                        print("An entry for that character already exists at " .. index)
-                        UpdateTopicPlaceholderWithShift(topic.name, characterName, chatMessage, index)
-                    else
-                        print("No entry for that character exists. Creating one...")
-                        UpdateFirstPlaceholderAndShiftDown(topic.name, characterName, chatMessage)
-                    end
+                    print("Creating one...")
+                    UpdateFirstSystemPlaceholderAndShiftDown(topicPlaceholders,topic.name, chatMessage)
 
                     matchFound = true -- Set the flag to true to break out of loops
                     break
                 end
             end
 
-            if matchFound then
-                break
-            end
+            if matchFound then break end
         end
     end
 end
 
+local function OnSystemMessage(arg1)
+    local systemMessage = arg1
+
+    local s = string.lower(systemMessage)
+
+    local words = splitIntoLowerWords(s)
+
+    analyzeSystemMessage(systemMessage, words, allHardcoreTopics, hardcoreTopicPlaceholders)
+end
+
 function handleEvent()
-    if event == "ADDON_LOADED" then
-        initializeAddon(event, arg1);
+    if event == "ADDON_LOADED" then 
+        initializeAddon(event, arg1)
     end
 
-    if event == "CHAT_MSG_CHANNEL" then
-        OnChatMessage(event, arg1, arg2, arg9)
+    if event == "CHAT_MSG_CHANNEL" then 
+        OnChatMessage(arg1, arg2, arg9) 
+    end
+
+    if event == "CHAT_MSG_SYSTEM" then 
+        OnSystemMessage(arg1) 
     end
 end
 
 mainFrame:RegisterEvent("ADDON_LOADED")
 mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
+mainFrame:RegisterEvent("CHAT_MSG_SYSTEM");
 mainFrame:SetScript("OnEvent", handleEvent)
