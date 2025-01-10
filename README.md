@@ -2,7 +2,17 @@
 
 **Difficult Bulletin Board** is a World of Warcraft 1.12 addon inspired by the LFG Group Bulletin Board that reads the world chat and presents it as an ordered list in an easy-to-read UI. This addon aims to make it easier to find groups for the content you want to do.
 
-![screenshot](DifficultBulletinBoard.PNG)
+Grouping
+
+![screenshot](images/groups.png)
+
+Professions
+
+![screenshot](images/professions.png)
+
+Hardcore Messages
+
+![screenshot](images/hardcore.png)
 
 ## Installation
 
@@ -52,6 +62,6 @@ Have feature suggestions or need further assistance? Feel free to reach out to m
 - [x] Add a reset button to the options frame.
 - [x] Expand options (e.g., placeholder number adjustments, etc.).
 - [x] Implement left-click whisper, shift-left-click /who, and right-click /invite functionality for buttons
-- [ ] Allow users to select which channels they want to observe.
+- [x] Implement tabs
+- [x] Implement a tab for Hardcore messages
 - [ ] Implement more customization options (e.g., classic WoW border styles, etc.).
-- [ ] Consider removing placeholders entirely and implement a dynamic list that grows as needed.
