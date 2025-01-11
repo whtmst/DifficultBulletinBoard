@@ -1037,6 +1037,8 @@ local function OnChatMessage(arg1, arg2, arg9)
     local characterName = arg2
     local channelName = arg9
 
+    print(channelName)
+
     local s = string.lower(chatMessage)
 
     local words = splitIntoLowerWords(s)
@@ -1084,6 +1086,10 @@ function handleEvent()
         initializeAddon(event, arg1)
     end
 
+    if event == "CHAT_MSG_HARDCORE" then 
+        OnChatMessage(arg1, arg2, arg9) 
+    end
+
     if event == "CHAT_MSG_CHANNEL" then 
         OnChatMessage(arg1, arg2, arg9) 
     end
@@ -1095,5 +1101,6 @@ end
 
 mainFrame:RegisterEvent("ADDON_LOADED")
 mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
+mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
 mainFrame:RegisterEvent("CHAT_MSG_SYSTEM");
 mainFrame:SetScript("OnEvent", handleEvent)
