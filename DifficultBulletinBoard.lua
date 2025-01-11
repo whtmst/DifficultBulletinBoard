@@ -447,7 +447,7 @@ local function createHardcoreTopicList()
 end
 
 -- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
-local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, name, message)
+local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, channelName, name, message)
     local topicData = topicPlaceholders[topic]
     if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
         print("No placeholders found for topic: " .. topic)
@@ -473,7 +473,7 @@ local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, name
     -- Update the first placeholder with the new data
     local firstFontString = topicData.FontStrings[1]
     firstFontString[1]:SetText(name or "No Name")
-    firstFontString[2]:SetText(message or "No Message")
+    firstFontString[2]:SetText("[" .. channelName .. "] " .. message or "No Message")
     firstFontString[3]:SetText(currentTime or "No Time")
 end
 
@@ -507,8 +507,7 @@ end
 
 -- Updates the specified placeholder for a topic with new name, message, and timestamp,
 -- then moves the updated entry to the top of the list, shifting other entries down.
-local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, name,
-                                               message, index)
+local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, channelName, name, message, index)
     local topicData = topicPlaceholders[topic]
     local FontStringsList = {}
 
@@ -530,7 +529,7 @@ local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, name,
 
     local currentTime = date("%H:%M:%S")
     FontStringsList[index][1] = name
-    FontStringsList[index][2] = message
+    FontStringsList[index][2] = "[" .. channelName .. "] " .. message
     FontStringsList[index][3] = currentTime
 
     local tempFontStringsList = table.remove(FontStringsList, index)
@@ -1002,8 +1001,7 @@ local function topicPlaceholdersContainsCharacterName(topicPlaceholders, topicNa
 end
 
 -- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
-local function analyzeChatMessage(characterName, chatMessage, words, topicList,
-                                  topicPlaceholders)
+local function analyzeChatMessage(channelName, characterName, chatMessage, words, topicList, topicPlaceholders)
     for _, topic in ipairs(topicList) do
         local matchFound = false -- Flag to control breaking out of nested loops
 
@@ -1016,10 +1014,10 @@ local function analyzeChatMessage(characterName, chatMessage, words, topicList,
                             topicPlaceholders, topic.name, characterName)
                     if found then
                         print("An entry for that character already exists at " .. index)
-                        UpdateTopicPlaceholderWithShift(topicPlaceholders, topic.name, characterName, chatMessage, index)
+                        UpdateTopicPlaceholderWithShift(topicPlaceholders, topic.name, channelName, characterName, chatMessage, index)
                     else
                         print("No entry for that character exists. Creating one...")
-                        UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic.name, characterName, chatMessage)
+                        UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic.name, channelName, characterName, chatMessage)
                     end
 
                     matchFound = true -- Set the flag to true to break out of loops
@@ -1037,16 +1035,15 @@ local function OnChatMessage(arg1, arg2, arg9)
     local characterName = arg2
     local channelName = arg9
 
+    print(chatMessage)
     print(channelName)
 
     local s = string.lower(chatMessage)
 
     local words = splitIntoLowerWords(s)
 
-    analyzeChatMessage(characterName, chatMessage, words, allGroupTopics,
-                       groupTopicPlaceholders)
-    analyzeChatMessage(characterName, chatMessage, words, allProfessionTopics,
-                       professionTopicPlaceholders)
+    analyzeChatMessage(channelName, characterName, chatMessage, words, allGroupTopics, groupTopicPlaceholders)
+    analyzeChatMessage(channelName, characterName, chatMessage, words, allProfessionTopics, professionTopicPlaceholders)
 end
 
 -- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
@@ -1087,7 +1084,7 @@ function handleEvent()
     end
 
     if event == "CHAT_MSG_HARDCORE" then 
-        OnChatMessage(arg1, arg2, arg9) 
+        OnChatMessage(arg1, arg2, "HC")
     end
 
     if event == "CHAT_MSG_CHANNEL" then 
