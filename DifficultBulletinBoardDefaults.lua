@@ -1,6 +1,6 @@
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 
-DifficultBulletinBoard.version = 5 
+DifficultBulletinBoard.version = 6
 
 DifficultBulletinBoard.defaultNumberOfGroupPlaceholders = 3
 
@@ -22,7 +22,7 @@ DifficultBulletinBoard.defaultGroupTopics = {
     { name = "Stratholme",                    selected = true, tags = { "strat", "stratholme" } },
     { name = "Scholomance",                   selected = true, tags = { "scholo", "scholomance" } },
     { name = "Dire Maul",                     selected = true, tags = { "dire", "maul", "dm", "dm:e", "dm:w", "dm:n", "dmw", "dmn", "dme" } },
-    { name = "Blackrock Depths",              selected = true, tags = { "brd", "blackrock", "depths" } },
+    { name = "Blackrock Depths",              selected = true, tags = { "brd", "blackrock", "depths", "emp", "lava" } },
     { name = "Hateforge Quarry",              selected = true, tags = { "hateforge", "quarry", "hq", "hfq" } },
     { name = "The Sunken Temple",             selected = true, tags = { "st", "sunken", "temple" } },
     { name = "Zul'Farrak",                    selected = true, tags = { "zf", "zul'farrak", "zulfarrak", "farrak" } },

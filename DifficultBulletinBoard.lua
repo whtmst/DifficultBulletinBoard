@@ -1032,10 +1032,10 @@ end
 
 -- function to reduce noise in messages and making matching easier
 local function replaceSymbolsWithSpace(inputString)
-    -- Replace commas with a space
     inputString = string.gsub(inputString, ",", " ")
-    -- Replace forward slashes with a space
     inputString = string.gsub(inputString, "/", " ")
+    inputString = string.gsub(inputString, "!", " ")
+    inputString = string.gsub(inputString, "?", " ")
 
     return inputString
 end
