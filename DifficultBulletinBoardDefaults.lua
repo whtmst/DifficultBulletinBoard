@@ -1,6 +1,6 @@
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 
-DifficultBulletinBoard.version = 6
+DifficultBulletinBoard.version = 7
 
 DifficultBulletinBoard.defaultNumberOfGroupPlaceholders = 3
 
@@ -47,7 +47,7 @@ DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders = 5
 DifficultBulletinBoard.defaultProfessionTopics = {
     { name = "Alchemy",                       selected = true, tags = { "alchemist", "alchemy", "alch" } },
     { name = "Blacksmithing",                 selected = true, tags = { "blacksmithing", "blacksmith", "bs" } },
-    { name = "Enchanting",                    selected = true, tags = { "enchanting", "enchanter", "enchant" } },
+    { name = "Enchanting",                    selected = true, tags = { "enchanting", "enchanter", "enchant", "ench" } },
     { name = "Engineering",                   selected = true, tags = { "engineering", "engineer", "eng" } },
     { name = "Herbalism",                     selected = true, tags = { "herbalism", "herbalist", "herb" } },
     { name = "Leatherworking",                selected = true, tags = { "leatherworking", "leatherworker", "lw" } },

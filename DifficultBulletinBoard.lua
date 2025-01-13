@@ -114,13 +114,11 @@ local function addGroupScrollFrameToMainFrame()
 end
 
 -- function to create the placeholders and font strings for a topic
-local function createGroupTopicList()
+local function createNameMessageDateTopicList(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
 
-    local contentFrame = DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild
-
-    for _, topic in ipairs(allGroupTopics) do
+    for _, topic in ipairs(topicList) do
         if topic.selected then
             local header = contentFrame:CreateFontString("$parent_" .. topic.name .. "Header", "OVERLAY", "GameFontNormal")
             header:SetText(topic.name)
@@ -134,9 +132,9 @@ local function createGroupTopicList()
             local topicYOffset = yOffset - 20 -- space between header and first placeholder
             yOffset = topicYOffset - 110 -- space between headers
 
-            groupTopicPlaceholders[topic.name] = groupTopicPlaceholders[topic.name] or {FontStrings = {}}
+            topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {FontStrings = {}}
 
-            for i = 1, numberOfGroupPlaceholders do
+            for i = 1, numberOfPlaceholders do
                 -- create Name column as a button
                 local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", contentFrame, nil)
                 nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
@@ -167,7 +165,6 @@ local function createGroupTopicList()
                     print("Clicked on: " .. nameButton:GetText())
                     local pressedButton = arg1
                     local targetName = nameButton:GetText()
-                    print(pressedButton)
 
                     -- dont do anything when its a placeholder
                     if targetName == "-" then return end
@@ -215,7 +212,7 @@ local function createGroupTopicList()
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                table.insert(groupTopicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn})
+                table.insert(topicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn})
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -249,120 +246,6 @@ local function addProfessionScrollFrameToMainFrame()
 
     -- Default Hide, because the groups tab is shown
     professionScrollFrame:Hide()
-end
-
--- function to create the placeholders and font strings for a topic
-local function createProfessionTopicList()
-    -- initial Y-offset for the first header and placeholder
-    local yOffset = 0
-
-    local contentFrame = DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild
-
-    for _, topic in ipairs(allProfessionTopics) do
-        if topic.selected then
-            local header = contentFrame:CreateFontString("$parent_" .. topic.name .. "Header", "OVERLAY", "GameFontNormal")
-            header:SetText(topic.name)
-            header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, yOffset)
-            header:SetWidth(200)
-            header:SetJustifyH("LEFT")
-            header:SetTextColor(1, 1, 0)
-            header:SetFont("Fonts\\FRIZQT__.TTF", 12)
-
-            -- Store the header Y offset for the current topic
-            local topicYOffset = yOffset - 20 -- space between header and first placeholder
-            yOffset = topicYOffset - 110 -- space between headers
-
-            professionTopicPlaceholders[topic.name] = professionTopicPlaceholders[topic.name] or {FontStrings = {}}
-
-            for i = 1, numberOfProfessionPlaceholders do
-                -- create Name column as a button
-                local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", contentFrame, nil)
-                nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
-                nameButton:SetWidth(150)
-                nameButton:SetHeight(14)
-
-                -- Set the text of the button
-                local buttonText = nameButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                buttonText:SetText("-")
-                buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0) -- Align text to the left with a small offset
-                buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
-                buttonText:SetTextColor(1, 1, 1) -- Normal color (e.g., white)
-                nameButton:SetFontString(buttonText)
-
-                -- Set scripts for hover behavior
-                nameButton:SetScript("OnEnter", function()
-                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Highlight font
-                    buttonText:SetTextColor(1, 1, 0) -- Highlight color (e.g., yellow)
-                end)
-
-                nameButton:SetScript("OnLeave", function()
-                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Normal font
-                    buttonText:SetTextColor(1, 1, 1) -- Normal color (e.g., white)
-                end)
-
-                -- Add an example OnClick handler
-                nameButton:SetScript("OnClick", function()
-                    print("Clicked on: " .. nameButton:GetText())
-                    local pressedButton = arg1
-                    local targetName = nameButton:GetText()
-                    print(pressedButton)
-
-                    -- dont do anything when its a placeholder
-                    if targetName == "-" then return end
-
-                    if pressedButton == "LeftButton" then
-                        if IsShiftKeyDown() then
-                            print("who")
-                            SendWho(targetName)
-                        else
-                            print("whisp")
-                            ChatFrame_OpenChat("/w " .. targetName)
-                        end
-                    end
-                end)
-
-                -- OnClick doesnt support right clicking... so lets just check OnMouseDown instead
-                nameButton:SetScript("OnMouseDown", function()
-                    local pressedButton = arg1
-                    local targetName = nameButton:GetText()
-
-                    -- dont do anything when its a placeholder
-                    if targetName == "-" then return end
-
-                    if pressedButton == "RightButton" then
-                        ChatFrame_OpenChat("/invite " .. targetName)
-                    end
-                end)
-
-                -- create Message column
-                local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
-                messageColumn:SetText("-")
-                messageColumn:SetPoint("TOPLEFT", nameButton, "TOPRIGHT", 50, 0)
-                messageColumn:SetWidth(650)
-                messageColumn:SetHeight(10)
-                messageColumn:SetJustifyH("LEFT")
-                messageColumn:SetTextColor(1, 1, 1)
-                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
-
-                -- create Time column
-                local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
-                timeColumn:SetText("-")
-                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
-                timeColumn:SetWidth(100)
-                timeColumn:SetJustifyH("LEFT")
-                timeColumn:SetTextColor(1, 1, 1)
-                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
-
-                table.insert(professionTopicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn})
-
-                -- Increment the Y-offset for the next placeholder
-                topicYOffset = topicYOffset - 18 -- space between placeholders
-            end
-
-            -- After the placeholders, adjust the main yOffset for the next topic
-            yOffset = topicYOffset - 10 -- space between topics
-        end
-    end
 end
 
 local hardcoreScrollFrame
@@ -929,11 +812,11 @@ local function initializeAddon(event, arg1)
 
         -- create main frame afterwards
         addGroupScrollFrameToMainFrame()
-        createGroupTopicList()
+        createNameMessageDateTopicList(DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild, allGroupTopics, groupTopicPlaceholders, numberOfGroupPlaceholders)
         addProfessionScrollFrameToMainFrame()
-        createProfessionTopicList()
+        createNameMessageDateTopicList(DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild, allProfessionTopics, professionTopicPlaceholders, numberOfProfessionPlaceholders)
         addHardcoreScrollFrameToMainFrame()
-        createHardcoreTopicList()
+        createNameMessageDateTopicList(DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild, allHardcoreTopics, hardcoreTopicPlaceholders, numberOfHardcorePlaceholders)
 
         -- add topic group tab switching
         configureTabSwitching()
@@ -1031,10 +914,7 @@ end
 
 -- function to reduce noise in messages and making matching easier
 local function replaceSymbolsWithSpace(inputString)
-    inputString = string.gsub(inputString, ",", " ")
-    inputString = string.gsub(inputString, "/", " ")
-    inputString = string.gsub(inputString, "!", " ")
-    inputString = string.gsub(inputString, "?", " ")
+    inputString = string.gsub(inputString, "[,/!%?]", " ")
 
     return inputString
 end
