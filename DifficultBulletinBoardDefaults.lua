@@ -61,7 +61,7 @@ DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders = 15
 
 DifficultBulletinBoard.defaultHardcoreTopics = {
     { name = "Deaths",                       selected = true, tags = { "tragedy"} },
-    { name = "Level Ups",                 selected = true, tags = { "level" } }
+    { name = "Level Ups",                 selected = true, tags = { "reached" } }
 }
 
 function DifficultBulletinBoard.deepCopy(original)
