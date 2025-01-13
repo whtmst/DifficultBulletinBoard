@@ -1,26 +1,36 @@
 local version = DifficultBulletinBoard.version
-local defaultGroupTopics = DifficultBulletinBoard.defaultGroupTopics
-local defaultProfessionTopics = DifficultBulletinBoard.defaultProfessionTopics
-local defaultHardcoreTopics = DifficultBulletinBoard.defaultHardcoreTopics
-local defaultNumberOfGroupPlaceholders = DifficultBulletinBoard.defaultNumberOfGroupPlaceholders
-local defaultNumberOfProfessionPlaceholders = DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders
-local defaultNumberOfHardcorePlaceholders = DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders
+local string_gfind = string.gmatch or string.gfind
+
+local mainFrame = DifficultBulletinBoardMainFrame
+local optionFrame = DifficultBulletinBoardOptionFrame
+
 local allGroupTopics = {}
 local allProfessionTopics = {}
 local allHardcoreTopics = {}
-local mainFrame = DifficultBulletinBoardMainFrame
+
 local groupsButton = DifficultBulletinBoardMainFrameGroupsButton
 local professionsButton = DifficultBulletinBoardMainFrameProfessionsButton
 local hcMessagesButton = DifficultBulletinBoardMainFrameHCMessagesButton
-local optionFrame = DifficultBulletinBoardOptionFrame
-local string_gfind = string.gmatch or string.gfind
 
-local numberOfGroupPlaceholders = defaultNumberOfGroupPlaceholders
-local numberOfProfessionPlaceholders = defaultNumberOfProfessionPlaceholders
-local numberOfHardcorePlaceholders = defaultNumberOfHardcorePlaceholders
+
+local numberOfGroupPlaceholders = DifficultBulletinBoard.defaultNumberOfGroupPlaceholders
+local numberOfProfessionPlaceholders = DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders
+local numberOfHardcorePlaceholders = DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders
+
 local groupTopicPlaceholders = {}
 local professionTopicPlaceholders = {}
 local hardcoreTopicPlaceholders = {}
+
+local groupScrollFrame
+local groupScrollChild
+local professionScrollFrame
+local professionScrollChild
+local hardcoreScrollFrame
+local hardcoreScrollChild
+
+local groupOptionInputBox
+local professionOptionInputBox
+local hardcoreOptionInputBox
 
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
@@ -40,10 +50,8 @@ end
 function DifficultBulletinBoard_ToggleOptionFrame()
     if optionFrame then
         if optionFrame:IsShown() then
-            print("Hiding frame")
             optionFrame:Hide()
         else
-            print("Showing frame")
             optionFrame:Show()
             mainFrame:Hide()
         end
@@ -55,10 +63,8 @@ end
 function DifficultBulletinBoard_ToggleMainFrame()
     if mainFrame then
         if mainFrame:IsShown() then
-            print("Hiding frame")
             mainFrame:Hide()
         else
-            print("Showing frame")
             mainFrame:Show()
             optionFrame:Hide()
         end
@@ -88,29 +94,29 @@ function DifficultBulletinBoard_DragMinimapStop()
     end
 end
 
-local scrollFrame = nil
-local function addGroupScrollFrameToMainFrame()
+local function createScrollFrameForMainFrame(scrollFrameName)
     local parentFrame = mainFrame
 
     -- Create the ScrollFrame
-    scrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() ..
-                                  "DifficultBulletinBoardMainFrame_ScrollFrame",
-                              parentFrame, "UIPanelScrollFrameTemplate")
+    local scrollFrame = CreateFrame("ScrollFrame", scrollFrameName, mainFrame, "UIPanelScrollFrameTemplate")
     scrollFrame:EnableMouseWheel(true)
 
     -- Set ScrollFrame anchors
-    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -80)
-    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 10)
+    scrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 0, -80)
+    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 10)
 
     -- Create the ScrollChild (content frame)
-    local scrollChild = CreateFrame("Frame",
-                                    "DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild",
-                                    scrollFrame)
+    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
     scrollChild:SetHeight(1)
     scrollChild:SetWidth(980)
 
     -- Attach the ScrollChild to the ScrollFrame
     scrollFrame:SetScrollChild(scrollChild)
+
+    -- Default Hide, because the default tab shows the correct frame later
+    scrollFrame:Hide()
+
+    return scrollFrame, scrollChild
 end
 
 -- function to create the placeholders and font strings for a topic
@@ -224,62 +230,12 @@ local function createNameMessageDateTopicList(contentFrame, topicList, topicPlac
     end
 end
 
-local professionScrollFrame
-local function addProfessionScrollFrameToMainFrame()
-    local parentFrame = mainFrame
-
-    -- Create the ScrollFrame
-    professionScrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "DifficultBulletinBoardMainFrame_Profession_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
-    professionScrollFrame:EnableMouseWheel(true)
-
-    -- Set ScrollFrame anchors
-    professionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -80)
-    professionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 10)
-
-    -- Create the ScrollChild (content frame)
-    local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild", professionScrollFrame)
-    scrollChild:SetHeight(1)
-    scrollChild:SetWidth(980)
-
-    -- Attach the ScrollChild to the ScrollFrame
-    professionScrollFrame:SetScrollChild(scrollChild)
-
-    -- Default Hide, because the groups tab is shown
-    professionScrollFrame:Hide()
-end
-
-local hardcoreScrollFrame
-local function addHardcoreScrollFrameToMainFrame()
-    local parentFrame = mainFrame
-
-    -- Create the ScrollFrame
-    hardcoreScrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
-    hardcoreScrollFrame:EnableMouseWheel(true)
-
-    -- Set ScrollFrame anchors
-    hardcoreScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -80)
-    hardcoreScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 10)
-
-    -- Create the ScrollChild (content frame)
-    local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild", hardcoreScrollFrame)
-    scrollChild:SetHeight(1)
-    scrollChild:SetWidth(980)
-
-    -- Attach the ScrollChild to the ScrollFrame
-    hardcoreScrollFrame:SetScrollChild(scrollChild)
-
-    -- Default Hide, because the groups tab is shown
-    hardcoreScrollFrame:Hide()
-end
-
 -- function to create the placeholders and font strings for a topic
-local function createHardcoreTopicList()
+    local function createMessageDateTopicList(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
 
-    local contentFrame = DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild
-
-    for _, topic in ipairs(allHardcoreTopics) do
+    for _, topic in ipairs(topicList) do
         if topic.selected then
             local header = contentFrame:CreateFontString("$parent_" .. topic.name ..  "Header", "OVERLAY", "GameFontNormal")
             header:SetText(topic.name)
@@ -293,14 +249,14 @@ local function createHardcoreTopicList()
             local topicYOffset = yOffset - 20 -- space between header and first placeholder
             yOffset = topicYOffset - 110 -- space between headers
 
-            hardcoreTopicPlaceholders[topic.name] = hardcoreTopicPlaceholders[topic.name] or {FontStrings = {}}
+            topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {FontStrings = {}}
 
-            for i = 1, numberOfHardcorePlaceholders do
+            for i = 1, numberOfPlaceholders do
 
                 -- create Message column
                 local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
-                messageColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 14, topicYOffset)
+                messageColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 15, topicYOffset)
                 messageColumn:SetWidth(846)
                 messageColumn:SetHeight(14)
                 messageColumn:SetJustifyH("LEFT")
@@ -310,13 +266,13 @@ local function createHardcoreTopicList()
                 -- create Time column
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
-                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
+                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 19, 0)
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                table.insert( hardcoreTopicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn})
+                table.insert( topicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn})
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -427,8 +383,7 @@ local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, channel
 end
 
 SLASH_DIFFICULTBB1 = "/dbb"
-SlashCmdList["DIFFICULTBB"] =
-    function() DifficultBulletinBoard_ToggleMainFrame() end
+SlashCmdList["DIFFICULTBB"] = function() DifficultBulletinBoard_ToggleMainFrame() end
 
 local function loadSavedVariables()
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
@@ -516,42 +471,24 @@ local function addScrollFrameToOptionFrame()
     local parentFrame = optionFrame
 
     -- Create the ScrollFrame
-    scrollFrame = CreateFrame("ScrollFrame", parentFrame:GetName() .. "_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:EnableMouseWheel(true)
+    local optionScrollFrame = CreateFrame("ScrollFrame", "DifficultBulletinBoardOptionFrame_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
+    optionScrollFrame:EnableMouseWheel(true)
 
     -- Set ScrollFrame anchors
-    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -50)
-    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -27, 75)
-    scrollFrame:SetWidth(460)
-    scrollFrame:SetHeight(520)
+    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -50)
+    optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -27, 75)
+    optionScrollFrame:SetWidth(460)
+    optionScrollFrame:SetHeight(1)
 
     -- Create the ScrollChild
-    optionScrollChild = CreateFrame("Frame", parentFrame:GetName() .. "_ScrollChild", scrollFrame)
+    optionScrollChild = CreateFrame("Frame", nil, optionScrollFrame)
     optionScrollChild:SetWidth(480)
-    optionScrollChild:SetHeight(2000)
-    scrollFrame:SetScrollChild(optionScrollChild)
-end
-
-local function addGroupPlaceholderOptionToOptionFrame()
-    local parentFrame = optionScrollChild
-
-    -- Create the first FontString (label) above the scroll frame
-    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, 0)
-    scrollLabel:SetText("Number of Placeholders per Group Topic:")
-    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
-
-    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_Group_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
-    placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
-    placeholderOptionTextBox:SetWidth(20)
-    placeholderOptionTextBox:SetHeight(20)
-    placeholderOptionTextBox:SetText(numberOfGroupPlaceholders)
-    placeholderOptionTextBox:EnableMouse(true)
-    placeholderOptionTextBox:SetAutoFocus(false)
+    optionScrollChild:SetHeight(1)
+    optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
 local tempGroupTags = {}
-local optionYOffset = -35 -- Starting vertical offset for the first option
+local optionYOffset = 25 -- Starting vertical offset for the first option
 local function addGroupTopicOptions()
     local parentFrame = optionScrollChild
 
@@ -602,31 +539,9 @@ local function addGroupTopicOptions()
     end
 end
 
-local function addProfessionPlaceholderOptionToOptionFrame()
-    local parentFrame = optionScrollChild
-
-    optionYOffset = optionYOffset - 30
-
-    -- Create the first FontString (label) above the scroll frame
-    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_Profession_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
-    scrollLabel:SetText("Number of Placeholders per Profession Topic:")
-    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
-
-    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_Profession_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
-    placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
-    placeholderOptionTextBox:SetWidth(20)
-    placeholderOptionTextBox:SetHeight(20)
-    placeholderOptionTextBox:SetText(numberOfProfessionPlaceholders)
-    placeholderOptionTextBox:EnableMouse(true)
-    placeholderOptionTextBox:SetAutoFocus(false)
-end
-
 local tempProfessionTags = {}
 local function addProfessionTopicOptions()
     local parentFrame = optionScrollChild
-
-    optionYOffset = optionYOffset - 35
 
     -- create fontstring
     local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -677,31 +592,34 @@ local function addProfessionTopicOptions()
     end
 end
 
-local function addHardcorePlaceholderOptionToOptionFrame()
-    local parentFrame = optionScrollChild
-
+local function addPlaceholderOptionToOptionFrame(inputLabel, labelText, defaultValue)
+    -- Adjust Y offset for the new option
     optionYOffset = optionYOffset - 30
 
-    -- Create the first FontString (label) above the scroll frame
-    local scrollLabel = parentFrame:CreateFontString("DifficultBulletinBoard_Option_Hardcore_PlaceholderOption_FontString", "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
-    scrollLabel:SetText("Number of Placeholders per Hardcore Topic:")
-    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+    -- Create the label (FontString)
+    local label = optionScrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    label:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
+    label:SetText(labelText)
+    label:SetFont("Fonts\\FRIZQT__.TTF", 14)
 
-    local placeholderOptionTextBox = CreateFrame("EditBox", "DifficultBulletinBoard_Option_Hardcore_PlaceholderOption_TextBox", parentFrame, "InputBoxTemplate")
-    placeholderOptionTextBox:SetPoint("RIGHT", scrollLabel, "RIGHT", 30, -0)
-    placeholderOptionTextBox:SetWidth(20)
-    placeholderOptionTextBox:SetHeight(20)
-    placeholderOptionTextBox:SetText(numberOfHardcorePlaceholders)
-    placeholderOptionTextBox:EnableMouse(true)
-    placeholderOptionTextBox:SetAutoFocus(false)
+    -- Create the input field (EditBox)
+    local inputBox = CreateFrame("EditBox", inputLabel, optionScrollChild, "InputBoxTemplate")
+    inputBox:SetPoint("LEFT", label, "RIGHT", 10, 0)
+    inputBox:SetWidth(30)
+    inputBox:SetHeight(20)
+    inputBox:SetText(defaultValue)
+    inputBox:EnableMouse(true)
+    inputBox:SetAutoFocus(false)
+
+    -- Adjust Y offset for the new option
+    optionYOffset = optionYOffset - 30
+
+    return inputBox
 end
 
 local tempHardcoreTags = {}
 local function addHardcoreTopicOptions()
     local parentFrame = optionScrollChild
-
-    optionYOffset = optionYOffset - 35
 
     -- create fontstring
     local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -752,49 +670,34 @@ local function addHardcoreTopicOptions()
 end
 
 local function configureTabSwitching()
-    -- Helper function to reset button states visually
+    local tabs = {
+        { button = groupsButton, frame = groupScrollFrame },
+        { button = professionsButton, frame = professionScrollFrame },
+        { button = hcMessagesButton, frame = hardcoreScrollFrame },
+    }
+
     local function ResetButtonStates()
-        groupsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
-        professionsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
-        hcMessagesButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+        for _, tab in ipairs(tabs) do
+            tab.button:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+            tab.frame:Hide()
+        end
     end
 
-    -- Set initial active button
-    ResetButtonStates()
-    groupsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+    local function ActivateTab(activeTab)
+        activeTab.button:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+        activeTab.frame:Show()
+    end
 
-    groupsButton:SetScript("OnClick", function()
-        print("Clicked on groupsButton")
+    for _, tab in ipairs(tabs) do
+        local currentTab = tab
+        tab.button:SetScript("OnClick", function()
+            ResetButtonStates()
+            ActivateTab(currentTab)
+        end)
+    end
 
-        ResetButtonStates()
-        groupsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
-
-        scrollFrame:Show()
-        professionScrollFrame:Hide()
-        hardcoreScrollFrame:Hide()
-    end)
-
-    professionsButton:SetScript("OnClick", function()
-        print("Clicked on professionsButton")
-
-        ResetButtonStates()
-        professionsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
-
-        scrollFrame:Hide()
-        professionScrollFrame:Show()
-        hardcoreScrollFrame:Hide()
-    end)
-
-    hcMessagesButton:SetScript("OnClick", function()
-        print("Clicked on hcMessagesButton")
-
-        ResetButtonStates()
-        hcMessagesButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Down")
-
-        scrollFrame:Hide()
-        professionScrollFrame:Hide()
-        hardcoreScrollFrame:Show()
-    end)
+    -- set groups as the initial tab
+    ActivateTab(tabs[1])
 end
 
 local function initializeAddon(event, arg1)
@@ -803,24 +706,23 @@ local function initializeAddon(event, arg1)
 
         -- create option frame first so the user can update his options in case he put in some invalid data that might result in the addon crashing
         addScrollFrameToOptionFrame()
-        addGroupPlaceholderOptionToOptionFrame()
+        groupOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Group_Placeholder_Option", "Number of Placeholders per Group Topic:", numberOfGroupPlaceholders)
         addGroupTopicOptions()
-        addProfessionPlaceholderOptionToOptionFrame()
+        professionOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Profession_Placeholder_Option", "Number of Placeholders per Profession Topic:", numberOfProfessionPlaceholders)
         addProfessionTopicOptions()
-        addHardcorePlaceholderOptionToOptionFrame()
+        hardcoreOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Hardcore_Placeholder_Option", "Number of Placeholders per Hardcore Topic:", numberOfHardcorePlaceholders)
         addHardcoreTopicOptions()
 
         -- create main frame afterwards
-        addGroupScrollFrameToMainFrame()
-        createNameMessageDateTopicList(DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild, allGroupTopics, groupTopicPlaceholders, numberOfGroupPlaceholders)
-        addProfessionScrollFrameToMainFrame()
-        createNameMessageDateTopicList(DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild, allProfessionTopics, professionTopicPlaceholders, numberOfProfessionPlaceholders)
-        addHardcoreScrollFrameToMainFrame()
-        createNameMessageDateTopicList(DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild, allHardcoreTopics, hardcoreTopicPlaceholders, numberOfHardcorePlaceholders)
+        groupScrollFrame, groupScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Group_ScrollFrame")
+        createNameMessageDateTopicList(groupScrollChild, allGroupTopics, groupTopicPlaceholders, numberOfGroupPlaceholders)
+        professionScrollFrame, professionScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Profession_ScrollFrame")
+        createNameMessageDateTopicList(professionScrollChild, allProfessionTopics, professionTopicPlaceholders, numberOfProfessionPlaceholders)
+        hardcoreScrollFrame, hardcoreScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame")
+        createMessageDateTopicList(hardcoreScrollChild, allHardcoreTopics, hardcoreTopicPlaceholders, numberOfHardcorePlaceholders)
 
         -- add topic group tab switching
         configureTabSwitching()
-
     end
 end
 
@@ -840,21 +742,21 @@ end
 function DifficultBulletinBoard_ResetVariablesAndReload()
     DifficultBulletinBoardSavedVariables.version = version
 
-    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = defaultNumberOfGroupPlaceholders
-    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = defaultNumberOfProfessionPlaceholders
-    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = defaultNumberOfHardcorePlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoard.defaultNumberOfGroupPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders
 
-    DifficultBulletinBoardSavedVariables.activeGroupTopics = defaultGroupTopics
-    DifficultBulletinBoardSavedVariables.activeProfessionTopics = defaultProfessionTopics
-    DifficultBulletinBoardSavedVariables.activeHardcoreTopics = defaultHardcoreTopics
+    DifficultBulletinBoardSavedVariables.activeGroupTopics = DifficultBulletinBoard.defaultGroupTopics
+    DifficultBulletinBoardSavedVariables.activeProfessionTopics = DifficultBulletinBoard.defaultProfessionTopics
+    DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoard.defaultHardcoreTopics
 
     ReloadUI();
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
-    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoard_Option_Group_PlaceholderOption_TextBox:GetText()
-    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoard_Option_Profession_PlaceholderOption_TextBox:GetText()
-    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoard_Option_Hardcore_PlaceholderOption_TextBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = hardcoreOptionInputBox:GetText()
     
     overwriteTagsForAllTopics(allGroupTopics, tempGroupTags); 
     overwriteTagsForAllTopics(allProfessionTopics, tempProfessionTags); 
