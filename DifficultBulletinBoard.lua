@@ -106,7 +106,7 @@ local function addGroupScrollFrameToMainFrame()
     local scrollChild = CreateFrame("Frame",
                                     "DifficultBulletinBoardMainFrame_ScrollFrame_ScrollChild",
                                     scrollFrame)
-    scrollChild:SetHeight(2000)
+    scrollChild:SetHeight(1)
     scrollChild:SetWidth(980)
 
     -- Attach the ScrollChild to the ScrollFrame
@@ -241,7 +241,7 @@ local function addProfessionScrollFrameToMainFrame()
 
     -- Create the ScrollChild (content frame)
     local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild", professionScrollFrame)
-    scrollChild:SetHeight(2000)
+    scrollChild:SetHeight(1)
     scrollChild:SetWidth(980)
 
     -- Attach the ScrollChild to the ScrollFrame
@@ -256,8 +256,7 @@ local function createProfessionTopicList()
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
 
-    local contentFrame =
-        DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild
+    local contentFrame = DifficultBulletinBoardMainFrame_Profession_ScrollFrame_ScrollChild
 
     for _, topic in ipairs(allProfessionTopics) do
         if topic.selected then
@@ -380,7 +379,7 @@ local function addHardcoreScrollFrameToMainFrame()
 
     -- Create the ScrollChild (content frame)
     local scrollChild = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame_ScrollChild", hardcoreScrollFrame)
-    scrollChild:SetHeight(2000)
+    scrollChild:SetHeight(1)
     scrollChild:SetWidth(980)
 
     -- Attach the ScrollChild to the ScrollFrame
@@ -1107,6 +1106,17 @@ function handleEvent()
         OnSystemMessage(arg1) 
     end
 end
+
+local function updateServerTime()
+    local serverTimeString = date("%H:%M:%S")
+    DifficultBulletinBoardMainFrame_ServerTime:SetText("Time: " .. serverTimeString)
+end
+
+-- Function to handle the update every second
+mainFrame:SetScript("OnUpdate", function()
+    updateServerTime()
+end)
+
 
 mainFrame:RegisterEvent("ADDON_LOADED")
 mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")

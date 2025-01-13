@@ -9,9 +9,10 @@
         </Anchors>
         <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"/>
 
-        <Layers>
+       <Layers>
             <Layer level="OVERLAY">
-                <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="LEFT"
+                <!-- Title centered -->
+                <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="CENTER"
                             text="Difficult Bulletin Board">
                     <Size>
                         <AbsDimension x="0" y="0"/>
@@ -24,8 +25,24 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
+
+                <!-- Server Time positioned at top-left -->
+                <FontString name="$parent_ServerTime" inherits="GameFontHighlight" justifyH="CENTER"
+                            text="">
+                    <Size>
+                        <AbsDimension x="0" y="0"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="10" y="-6"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
             </Layer>
         </Layers>
+
 
         <!-- Close Button -->
         <Frames>
@@ -52,7 +69,7 @@
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="10" y="-30"/>
+                            <AbsDimension x="10" y="-35"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
