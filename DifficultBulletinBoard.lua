@@ -1030,17 +1030,29 @@ local function analyzeChatMessage(channelName, characterName, chatMessage, words
     end
 end
 
+-- function to reduce noise in messages and making matching easier
+local function replaceSymbolsWithSpace(inputString)
+    -- Replace commas with a space
+    inputString = string.gsub(inputString, ",", " ")
+    -- Replace forward slashes with a space
+    inputString = string.gsub(inputString, "/", " ")
+
+    return inputString
+end
+
 local function OnChatMessage(arg1, arg2, arg9)
     local chatMessage = arg1
     local characterName = arg2
     local channelName = arg9
-
+    
     print(chatMessage)
     print(channelName)
 
-    local s = string.lower(chatMessage)
+    local stringWithoutNoise = replaceSymbolsWithSpace(chatMessage)
 
-    local words = splitIntoLowerWords(s)
+    print(stringWithoutNoise)
+
+    local words = splitIntoLowerWords(stringWithoutNoise)
 
     analyzeChatMessage(channelName, characterName, chatMessage, words, allGroupTopics, groupTopicPlaceholders)
     analyzeChatMessage(channelName, characterName, chatMessage, words, allProfessionTopics, professionTopicPlaceholders)
@@ -1071,9 +1083,9 @@ end
 local function OnSystemMessage(arg1)
     local systemMessage = arg1
 
-    local s = string.lower(systemMessage)
+    local stringWithoutNoise = replaceSymbolsWithSpace(systemMessage)
 
-    local words = splitIntoLowerWords(s)
+    local words = splitIntoLowerWords(stringWithoutNoise)
 
     analyzeSystemMessage(systemMessage, words, allHardcoreTopics, hardcoreTopicPlaceholders)
 end

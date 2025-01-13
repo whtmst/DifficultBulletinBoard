@@ -103,7 +103,7 @@
             <!-- HC Messages Button -->
             <Button name="DifficultBulletinBoardMainFrameHCMessagesButton" enableMouse="true" inherits="UIPanelButtonTemplate">
                 <Size>
-                    <AbsDimension x="100" y="22"/>
+                    <AbsDimension x="120" y="22"/>
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameProfessionsButton" relativePoint="RIGHT">
@@ -114,7 +114,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="OVERLAY">
-                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Hardcore">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Hardcore Logs">
                             <Anchors>
                                 <Anchor point="CENTER"/>
                             </Anchors>
