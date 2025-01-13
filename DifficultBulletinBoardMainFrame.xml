@@ -47,7 +47,7 @@
             <!-- Groups Button -->
             <Button name="DifficultBulletinBoardMainFrameGroupsButton" enableMouse="true" inherits="UIPanelButtonTemplate">
                 <Size>
-                    <AbsDimension x="100" y="22"/>
+                    <AbsDimension x="120" y="22"/>
                 </Size>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
@@ -75,7 +75,7 @@
             <!-- Professions Button -->
             <Button name="DifficultBulletinBoardMainFrameProfessionsButton" enableMouse="true" inherits="UIPanelButtonTemplate">
                 <Size>
-                    <AbsDimension x="100" y="22"/>
+                    <AbsDimension x="120" y="22"/>
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameGroupsButton" relativePoint="RIGHT">
