@@ -55,7 +55,7 @@ end
 
 -- Updates the specified placeholder for a topic with new name, message, and timestamp,
 -- then moves the updated entry to the top of the list, shifting other entries down.
-local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message, index)
+local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message, index)
     local topicData = topicPlaceholders[topic]
     local FontStringsList = {}
 
@@ -89,11 +89,24 @@ local function UpdateTopicPlaceholderWithShift(topicPlaceholders, topic, numberO
         currentFontString[1]:SetText(FontStringsList[i][1])
         currentFontString[2]:SetText(FontStringsList[i][2])
         currentFontString[3]:SetText(FontStringsList[i][3])
+
+        local currentMessage = currentFontString[2]:GetText()
+        local messageFrame = currentFontString[4]
+
+        messageFrame:SetScript("OnEnter", function()
+            GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+            GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+
+        messageFrame:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
     end
 end
 
 -- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
-local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, channelName, name, message)
+local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, channelName, name, message)
     local topicData = topicPlaceholders[topic]
     if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
         print("No placeholders found for topic: " .. topic)
@@ -103,6 +116,8 @@ local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, chan
     local currentTime = date("%H:%M:%S")
 
     local index = 0
+
+    --count the entries (no idea how else to do it l0l)
     for i, _ in ipairs(topicData.FontStrings) do index = i end
 
     for i = index, 2, -1 do
@@ -121,6 +136,23 @@ local function UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic, chan
     firstFontString[1]:SetText(name or "No Name")
     firstFontString[2]:SetText("[" .. channelName .. "] " .. message or "No Message")
     firstFontString[3]:SetText(currentTime or "No Time")
+
+    -- Update the GameTooltip
+    for i = index, 1, -1 do
+        local fontString = topicData.FontStrings[i]
+        local currentMessage = fontString[2]:GetText()
+        local messageFrame = fontString[4]
+
+        messageFrame:SetScript("OnEnter", function()
+            GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+            GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+
+        messageFrame:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+    end
 end
 
 -- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
@@ -149,6 +181,23 @@ local function UpdateFirstSystemPlaceholderAndShiftDown(topicPlaceholders, topic
     local firstFontString = topicData.FontStrings[1]
     firstFontString[2]:SetText(message or "No Message")
     firstFontString[3]:SetText(currentTime or "No Time")
+
+    -- Update the GameTooltip
+    for i = index, 1, -1 do
+        local fontString = topicData.FontStrings[i]
+        local currentMessage = fontString[2]:GetText()
+        local messageFrame = fontString[4]
+
+        messageFrame:SetScript("OnEnter", function()
+            GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+            GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+
+        messageFrame:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+    end
 end
 
 -- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
@@ -164,10 +213,10 @@ local function analyzeChatMessage(channelName, characterName, chatMessage, words
                         topicPlaceholdersContainsCharacterName(topicPlaceholders, topic.name, characterName)
                     if found then
                         print("An entry for that character already exists at " .. index)
-                        UpdateTopicPlaceholderWithShift(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage, index)
+                        UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage, index)
                     else
                         print("No entry for that character exists. Creating one...")
-                        UpdateFirstPlaceholderAndShiftDown(topicPlaceholders, topic.name, channelName, characterName, chatMessage)
+                        AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic.name, channelName, characterName, chatMessage)
                     end
 
                     matchFound = true -- Set the flag to true to break out of loops
@@ -262,7 +311,7 @@ local function configureTabSwitching()
 end
 
 -- function to create the placeholders and font strings for a topic
-local function createNameMessageDateTopicList(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
+local function createTopicListWithNameMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
 
@@ -341,6 +390,13 @@ local function createNameMessageDateTopicList(contentFrame, topicList, topicPlac
                     end
                 end)
 
+                -- Create an invisible button to act as a parent
+                local messageFrame = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_MessageFrame", contentFrame)
+                messageFrame:SetPoint("TOPLEFT", nameButton, "TOPLEFT", 200, 0)
+                messageFrame:SetWidth(650)
+                messageFrame:SetHeight(10)
+                messageFrame:EnableMouse(true)
+
                 -- create Message column
                 local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
@@ -360,7 +416,7 @@ local function createNameMessageDateTopicList(contentFrame, topicList, topicPlac
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                table.insert(topicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn})
+                table.insert(topicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn, messageFrame})
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -373,7 +429,7 @@ local function createNameMessageDateTopicList(contentFrame, topicList, topicPlac
 end
 
     -- function to create the placeholders and font strings for a topic
-local function createMessageDateTopicList(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
+local function createTopicListWithMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
 
@@ -395,12 +451,19 @@ local function createMessageDateTopicList(contentFrame, topicList, topicPlacehol
 
             for i = 1, numberOfPlaceholders do
 
+                -- Create an invisible button to act as a parent
+                local messageFrame = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_MessageFrame", contentFrame)
+                messageFrame:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 15, topicYOffset)
+                messageFrame:SetWidth(846)
+                messageFrame:SetHeight(10)
+                messageFrame:EnableMouse(true)
+
                 -- create Message column
                 local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
                 messageColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 15, topicYOffset)
                 messageColumn:SetWidth(846)
-                messageColumn:SetHeight(14)
+                messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
                 messageColumn:SetTextColor(1, 1, 1)
                 messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
@@ -414,7 +477,7 @@ local function createMessageDateTopicList(contentFrame, topicList, topicPlacehol
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                table.insert( topicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn})
+                table.insert( topicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn, messageFrame})
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -451,11 +514,11 @@ end
 
 function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     groupScrollFrame, groupScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Group_ScrollFrame")
-    createNameMessageDateTopicList(groupScrollChild, DifficultBulletinBoardVars.allGroupTopics, groupTopicPlaceholders, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
+    createTopicListWithNameMessageDateColumns(groupScrollChild, DifficultBulletinBoardVars.allGroupTopics, groupTopicPlaceholders, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
     professionScrollFrame, professionScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Profession_ScrollFrame")
-    createNameMessageDateTopicList(professionScrollChild, DifficultBulletinBoardVars.allProfessionTopics, professionTopicPlaceholders, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+    createTopicListWithNameMessageDateColumns(professionScrollChild, DifficultBulletinBoardVars.allProfessionTopics, professionTopicPlaceholders, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
     hardcoreScrollFrame, hardcoreScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame")
-    createMessageDateTopicList(hardcoreScrollChild, DifficultBulletinBoardVars.allHardcoreTopics, hardcoreTopicPlaceholders, DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+    createTopicListWithMessageDateColumns(hardcoreScrollChild, DifficultBulletinBoardVars.allHardcoreTopics, hardcoreTopicPlaceholders, DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
 
     -- add topic group tab switching
     configureTabSwitching()
