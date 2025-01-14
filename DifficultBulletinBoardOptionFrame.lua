@@ -153,7 +153,6 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
-    print(groupOptionInputBox:GetText())
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = hardcoreOptionInputBox:GetText()
