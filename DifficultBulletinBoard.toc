@@ -6,7 +6,10 @@
 
 icon.tga
 DifficultBulletinBoardDefaults.lua
+DifficultBulletinBoardVars.lua
 DifficultBulletinBoardMinimapButton.xml
 DifficultBulletinBoardOptionFrame.xml
 DifficultBulletinBoardMainFrame.xml
+DifficultBulletinBoardOptionFrame.lua
+DifficultBulletinBoardMainFrame.lua
 DifficultBulletinBoard.lua

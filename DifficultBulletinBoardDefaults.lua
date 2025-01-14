@@ -1,10 +1,10 @@
-DifficultBulletinBoard = DifficultBulletinBoard or {}
+DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
-DifficultBulletinBoard.version = 7
+DifficultBulletinBoardDefaults.version = 7
 
-DifficultBulletinBoard.defaultNumberOfGroupPlaceholders = 3
+DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
-DifficultBulletinBoard.defaultGroupTopics = {
+DifficultBulletinBoardDefaults.defaultGroupTopics = {
     { name = "Naxxramas",                     selected = true, tags = { "naxxramas", "naxx" } },
     { name = "Temple of Ahn'Qiraj",           selected = true, tags = { "ahn'qiraj", "ahnqiraj", "aq40", "aq" } },
     { name = "Emerald Sanctum",               selected = true, tags = { "emerald", "sanctum", "es" } },
@@ -42,9 +42,9 @@ DifficultBulletinBoard.defaultGroupTopics = {
     { name = "Ragefire Chasm",                selected = true, tags = { "rfc", "ragefire", "chasm" } }
 }
 
-DifficultBulletinBoard.defaultNumberOfProfessionPlaceholders = 5
+DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders = 5
 
-DifficultBulletinBoard.defaultProfessionTopics = {
+DifficultBulletinBoardDefaults.defaultProfessionTopics = {
     { name = "Alchemy",                       selected = true, tags = { "alchemist", "alchemy", "alch" } },
     { name = "Blacksmithing",                 selected = true, tags = { "blacksmithing", "blacksmith", "bs" } },
     { name = "Enchanting",                    selected = true, tags = { "enchanting", "enchanter", "enchant", "ench" } },
@@ -57,28 +57,22 @@ DifficultBulletinBoard.defaultProfessionTopics = {
     { name = "Cooking",                       selected = true, tags = { "cooking", "cook" } }
 }
 
-DifficultBulletinBoard.defaultNumberOfHardcorePlaceholders = 15
+DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders = 15
 
-DifficultBulletinBoard.defaultHardcoreTopics = {
+DifficultBulletinBoardDefaults.defaultHardcoreTopics = {
     { name = "Deaths",                       selected = true, tags = { "tragedy"} },
     { name = "Level Ups",                 selected = true, tags = { "reached" } }
 }
 
-function DifficultBulletinBoard.deepCopy(original)
+function DifficultBulletinBoardDefaults.deepCopy(original)
     local copy = {}
     for key, value in pairs(original) do
         if type(value) == "table" then
-            copy[key] = DifficultBulletinBoard.deepCopy(value)
+            copy[key] = DifficultBulletinBoardDefaults.deepCopy(value)
         else
             copy[key] = value
         end
     end
 
     return copy
-end
-
-function DifficultBulletinBoard.printDefaultTopics()
-    for _, topic in ipairs(DifficultBulletinBoard.defaultTopics) do
-        DEFAULT_CHAT_FRAME:AddMessage(topic.name)
-    end
 end
