@@ -5,6 +5,7 @@
 ## Author: Difficult
 
 icon.tga
+resize.tga
 DifficultBulletinBoardDefaults.lua
 DifficultBulletinBoardVars.lua
 DifficultBulletinBoardMinimapButton.xml

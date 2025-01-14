@@ -1,41 +1,44 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
     <!-- Main Frame -->
-    <Frame name="DifficultBulletinBoardMainFrame" parent="UIParent" hidden="true" movable="true" enableMouse="true" clampedToScreen="true">
+    <Frame name="DifficultBulletinBoardMainFrame" resizable="true" parent="UIParent" hidden="true"
+        movable="true" enableMouse="true" clampedToScreen="true">
+        <ResizeBounds>
+            <minResize x="600" y="400" />
+        </ResizeBounds>
         <Size>
-            <AbsDimension x="1000" y="700"/>
+            <AbsDimension x="1000" y="700" />
         </Size>
-        <Anchors>
-            <Anchor point="CENTER"/>
-        </Anchors>
-        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"/>
 
-       <Layers>
+        <Anchors>
+            <Anchor point="CENTER" />
+        </Anchors>
+        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" />
+
+        <Layers>
             <Layer level="OVERLAY">
                 <!-- Title centered -->
-                <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="CENTER"
-                            text="Difficult Bulletin Board">
+                <FontString name="$parent_ExpansionLabel" inherits="GameFontHighlight" justifyH="CENTER" text="Difficult Bulletin Board">
                     <Size>
-                        <AbsDimension x="0" y="0"/>
+                        <AbsDimension x="0" y="0" />
                     </Size>
                     <Anchors>
                         <Anchor point="TOP" relativeTo="$parent">
                             <Offset>
-                                <AbsDimension x="0" y="-6"/>
+                                <AbsDimension x="0" y="-6" />
                             </Offset>
                         </Anchor>
                     </Anchors>
                 </FontString>
 
                 <!-- Server Time positioned at top-left -->
-                <FontString name="$parent_ServerTime" inherits="GameFontHighlight" justifyH="CENTER"
-                            text="">
+                <FontString name="$parent_ServerTime" inherits="GameFontHighlight" justifyH="CENTER" text="">
                     <Size>
-                        <AbsDimension x="0" y="0"/>
+                        <AbsDimension x="0" y="0" />
                     </Size>
                     <Anchors>
                         <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
                             <Offset>
-                                <AbsDimension x="10" y="-6"/>
+                                <AbsDimension x="10" y="-6" />
                             </Offset>
                         </Anchor>
                     </Anchors>
@@ -43,14 +46,13 @@
             </Layer>
         </Layers>
 
-
         <!-- Close Button -->
         <Frames>
             <Button name="$parent_CloseButton" inherits="UIPanelCloseButton">
                 <Anchors>
                     <Anchor point="TOPRIGHT" relativeTo="DifficultBulletinBoardMainFrame" relativePoint="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="3" y="3"/>
+                            <AbsDimension x="3" y="3" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -64,12 +66,12 @@
             <!-- Groups Button -->
             <Button name="DifficultBulletinBoardMainFrameGroupsButton" enableMouse="true" inherits="UIPanelButtonTemplate">
                 <Size>
-                    <AbsDimension x="120" y="22"/>
+                    <AbsDimension x="120" y="22" />
                 </Size>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="10" y="-35"/>
+                            <AbsDimension x="10" y="-35" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -77,27 +79,22 @@
                     <Layer level="OVERLAY">
                         <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Groups">
                             <Anchors>
-                                <Anchor point="CENTER"/>
+                                <Anchor point="CENTER" />
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
-                <Scripts>
-                    <OnClick>
-                        print("Groups button clicked!");
-                    </OnClick>
-                </Scripts>
             </Button>
 
             <!-- Professions Button -->
             <Button name="DifficultBulletinBoardMainFrameProfessionsButton" enableMouse="true" inherits="UIPanelButtonTemplate">
                 <Size>
-                    <AbsDimension x="120" y="22"/>
+                    <AbsDimension x="120" y="22" />
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameGroupsButton" relativePoint="RIGHT">
                         <Offset>
-                            <AbsDimension x="10" y="0"/>
+                            <AbsDimension x="10" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -105,27 +102,22 @@
                     <Layer level="OVERLAY">
                         <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Professions">
                             <Anchors>
-                                <Anchor point="CENTER"/>
+                                <Anchor point="CENTER" />
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
-                <Scripts>
-                    <OnClick>
-                        print("Professions button clicked!");
-                    </OnClick>
-                </Scripts>
             </Button>
 
             <!-- HC Messages Button -->
             <Button name="DifficultBulletinBoardMainFrameHCMessagesButton" enableMouse="true" inherits="UIPanelButtonTemplate">
                 <Size>
-                    <AbsDimension x="120" y="22"/>
+                    <AbsDimension x="120" y="22" />
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameProfessionsButton" relativePoint="RIGHT">
                         <Offset>
-                            <AbsDimension x="10" y="0"/>
+                            <AbsDimension x="10" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -133,17 +125,41 @@
                     <Layer level="OVERLAY">
                         <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Hardcore Logs">
                             <Anchors>
-                                <Anchor point="CENTER"/>
+                                <Anchor point="CENTER" />
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
+            </Button>
+
+            <!-- Resize Grip -->
+            <Button name="$DifficultBulletinBoardMainFrameResizeButton">
+                <Size>
+                    <AbsDimension x="16" y="16" />
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Texture" file="Interface\AddOns\DifficultBulletinBoard\resize">
+                            <Size>
+                                <AbsDimension x="17" y="17"/>
+                            </Size>
+                        </Texture>
+                    </Layer>
+                </Layers>
                 <Scripts>
-                    <OnClick>
-                        print("HC Messages button clicked!");
-                    </OnClick>
+                    <OnMouseDown>
+                        DifficultBulletinBoardMainFrame:StartSizing("BOTTOMRIGHT");
+                    </OnMouseDown>
+                    <OnMouseUp>
+                        DifficultBulletinBoardMainFrame:StopMovingOrSizing();
+                    </OnMouseUp>
                 </Scripts>
             </Button>
+
         </Frames>
 
         <!-- ScrollFrames are added in DifficultBulletinBoard.lua -->
