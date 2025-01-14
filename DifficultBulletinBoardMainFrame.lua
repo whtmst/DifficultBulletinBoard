@@ -6,6 +6,9 @@ local string_gfind = string.gmatch or string.gfind
 
 local mainFrame = DifficultBulletinBoardMainFrame
 
+local chatMessageWidthDelta = 350
+local systemMessageWidthDelta = 155
+
 local groupScrollFrame
 local groupScrollChild
 local professionScrollFrame
@@ -27,7 +30,7 @@ end
 
 -- function to reduce noise in messages and making matching easier
 local function replaceSymbolsWithSpace(inputString)
-    inputString = string.gsub(inputString, "[,/!%?]", " ")
+    inputString = string.gsub(inputString, "[,/!%?.]", " ")
 
     return inputString
 end
@@ -155,8 +158,8 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, channelN
     end
 end
 
--- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
-local function UpdateFirstSystemPlaceholderAndShiftDown(topicPlaceholders, topic, message)
+-- Function to update the first placeholder for a given topic with new message, and time and shift other placeholders down
+local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, message)
     local topicData = topicPlaceholders[topic]
     if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
         print("No placeholders found for topic: " .. topic)
@@ -209,8 +212,7 @@ local function analyzeChatMessage(channelName, characterName, chatMessage, words
             for _, word in ipairs(words) do
                 if word == string.lower(tag) then
                     print("Tag '" .. tag .. "' matches Topic: " .. topic.name)
-                    local found, index =
-                        topicPlaceholdersContainsCharacterName(topicPlaceholders, topic.name, characterName)
+                    local found, index = topicPlaceholdersContainsCharacterName(topicPlaceholders, topic.name, characterName)
                     if found then
                         print("An entry for that character already exists at " .. index)
                         UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage, index)
@@ -257,7 +259,7 @@ local function analyzeSystemMessage(chatMessage, words, topicList, topicPlacehol
                 if word == string.lower(tag) then
                     print("Tag '" .. tag .. "' matches Topic: " .. topic.name)
                     print("Creating one...")
-                    UpdateFirstSystemPlaceholderAndShiftDown(topicPlaceholders,topic.name, chatMessage)
+                    AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders,topic.name, chatMessage)
 
                     matchFound = true -- Set the flag to true to break out of loops
                     break
@@ -310,10 +312,13 @@ local function configureTabSwitching()
     ActivateTab(tabs[1])
 end
 
--- function to create the placeholders and font strings for a topic
+
+local tempChatMessageFrames = {}
+local tempChatMessageColumns = {}
 local function createTopicListWithNameMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
-    -- initial Y-offset for the first header and placeholder
     local yOffset = 0
+
+    local chatMessageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
 
     for _, topic in ipairs(topicList) do
         if topic.selected then
@@ -325,20 +330,17 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
             header:SetTextColor(1, 1, 0)
             header:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-            -- Store the header Y offset for the current topic
-            local topicYOffset = yOffset - 20 -- space between header and first placeholder
-            yOffset = topicYOffset - 110 -- space between headers
+            local topicYOffset = yOffset - 20
+            yOffset = topicYOffset - 110
 
             topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {FontStrings = {}}
 
             for i = 1, numberOfPlaceholders do
-                -- create Name column as a button
                 local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", contentFrame, nil)
                 nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
                 nameButton:SetWidth(150)
-                nameButton:SetHeight(14)
+                nameButton:SetHeight(10)
 
-                -- Set the text of the button
                 local buttonText = nameButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
                 buttonText:SetText("-")
                 buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0)
@@ -346,15 +348,14 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                 buttonText:SetTextColor(1, 1, 1)
                 nameButton:SetFontString(buttonText)
 
-                -- Set scripts for hover behavior
                 nameButton:SetScript("OnEnter", function()
-                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Highlight font
-                    buttonText:SetTextColor(1, 1, 0) -- Highlight color (e.g., yellow)
+                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                    buttonText:SetTextColor(1, 1, 0)
                 end)
 
                 nameButton:SetScript("OnLeave", function()
-                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12) -- Normal font
-                    buttonText:SetTextColor(1, 1, 1) -- Normal color (e.g., white)
+                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                    buttonText:SetTextColor(1, 1, 1)
                 end)
 
                 -- Add an example OnClick handler
@@ -390,24 +391,21 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                     end
                 end)
 
-                -- Create an invisible button to act as a parent
                 local messageFrame = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_MessageFrame", contentFrame)
                 messageFrame:SetPoint("TOPLEFT", nameButton, "TOPLEFT", 200, 0)
-                messageFrame:SetWidth(650)
+                messageFrame:SetWidth(chatMessageWidth)
                 messageFrame:SetHeight(10)
                 messageFrame:EnableMouse(true)
 
-                -- create Message column
                 local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
                 messageColumn:SetPoint("TOPLEFT", nameButton, "TOPRIGHT", 50, 0)
-                messageColumn:SetWidth(650)
+                messageColumn:SetWidth(chatMessageWidth)
                 messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
                 messageColumn:SetTextColor(1, 1, 1)
                 messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                -- create Time column
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
                 timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
@@ -418,20 +416,25 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
 
                 table.insert(topicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn, messageFrame})
 
-                -- Increment the Y-offset for the next placeholder
-                topicYOffset = topicYOffset - 18 -- space between placeholders
+                table.insert(tempChatMessageFrames, messageFrame)
+                table.insert(tempChatMessageColumns, messageColumn)
+
+                topicYOffset = topicYOffset - 18
             end
 
-            -- After the placeholders, adjust the main yOffset for the next topic
-            yOffset = topicYOffset - 10 -- space between topics
+            yOffset = topicYOffset - 10
         end
     end
 end
 
-    -- function to create the placeholders and font strings for a topic
+local tempSystemMessageFrames = {}
+local tempSystemMessageColumns = {}
+-- function to create the placeholders and font strings for a topic
 local function createTopicListWithMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
+
+    local systemMessageWidth = mainFrame:GetWidth() - systemMessageWidthDelta
 
     for _, topic in ipairs(topicList) do
         if topic.selected then
@@ -462,22 +465,25 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
                 messageColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 15, topicYOffset)
-                messageColumn:SetWidth(846)
+                messageColumn:SetWidth(systemMessageWidth)
                 messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
                 messageColumn:SetTextColor(1, 1, 1)
                 messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
-                -- create Time column
+                -- Create Time column
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
-                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 19, 0)
+                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
 
                 table.insert( topicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn, messageFrame})
+
+                table.insert(tempSystemMessageFrames, messageFrame)
+                table.insert(tempSystemMessageColumns, messageColumn)
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -496,7 +502,7 @@ local function createScrollFrameForMainFrame(scrollFrameName)
 
     -- Set ScrollFrame anchors
     scrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 0, -80)
-    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 10)
+    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 30)
 
     -- Create the ScrollChild (content frame)
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
@@ -523,3 +529,24 @@ function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     -- add topic group tab switching
     configureTabSwitching()
 end
+
+mainFrame:SetScript("OnSizeChanged", function()
+    local chatMessageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
+    for _, msgFrame in ipairs(tempChatMessageFrames) do
+        msgFrame:SetWidth(chatMessageWidth)
+    end
+
+    for _, msgColumn in ipairs(tempChatMessageColumns) do
+        msgColumn:SetWidth(chatMessageWidth)
+    end
+
+    local systemMessageWidth = mainFrame:GetWidth() - systemMessageWidthDelta
+    for _, msgFrame in ipairs(tempSystemMessageFrames) do
+        msgFrame:SetWidth(systemMessageWidth)
+    end
+
+    for _, msgColumn in ipairs(tempSystemMessageColumns) do
+        msgColumn:SetWidth(systemMessageWidth)
+    end
+end)
+
