@@ -5,9 +5,11 @@ DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {
 
 local optionFrame = DifficultBulletinBoardOptionFrame
 
-local optionYOffset = 25 -- Starting vertical offset for the first option
+local optionYOffset = 30 -- Starting vertical offset for the first option
 
 local optionScrollChild
+
+local tagsTextBoxWidthDelta = 260
 
 local tempGroupTags = {}
 local tempProfessionTags = {}
@@ -57,7 +59,7 @@ end
 
 local function addPlaceholderOptionToOptionFrame(inputLabel, labelText, defaultValue)
     -- Adjust Y offset for the new option
-    optionYOffset = optionYOffset - 30
+    optionYOffset = optionYOffset - 50
 
     -- Create the label (FontString)
     local label = optionScrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -74,24 +76,25 @@ local function addPlaceholderOptionToOptionFrame(inputLabel, labelText, defaultV
     inputBox:EnableMouse(true)
     inputBox:SetAutoFocus(false)
 
-    -- Adjust Y offset for the new option
-    optionYOffset = optionYOffset - 30
-
     return inputBox
 end
 
+local tempTagsTextBoxes = {}
 local function addTopicListToFrame(title, topicList, tempTags)
     local parentFrame = optionScrollChild
+
+    optionYOffset = optionYOffset - 30
 
     -- create fontstring
     local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
-    scrollLabel:SetText("Select the " .. title .. " Topics you want to observe:")
+    scrollLabel:SetText("Select the " .. title .. " Topics to Observe:")
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
 
-    optionYOffset = optionYOffset - 30
-
     for _, topic in ipairs(topicList) do
+
+        optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
+
         local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", parentFrame, "UICheckButtonTemplate")
         checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
         checkbox:SetWidth(25)
@@ -126,18 +129,19 @@ local function addTopicListToFrame(title, topicList, tempTags)
             tempTags[topicName] = DifficultBulletinBoard.SplitIntoLowerWords(enteredText)
         end)
 
-        optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
+        table.insert(tempTagsTextBoxes, tagsTextBox)
+
     end
 end
 
 function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     addScrollFrameToOptionFrame()
-    fontSizeOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Font_Size_Placeholder_Option", "Define the base Font Size:", DifficultBulletinBoardVars.fontSize)
-    groupOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Group_Placeholder_Option", "Number of Placeholders per Group Topic:", DifficultBulletinBoardVars.numberOfGroupPlaceholders)
+    fontSizeOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Font_Size_Placeholder_Option", "Base Font Size:", DifficultBulletinBoardVars.fontSize)
+    groupOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Group_Placeholder_Option", "Placeholders per Group Topic:", DifficultBulletinBoardVars.numberOfGroupPlaceholders)
     addTopicListToFrame("Group", DifficultBulletinBoardVars.allGroupTopics, tempGroupTags)
-    professionOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Profession_Placeholder_Option", "Number of Placeholders per Profession Topic:", DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+    professionOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Profession_Placeholder_Option", "Placeholders per Profession Topic:", DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
     addTopicListToFrame("Profession", DifficultBulletinBoardVars.allProfessionTopics, tempProfessionTags)
-    hardcoreOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Hardcore_Placeholder_Option", "Number of Placeholders per Hardcore Topic:", DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+    hardcoreOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Hardcore_Placeholder_Option", "Placeholders per Hardcore Topic:", DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
     addTopicListToFrame("Hardcore", DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags)
 end
 
@@ -170,3 +174,10 @@ function DifficultBulletinBoard_SaveVariablesAndReload()
 
     ReloadUI();
 end
+
+optionFrame:SetScript("OnSizeChanged", function()
+    local tagsTextBoxWidth = optionFrame:GetWidth() - tagsTextBoxWidthDelta
+    for _, msgFrame in ipairs(tempTagsTextBoxes) do
+        msgFrame:SetWidth(tagsTextBoxWidth)
+    end
+end)
