@@ -328,7 +328,7 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
             header:SetWidth(200)
             header:SetJustifyH("LEFT")
             header:SetTextColor(1, 1, 0)
-            header:SetFont("Fonts\\FRIZQT__.TTF", 12)
+            header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
             local topicYOffset = yOffset - 20
             yOffset = topicYOffset - 110
@@ -344,17 +344,17 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                 local buttonText = nameButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
                 buttonText:SetText("-")
                 buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0)
-                buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
                 buttonText:SetTextColor(1, 1, 1)
                 nameButton:SetFontString(buttonText)
 
                 nameButton:SetScript("OnEnter", function()
-                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
                     buttonText:SetTextColor(1, 1, 0)
                 end)
 
                 nameButton:SetScript("OnLeave", function()
-                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                    buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
                     buttonText:SetTextColor(1, 1, 1)
                 end)
 
@@ -404,7 +404,7 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                 messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
                 messageColumn:SetTextColor(1, 1, 1)
-                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
@@ -412,7 +412,7 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
                 timeColumn:SetTextColor(1, 1, 1)
-                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
                 table.insert(topicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn, messageFrame})
 
@@ -444,7 +444,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
             header:SetWidth(200)
             header:SetJustifyH("LEFT")
             header:SetTextColor(1, 1, 0)
-            header:SetFont("Fonts\\FRIZQT__.TTF", 12)
+            header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
             -- Store the header Y offset for the current topic
             local topicYOffset = yOffset - 20 -- space between header and first placeholder
@@ -469,7 +469,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
                 messageColumn:SetTextColor(1, 1, 1)
-                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
                 -- Create Time column
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
@@ -478,7 +478,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
                 timeColumn:SetTextColor(1, 1, 1)
-                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", 12)
+                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
                 table.insert( topicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn, messageFrame})
 

@@ -1,5 +1,6 @@
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
+DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
 
 local optionFrame = DifficultBulletinBoardOptionFrame
@@ -12,6 +13,7 @@ local tempGroupTags = {}
 local tempProfessionTags = {}
 local tempHardcoreTags = {}
 
+local fontSizeOptionInputBox
 local groupOptionInputBox
 local professionOptionInputBox
 local hardcoreOptionInputBox
@@ -61,7 +63,7 @@ local function addPlaceholderOptionToOptionFrame(inputLabel, labelText, defaultV
     local label = optionScrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     label:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
     label:SetText(labelText)
-    label:SetFont("Fonts\\FRIZQT__.TTF", 14)
+    label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
 
     -- Create the input field (EditBox)
     local inputBox = CreateFrame("EditBox", inputLabel, optionScrollChild, "InputBoxTemplate")
@@ -85,7 +87,7 @@ local function addTopicListToFrame(title, topicList, tempTags)
     local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
     scrollLabel:SetText("Select the " .. title .. " Topics you want to observe:")
-    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
+    scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
 
     optionYOffset = optionYOffset - 30
 
@@ -105,7 +107,7 @@ local function addTopicListToFrame(title, topicList, tempTags)
         local topicLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         topicLabel:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
         topicLabel:SetText(topic.name)
-        topicLabel:SetFont("Fonts\\FRIZQT__.TTF", 12)
+        topicLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
         topicLabel:SetJustifyH("LEFT")
         topicLabel:SetWidth(175)
 
@@ -130,6 +132,7 @@ end
 
 function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     addScrollFrameToOptionFrame()
+    fontSizeOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Font_Size_Placeholder_Option", "Define the base Font Size:", DifficultBulletinBoardVars.fontSize)
     groupOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Group_Placeholder_Option", "Number of Placeholders per Group Topic:", DifficultBulletinBoardVars.numberOfGroupPlaceholders)
     addTopicListToFrame("Group", DifficultBulletinBoardVars.allGroupTopics, tempGroupTags)
     professionOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Profession_Placeholder_Option", "Number of Placeholders per Profession Topic:", DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
@@ -139,20 +142,24 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
-    DifficultBulletinBoardSavedVariables.version = version
+    DifficultBulletinBoardSavedVariables.version = DifficultBulletinBoardDefaults.version
 
-    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoardVars.defaultNumberOfGroupPlaceholders
-    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoardVars.defaultNumberOfProfessionPlaceholders
-    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoardVars.defaultNumberOfHardcorePlaceholders
+    DifficultBulletinBoardSavedVariables.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
 
-    DifficultBulletinBoardSavedVariables.activeGroupTopics = DifficultBulletinBoardVars.defaultGroupTopics
-    DifficultBulletinBoardSavedVariables.activeProfessionTopics = DifficultBulletinBoardVars.defaultProfessionTopics
-    DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardVars.defaultHardcoreTopics
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders
+
+    DifficultBulletinBoardSavedVariables.activeGroupTopics = DifficultBulletinBoardDefaults.defaultGroupTopics
+    DifficultBulletinBoardSavedVariables.activeProfessionTopics = DifficultBulletinBoardDefaults.defaultProfessionTopics
+    DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardDefaults.defaultHardcoreTopics
 
     ReloadUI();
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
+    DifficultBulletinBoardSavedVariables.fontSize = fontSizeOptionInputBox:GetText()
+
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = hardcoreOptionInputBox:GetText()

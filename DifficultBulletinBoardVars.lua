@@ -5,6 +5,8 @@ DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
 DifficultBulletinBoardVars.version = DifficultBulletinBoardDefaults.version
 
+DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
+
 DifficultBulletinBoardVars.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
 DifficultBulletinBoardVars.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
 DifficultBulletinBoardVars.numberOfHardcorePlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders
@@ -55,6 +57,13 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
 
         DifficultBulletinBoardVars.allHardcoreTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics)
         DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardVars.allHardcoreTopics
+    end
+
+    if DifficultBulletinBoardSavedVariables.fontSize and DifficultBulletinBoardSavedVariables.fontSize ~= "" then
+        DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardSavedVariables.fontSize
+    else
+        DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
+        DifficultBulletinBoardSavedVariables.fontSize = DifficultBulletinBoardVars.fontSize
     end
 
     if DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders and DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders ~= "" then
