@@ -2,6 +2,8 @@ DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
 DifficultBulletinBoardDefaults.version = 7
 
+DifficultBulletinBoardDefaults.defaultFontSize = 14
+
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {
