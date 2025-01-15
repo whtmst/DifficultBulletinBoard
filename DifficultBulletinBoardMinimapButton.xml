@@ -13,7 +13,7 @@
         </Anchors>
         <Layers>
             <Layer level="BACKGROUND">
-                <Texture name="$parent_Texture" file="Interface\AddOns\DifficultBulletinBoard\icon">
+                <Texture name="$parent_Texture" file="Interface\AddOns\DifficultBulletinBoard\icons\icon">
                     <Size>
                         <AbsDimension x="17" y="17"/>
                     </Size>

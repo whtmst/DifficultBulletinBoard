@@ -502,7 +502,7 @@ local function createScrollFrameForMainFrame(scrollFrameName)
 
     -- Set ScrollFrame anchors
     scrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 0, -80)
-    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 30)
+    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 20)
 
     -- Create the ScrollChild (content frame)
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)

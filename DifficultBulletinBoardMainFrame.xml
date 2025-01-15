@@ -141,15 +141,9 @@
                     <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
                     </Anchor>
                 </Anchors>
-                <Layers>
-                    <Layer level="BACKGROUND">
-                        <Texture name="$parent_Texture" file="Interface\AddOns\DifficultBulletinBoard\resize">
-                            <Size>
-                                <AbsDimension x="17" y="17"/>
-                            </Size>
-                        </Texture>
-                    </Layer>
-                </Layers>
+                <NormalTexture file="Interface\AddOns\DifficultBulletinBoard\icons\UI-ChatIM-SizeGrabber-Up.tga" />
+                <PushedTexture file="Interface\AddOns\DifficultBulletinBoard\icons\UI-ChatIM-SizeGrabber-Down.tga" />
+                <HighlightTexture file="Interface\AddOns\DifficultBulletinBoard\icons\UI-ChatIM-SizeGrabber-Highlight.tga" alphaMode="ADD" />
                 <Scripts>
                     <OnMouseDown>
                         DifficultBulletinBoardMainFrame:StartSizing("BOTTOMRIGHT");
