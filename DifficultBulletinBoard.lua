@@ -23,8 +23,6 @@ end
     return tags
 end
 
-
-
 function DifficultBulletinBoard_ToggleOptionFrame()
     if optionFrame then
         if optionFrame:IsShown() then
@@ -74,8 +72,6 @@ end
 
 SLASH_DIFFICULTBB1 = "/dbb"
 SlashCmdList["DIFFICULTBB"] = function() DifficultBulletinBoard_ToggleMainFrame() end
-
-
 
 local function initializeAddon(event, arg1)
     if event == "ADDON_LOADED" and arg1 == "DifficultBulletinBoard" then
