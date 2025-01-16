@@ -1,6 +1,6 @@
 DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
-DifficultBulletinBoardDefaults.version = 7
+DifficultBulletinBoardDefaults.version = 8
 
 DifficultBulletinBoardDefaults.defaultFontSize = 14
 
@@ -63,7 +63,7 @@ DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders = 15
 
 DifficultBulletinBoardDefaults.defaultHardcoreTopics = {
     { name = "Deaths",                       selected = true, tags = { "tragedy"} },
-    { name = "Level Ups",                 selected = true, tags = { "reached" } }
+    { name = "Level Ups",                 selected = true, tags = { "reached", "inferno" } }
 }
 
 function DifficultBulletinBoardDefaults.deepCopy(original)

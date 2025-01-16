@@ -30,9 +30,7 @@ end
 
 -- function to reduce noise in messages and making matching easier
 local function replaceSymbolsWithSpace(inputString)
-    inputString = string.gsub(inputString, "[,/!%?.]", " ")
-
-    return inputString
+    return string.gsub(inputString, "[,/!%?.]", " ")
 end
 
 
@@ -96,6 +94,8 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
         local currentMessage = currentFontString[2]:GetText()
         local messageFrame = currentFontString[4]
 
+        -- dont show a tooltip if the message equals "-"
+        if currentMessage ~= nil and currentMessage ~= "-" then
         messageFrame:SetScript("OnEnter", function()
             GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
             GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
@@ -106,6 +106,7 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
             GameTooltip:Hide()
         end)
     end
+end
 end
 
 -- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
@@ -146,6 +147,8 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, channelN
         local currentMessage = fontString[2]:GetText()
         local messageFrame = fontString[4]
 
+        -- dont show a tooltip if the message equals "-"
+        if currentMessage ~= nil and currentMessage ~= "-" then
         messageFrame:SetScript("OnEnter", function()
             GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
             GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
@@ -156,6 +159,7 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, channelN
             GameTooltip:Hide()
         end)
     end
+end
 end
 
 -- Function to update the first placeholder for a given topic with new message, and time and shift other placeholders down
@@ -191,6 +195,8 @@ local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, me
         local currentMessage = fontString[2]:GetText()
         local messageFrame = fontString[4]
 
+        -- dont show a tooltip if the message equals "-"
+        if currentMessage ~= nil and currentMessage ~= "-" then
         messageFrame:SetScript("OnEnter", function()
             GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
             GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
@@ -201,6 +207,7 @@ local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, me
             GameTooltip:Hide()
         end)
     end
+end
 end
 
 -- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
