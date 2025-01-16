@@ -1,5 +1,5 @@
 <Ui xmlns="http://www.w3.org/1999/xhtml">
-    <Button name="DifficultBulletinBoard_MinimapButtonFrame" toplevel="true" frameStrata="MEDIUM" parent="Minimap" clampedToScreen="true"
+    <Button name="DifficultBulletinBoard_MinimapButtonFrame" toplevel="true" frameStrata="LOW" parent="Minimap" clampedToScreen="true"
             enableMouse="true" movable="true" hidden="false">
         <Size>
             <AbsDimension x="33" y="33"/>
