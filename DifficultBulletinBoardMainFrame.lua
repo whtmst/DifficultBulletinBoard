@@ -96,17 +96,17 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
 
         -- dont show a tooltip if the message equals "-"
         if currentMessage ~= nil and currentMessage ~= "-" then
-        messageFrame:SetScript("OnEnter", function()
-            GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-            GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
+            messageFrame:SetScript("OnEnter", function()
+                GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
 
-        messageFrame:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+            messageFrame:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+        end
     end
-end
 end
 
 -- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
@@ -149,17 +149,17 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, channelN
 
         -- dont show a tooltip if the message equals "-"
         if currentMessage ~= nil and currentMessage ~= "-" then
-        messageFrame:SetScript("OnEnter", function()
-            GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-            GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
+            messageFrame:SetScript("OnEnter", function()
+                GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
 
-        messageFrame:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+            messageFrame:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+        end
     end
-end
 end
 
 -- Function to update the first placeholder for a given topic with new message, and time and shift other placeholders down
@@ -197,17 +197,17 @@ local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, me
 
         -- dont show a tooltip if the message equals "-"
         if currentMessage ~= nil and currentMessage ~= "-" then
-        messageFrame:SetScript("OnEnter", function()
-            GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-            GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
+            messageFrame:SetScript("OnEnter", function()
+                GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
 
-        messageFrame:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+            messageFrame:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+        end
     end
-end
 end
 
 -- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
