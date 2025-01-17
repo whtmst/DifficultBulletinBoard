@@ -15,6 +15,52 @@ local tempGroupTags = {}
 local tempProfessionTags = {}
 local tempHardcoreTags = {}
 
+-- Option Data for Base Font Size
+local baseFontSizeOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Font_Size_Input",
+    labelText = "Base Font Size:",
+    labelToolTip = "Adjusts the base font size for text. Other font sizes (e.g., titles) are calculated relative to this value. For example, if the base font size is 14, titles may be set 2 points higher.",
+}
+
+-- Option Data for Placeholders per Group Topic
+local groupPlaceholdersOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Group_Placeholder_Input",
+    labelText = "Entries per Group Topic:",
+    labelToolTip = "Defines the number of entries displayed for each group topic entry.",
+}
+
+-- Option Data for Placeholders per Profession Topic
+local professionPlaceholdersOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Profession_Placeholder_Input",
+    labelText = "Entries per Profession Topic:",
+    labelToolTip = "Specifies the number of entries displayed for each profession topic entry.",
+}
+
+-- Option Data for Placeholders per Hardcore Topic
+local hardcorePlaceholdersOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Hardcore_Placeholder_Input",
+    labelText = "Entries per Hardcore Topic:",
+    labelToolTip = "Sets the number of entries displayed for each hardcore topic entry.",
+}
+
+local groupTopicListObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Group_TopicList",
+    labelText = "Select the Group Topics to Observe:",
+    labelToolTip = "Check to enable scanning for messages related to this group topic in chat. Uncheck to stop searching.\n\nTags should be separated by spaces, and only the first match will be searched. Once a match is found, the message will be added to the bulletin board.",
+}
+
+local professionTopicListObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Profession_TopicList",
+    labelText = "Select the Profession Topics to Observe:",
+    labelToolTip = "Check to enable scanning for messages related to this profession topic in chat. Uncheck to stop searching.\n\nTags should be separated by spaces, and only the first match will be searched. Once a match is found, the message will be added to the bulletin board.",
+}
+
+local hardcoreTopicListObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Hardcore_TopicList",
+    labelText = "Select the Hardcore Topics to Observe:",
+    labelToolTip = "Check to enable scanning for messages related to this hardcore topic in chat. Uncheck to stop searching.\n\nTags should be separated by spaces, and only the first match will be searched. Once a match is found, the message will be added to the bulletin board.",
+}
+
 local fontSizeOptionInputBox
 local groupOptionInputBox
 local professionOptionInputBox
@@ -57,22 +103,41 @@ local function addScrollFrameToOptionFrame()
     optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
-local function addPlaceholderOptionToOptionFrame(inputLabel, labelText, defaultValue)
+local function addPlaceholderOptionToOptionFrame(option, value)
     -- Adjust Y offset for the new option
     optionYOffset = optionYOffset - 50
 
-    -- Create the label (FontString)
-    local label = optionScrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    label:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
-    label:SetText(labelText)
+    -- Create a frame to hold the label and allow for mouse interactions
+    local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 0, optionYOffset)
+    labelFrame:SetHeight(20)
+
+    -- Create the label (FontString) inside the frame
+    local label = labelFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    label:SetAllPoints(labelFrame) -- Make the label take up the full frame
+    label:SetText(option.labelText)
     label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
 
+    --set labelFrame width afterwards with padding so the label is not cut off
+    labelFrame:SetWidth(label:GetStringWidth() + 20)
+
+    -- Add a GameTooltip to the labelFrame
+    labelFrame:EnableMouse(true) -- Enable mouse interactions for the frame
+    labelFrame:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
+        GameTooltip:SetText(option.labelToolTip, nil, nil, nil, nil, true)
+        GameTooltip:Show()
+    end)
+    labelFrame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     -- Create the input field (EditBox)
-    local inputBox = CreateFrame("EditBox", inputLabel, optionScrollChild, "InputBoxTemplate")
-    inputBox:SetPoint("LEFT", label, "RIGHT", 10, 0)
+    local inputBox = CreateFrame("EditBox", option.frameName, optionScrollChild, "InputBoxTemplate")
+    inputBox:SetPoint("LEFT", labelFrame, "RIGHT", 10, 0)
     inputBox:SetWidth(30)
     inputBox:SetHeight(20)
-    inputBox:SetText(defaultValue)
+    inputBox:SetText(value)
     inputBox:EnableMouse(true)
     inputBox:SetAutoFocus(false)
 
@@ -80,19 +145,39 @@ local function addPlaceholderOptionToOptionFrame(inputLabel, labelText, defaultV
 end
 
 local tempTagsTextBoxes = {}
-local function addTopicListToFrame(title, topicList, tempTags)
+local function addTopicListToFrame(topicObject, topicList)
     local parentFrame = optionScrollChild
+    local tempTags = {}
 
     optionYOffset = optionYOffset - 30
 
-    -- create fontstring
-    local scrollLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    scrollLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
-    scrollLabel:SetText("Select the " .. title .. " Topics to Observe:")
+    -- Create a frame to hold the label and allow for mouse interactions
+    local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 0, optionYOffset)
+    labelFrame:SetHeight(20)
+
+
+    -- Create the label (FontString) inside the frame
+    local scrollLabel = labelFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    scrollLabel:SetAllPoints(labelFrame) -- Make the label take up the full frame
+    scrollLabel:SetText(topicObject.labelText)
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
 
-    for _, topic in ipairs(topicList) do
+    --set labelFrame width afterwards with padding so the label is not cut off
+    labelFrame:SetWidth(scrollLabel:GetStringWidth() + 20)
 
+    -- Add a GameTooltip to the labelFrame
+    labelFrame:EnableMouse(true) -- Enable mouse interactions for the frame
+    labelFrame:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
+        GameTooltip:SetText(topicObject.labelToolTip, nil, nil, nil, nil, true)
+        GameTooltip:Show()
+    end)
+    labelFrame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    for _, topic in ipairs(topicList) do
         optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
 
         local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", parentFrame, "UICheckButtonTemplate")
@@ -132,17 +217,26 @@ local function addTopicListToFrame(title, topicList, tempTags)
         table.insert(tempTagsTextBoxes, tagsTextBox)
 
     end
+
+    return tempTags
 end
 
 function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     addScrollFrameToOptionFrame()
-    fontSizeOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Font_Size_Placeholder_Option", "Base Font Size:", DifficultBulletinBoardVars.fontSize)
-    groupOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Group_Placeholder_Option", "Placeholders per Group Topic:", DifficultBulletinBoardVars.numberOfGroupPlaceholders)
-    addTopicListToFrame("Group", DifficultBulletinBoardVars.allGroupTopics, tempGroupTags)
-    professionOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Profession_Placeholder_Option", "Placeholders per Profession Topic:", DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
-    addTopicListToFrame("Profession", DifficultBulletinBoardVars.allProfessionTopics, tempProfessionTags)
-    hardcoreOptionInputBox = addPlaceholderOptionToOptionFrame("DifficultBulletinBoardOptionFrame_Hardcore_Placeholder_Option", "Placeholders per Hardcore Topic:", DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
-    addTopicListToFrame("Hardcore", DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags)
+
+    fontSizeOptionInputBox = addPlaceholderOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
+    
+    groupOptionInputBox = addPlaceholderOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
+    
+    tempGroupTags = addTopicListToFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
+    
+    professionOptionInputBox = addPlaceholderOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+    
+    tempProfessionTags= addTopicListToFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
+    
+    hardcoreOptionInputBox = addPlaceholderOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+    
+    tempHardcoreTags = addTopicListToFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
