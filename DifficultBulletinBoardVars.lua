@@ -21,7 +21,8 @@ local function print(string)
 end
 
 function DifficultBulletinBoardVars.LoadSavedVariables()
-    print("test")
+    print("Start Loading DifficultBulletinBoardVars")
+
     if DifficultBulletinBoardSavedVariables.version then
         local savedVersion = DifficultBulletinBoardSavedVariables.version
         
@@ -107,4 +108,6 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
         DifficultBulletinBoardVars.allHardcoreTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics)
         DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardVars.allHardcoreTopics
     end
+
+    print("Finished Loading DifficultBulletinBoardVars")
 end
