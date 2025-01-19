@@ -103,18 +103,28 @@ local function handleEvent()
     end
 end
 
-local function updateServerTime()
-    local serverTimeString = date("%H:%M:%S")
-    DifficultBulletinBoardMainFrame_ServerTime:SetText("Time: " .. serverTimeString)
-end
+-- Initialize with the current server time
+local lastUpdateTime = GetTime() 
+local function OnUpdate()
+    local currentTime = GetTime()
+    local deltaTime = currentTime - lastUpdateTime
 
--- Function to handle the update every second
-mainFrame:SetScript("OnUpdate", function()
-    updateServerTime()
-end)
+    -- Update only if at least 1 second has passed
+    if deltaTime >= 1 then
+        -- Update the lastUpdateTime
+        lastUpdateTime = currentTime
+
+        DifficultBulletinBoardMainFrame.UpdateServerTime()
+
+        if DifficultBulletinBoardVars.timeFormat == "elapsed" then
+            DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
+        end
+    end
+end
 
 mainFrame:RegisterEvent("ADDON_LOADED")
 mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
 mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
-mainFrame:RegisterEvent("CHAT_MSG_SYSTEM");
+mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 mainFrame:SetScript("OnEvent", handleEvent)
+mainFrame:SetScript("OnUpdate", OnUpdate)

@@ -7,6 +7,8 @@ DifficultBulletinBoardVars.version = DifficultBulletinBoardDefaults.version
 
 DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
 
+DifficultBulletinBoardVars.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
+
 DifficultBulletinBoardVars.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
 DifficultBulletinBoardVars.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
 DifficultBulletinBoardVars.numberOfHardcorePlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders
@@ -65,6 +67,13 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     else
         DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
         DifficultBulletinBoardSavedVariables.fontSize = DifficultBulletinBoardVars.fontSize
+    end
+
+    if DifficultBulletinBoardSavedVariables.timeFormat and DifficultBulletinBoardSavedVariables.timeFormat ~= "" then
+        DifficultBulletinBoardVars.timeFormat = DifficultBulletinBoardSavedVariables.timeFormat
+    else
+        DifficultBulletinBoardVars.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
+        DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardVars.timeFormat
     end
 
     if DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders and DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders ~= "" then

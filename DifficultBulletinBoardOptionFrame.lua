@@ -61,7 +61,13 @@ local hardcoreTopicListObject = {
     labelToolTip = "Check to enable scanning for messages related to this hardcore topic in chat. Uncheck to stop searching.\n\nTags should be separated by spaces, and only the first match will be searched. Once a match is found, the message will be added to the bulletin board.",
 }
 
+local timeFormatDropDownItems = {
+    { text = "Fixed Time (HH:MM:SS)", value = "fixed"},
+    { text = "Elapsed Time (MM:SS)", value = "elapsed"}
+}
+
 local fontSizeOptionInputBox
+local timeFormatDropDown
 local groupOptionInputBox
 local professionOptionInputBox
 local hardcoreOptionInputBox
@@ -103,7 +109,83 @@ local function addScrollFrameToOptionFrame()
     optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
-local function addPlaceholderOptionToOptionFrame(option, value)
+local function addDropDownOptionToOptionFrame(dropdownItems)
+    -- Adjust vertical offset for the dropdown
+    optionYOffset = optionYOffset - 50
+
+    -- Create a frame to hold the label and enable mouse interactions
+    local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 0, optionYOffset)
+    labelFrame:SetHeight(20)
+
+    -- Create the label (FontString) inside the frame
+    local label = labelFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    label:SetAllPoints(labelFrame)
+    label:SetText("Select Time Format:")
+    label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
+
+    -- Set labelFrame width based on the text width with padding
+    labelFrame:SetWidth(label:GetStringWidth() + 20)
+
+    -- Add a GameTooltip to the labelFrame
+    labelFrame:EnableMouse(true)
+    labelFrame:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Choose a time format for displaying timestamps.\n\n", nil, nil, nil, nil, true)
+        GameTooltip:AddLine("Fixed format displays the exact time, while elapsed format shows the time since the message was posted.", nil, nil, nil, true)
+        GameTooltip:Show()
+    end)
+    labelFrame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    -- Create the dropdown menu
+    local dropdown = CreateFrame("Frame", "ExampleDropdown", optionScrollChild, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("LEFT", labelFrame, "RIGHT", 0, 0)
+    
+    
+    local maxWidth = 0
+    -- Initialize the dropdown menu
+    UIDropDownMenu_Initialize(dropdown, function()
+        for id, item in ipairs(dropdownItems) do
+            local info = {}
+            info.text = item.text
+            info.value = item.value
+
+            -- Create a hidden FontString so we can get the width of the string (this sucks I know...)
+            local fontString = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            fontString:SetText(info.text)
+            fontString:Hide()
+            
+            local textWidth = fontString:GetStringWidth()
+
+            if textWidth > maxWidth then
+                maxWidth = textWidth
+            end
+
+            info.func = function()
+                UIDropDownMenu_SetSelectedValue(dropdown, info.value, false)
+                print("Selected: " .. info.value .. " " .. info.text)
+                print(UIDropDownMenu_GetText(dropdown))
+                print(UIDropDownMenu_GetSelectedValue(dropdown))
+            end
+
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    UIDropDownMenu_SetWidth(maxWidth + 20, dropdown)
+
+    -- Set the default value
+    UIDropDownMenu_SetSelectedValue(dropdown, DifficultBulletinBoardVars.timeFormat, false)
+
+    return dropdown
+end
+
+
+
+
+local function addInputBoxOptionToOptionFrame(option, value)
     -- Adjust Y offset for the new option
     optionYOffset = optionYOffset - 50
 
@@ -145,7 +227,7 @@ local function addPlaceholderOptionToOptionFrame(option, value)
 end
 
 local tempTagsTextBoxes = {}
-local function addTopicListToFrame(topicObject, topicList)
+local function addTopicListToOptionFrame(topicObject, topicList)
     local parentFrame = optionScrollChild
     local tempTags = {}
 
@@ -224,25 +306,29 @@ end
 function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     addScrollFrameToOptionFrame()
 
-    fontSizeOptionInputBox = addPlaceholderOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
+    fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
     
-    groupOptionInputBox = addPlaceholderOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
+    timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownItems)
+
+    groupOptionInputBox = addInputBoxOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
     
-    tempGroupTags = addTopicListToFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
+    tempGroupTags = addTopicListToOptionFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
     
-    professionOptionInputBox = addPlaceholderOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+    professionOptionInputBox = addInputBoxOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
     
-    tempProfessionTags= addTopicListToFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
+    tempProfessionTags= addTopicListToOptionFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
     
-    hardcoreOptionInputBox = addPlaceholderOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+    hardcoreOptionInputBox = addInputBoxOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
     
-    tempHardcoreTags = addTopicListToFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
+    tempHardcoreTags = addTopicListToOptionFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
     DifficultBulletinBoardSavedVariables.version = DifficultBulletinBoardDefaults.version
 
     DifficultBulletinBoardSavedVariables.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
+
+    DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
 
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
@@ -257,6 +343,8 @@ end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
     DifficultBulletinBoardSavedVariables.fontSize = fontSizeOptionInputBox:GetText()
+
+    DifficultBulletinBoardSavedVariables.timeFormat = UIDropDownMenu_GetSelectedValue(timeFormatDropDown)
 
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()

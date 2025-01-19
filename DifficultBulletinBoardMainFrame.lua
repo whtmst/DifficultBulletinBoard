@@ -33,17 +33,15 @@ local function replaceSymbolsWithSpace(inputString)
     return string.gsub(inputString, "[,/!%?.]", " ")
 end
 
-
-
 local function topicPlaceholdersContainsCharacterName(topicPlaceholders, topicName, characterName)
     local topicData = topicPlaceholders[topicName]
-    if not topicData or not topicData.FontStrings then
+    if not topicData or not topicData then
         print("Nothing in here yet")
         return false, nil
     end
 
-    for index, row in ipairs(topicData.FontStrings) do
-        local nameColumn = row[1]
+    for index, row in ipairs(topicData) do
+        local nameColumn = row.nameButton
 
         if nameColumn:GetText() == characterName then
             print("Already in there!")
@@ -58,47 +56,39 @@ end
 -- then moves the updated entry to the top of the list, shifting other entries down.
 local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message, index)
     local topicData = topicPlaceholders[topic]
-    local FontStringsList = {}
 
-    if not topicData or not topicData.FontStrings then
-        print("No FontStrings found for topic:", topic)
-        return nil
+    local timestamp
+    if DifficultBulletinBoardVars.timeFormat == "elapsed" then
+        timestamp = "00:00"
+    else 
+        timestamp = date("%H:%M:%S")
     end
 
-    for i, row in ipairs(topicData.FontStrings) do
-        local entryList = {}
-
-        for j, fontString in ipairs(row) do
-            local text = fontString:GetText()
-            table.insert(entryList, text)
-        end
-
-        table.insert(FontStringsList, entryList)
+    -- Shift all entries down from index 1 to the updated entry's position
+    for i = index, 2, -1 do
+        topicData[i].nameButton:SetText(topicData[i - 1].nameButton:GetText())
+        topicData[i].messageFontString:SetText(topicData[i - 1].messageFontString:GetText())
+        topicData[i].timeFontString:SetText(topicData[i - 1].timeFontString:GetText())
+        topicData[i].creationTimestamp = topicData[i - 1].creationTimestamp
     end
 
-    local currentTime = date("%H:%M:%S")
-    FontStringsList[index][1] = name
-    FontStringsList[index][2] = "[" .. channelName .. "] " .. message
-    FontStringsList[index][3] = currentTime
+    -- Place the updated entry's data at the top
+    topicData[1].nameButton:SetText(name)
+    topicData[1].messageFontString:SetText("[" .. channelName .. "] " .. message or "No Message")
+    topicData[1].timeFontString:SetText(timestamp)
+    topicData[1].creationTimestamp = date("%H:%M:%S")
 
-    local tempFontStringsList = table.remove(FontStringsList, index)
-    table.insert(FontStringsList, 1, tempFontStringsList)
-
-    for i = 1, numberOfPlaceholders, 1 do
-        local currentFontString = topicData.FontStrings[i]
-
-        currentFontString[1]:SetText(FontStringsList[i][1])
-        currentFontString[2]:SetText(FontStringsList[i][2])
-        currentFontString[3]:SetText(FontStringsList[i][3])
-
-        local currentMessage = currentFontString[2]:GetText()
-        local messageFrame = currentFontString[4]
+    -- Update the GameTooltip
+    for i = numberOfPlaceholders, 1, -1 do
+        local currentFontString = topicData[i]
+        local message = currentFontString.messageFontString:GetText()
+        local messageFrame = currentFontString.messageFrame
 
         -- dont show a tooltip if the message equals "-"
-        if currentMessage ~= nil and currentMessage ~= "-" then
+        if message ~= nil and message ~= "-" then
             messageFrame:SetScript("OnEnter", function()
                 GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                GameTooltip:SetText(message, 1, 1, 1, 1, true)
                 GameTooltip:Show()
             end)
 
@@ -109,49 +99,67 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
     end
 end
 
--- Function to update the first placeholder for a given topic with new name, message, and time and shift other placeholders down
-local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, channelName, name, message)
+-- Calculate delta in MM:SS format
+local function calculateDelta(creationTimestamp, currentTime)
+    local creationInSeconds = timeToSeconds(creationTimestamp)
+    local currentInSeconds = timeToSeconds(currentTime)
+    local deltaSeconds = currentInSeconds - creationInSeconds
+
+    -- Handle negative delta (e.g., crossing midnight)
+    if deltaSeconds < 0 then
+        -- Add a day's worth of seconds
+        deltaSeconds = deltaSeconds + 86400 
+    end
+
+    return secondsToMMSS(deltaSeconds)
+end
+    
+
+-- Function to add a new entry to the given topic with and shift other entries down
+local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message)
     local topicData = topicPlaceholders[topic]
-    if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
+    if not topicData or not topicData[1] then
         print("No placeholders found for topic: " .. topic)
         return
     end
 
-    local currentTime = date("%H:%M:%S")
+    local timestamp
+    if DifficultBulletinBoardVars.timeFormat == "elapsed" then
+        timestamp = "00:00"
+    else 
+        timestamp = date("%H:%M:%S")
+    end
 
-    local index = 0
-
-    --count the entries (no idea how else to do it l0l)
-    for i, _ in ipairs(topicData.FontStrings) do index = i end
-
-    for i = index, 2, -1 do
+    for i = numberOfPlaceholders, 2, -1 do
         -- Copy the data from the previous placeholder to the current one
-        local currentFontString = topicData.FontStrings[i]
-        local previousFontString = topicData.FontStrings[i - 1]
+        local currentFontString = topicData[i]
+        local previousFontString = topicData[i - 1]
 
         -- Update the current placeholder with the previous placeholder's data
-        currentFontString[1]:SetText(previousFontString[1]:GetText())
-        currentFontString[2]:SetText(previousFontString[2]:GetText())
-        currentFontString[3]:SetText(previousFontString[3]:GetText())
+        currentFontString.nameButton:SetText(previousFontString.nameButton:GetText())
+        currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
+        currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
+        currentFontString.creationTimestamp = previousFontString.creationTimestamp
     end
 
     -- Update the first placeholder with the new data
-    local firstFontString = topicData.FontStrings[1]
-    firstFontString[1]:SetText(name or "No Name")
-    firstFontString[2]:SetText("[" .. channelName .. "] " .. message or "No Message")
-    firstFontString[3]:SetText(currentTime or "No Time")
+    local firstFontString = topicData[1]
+    firstFontString.nameButton:SetText(name)
+    firstFontString.messageFontString:SetText("[" .. channelName .. "] " .. message)
+    firstFontString.timeFontString:SetText(timestamp)
+    firstFontString.creationTimestamp = date("%H:%M:%S")
 
     -- Update the GameTooltip
-    for i = index, 1, -1 do
-        local fontString = topicData.FontStrings[i]
-        local currentMessage = fontString[2]:GetText()
-        local messageFrame = fontString[4]
+    for i = numberOfPlaceholders, 1, -1 do
+        local currentFontString = topicData[i]
+        local message = currentFontString.messageFontString:GetText()
+        local messageFrame = currentFontString.messageFrame
 
         -- dont show a tooltip if the message equals "-"
-        if currentMessage ~= nil and currentMessage ~= "-" then
+        if message ~= nil and message ~= "-" then
             messageFrame:SetScript("OnEnter", function()
                 GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                GameTooltip:SetText(message, 1, 1, 1, 1, true)
                 GameTooltip:Show()
             end)
 
@@ -165,35 +173,42 @@ end
 -- Function to update the first placeholder for a given topic with new message, and time and shift other placeholders down
 local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, message)
     local topicData = topicPlaceholders[topic]
-    if not topicData or not topicData.FontStrings or not topicData.FontStrings[1] then
+    if not topicData or not topicData[1] then
         print("No placeholders found for topic: " .. topic)
         return
     end
 
-    local currentTime = date("%H:%M:%S")
+    local timestamp
+    if DifficultBulletinBoardVars.timeFormat == "elapsed" then
+        timestamp = "00:00"
+    else 
+        timestamp = date("%H:%M:%S")
+    end
 
     local index = 0
-    for i, _ in ipairs(topicData.FontStrings) do index = i end
+    for i, _ in ipairs(topicData) do index = i end
         for i = index, 2, -1 do
             -- Copy the data from the previous placeholder to the current one
-            local currentFontString = topicData.FontStrings[i]
-            local previousFontString = topicData.FontStrings[i - 1]
+            local currentFontString = topicData[i]
+            local previousFontString = topicData[i - 1]
 
             -- Update the current placeholder with the previous placeholder's data
-            currentFontString[2]:SetText(previousFontString[2]:GetText())
-            currentFontString[3]:SetText(previousFontString[3]:GetText())
+            currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
+            currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
+            currentFontString.creationTimestamp = previousFontString.creationTimestamp
         end
 
     -- Update the first placeholder with the new data
-    local firstFontString = topicData.FontStrings[1]
-    firstFontString[2]:SetText(message or "No Message")
-    firstFontString[3]:SetText(currentTime or "No Time")
+    local firstFontString = topicData[1]
+    firstFontString.messageFontString:SetText(message)
+    firstFontString.timeFontString:SetText(timestamp)
+    firstFontString.creationTimestamp = date("%H:%M:%S")
 
     -- Update the GameTooltip
     for i = index, 1, -1 do
-        local fontString = topicData.FontStrings[i]
-        local currentMessage = fontString[2]:GetText()
-        local messageFrame = fontString[4]
+        local fontString = topicData[i]
+        local currentMessage = fontString.messageFontString:GetText()
+        local messageFrame = fontString.messageFrame
 
         -- dont show a tooltip if the message equals "-"
         if currentMessage ~= nil and currentMessage ~= "-" then
@@ -225,7 +240,7 @@ local function analyzeChatMessage(channelName, characterName, chatMessage, words
                         UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage, index)
                     else
                         print("No entry for that character exists. Creating one...")
-                        AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic.name, channelName, characterName, chatMessage)
+                        AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage)
                     end
 
                     matchFound = true -- Set the flag to true to break out of loops
@@ -243,9 +258,6 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
     local characterName = arg2
     local channelName = arg9
     
-    print(chatMessage)
-    print(channelName)
-
     local stringWithoutNoise = replaceSymbolsWithSpace(chatMessage)
 
     print(stringWithoutNoise)
@@ -421,7 +433,7 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
-                table.insert(topicPlaceholders[topic.name].FontStrings, {nameButton, messageColumn, timeColumn, messageFrame})
+                table.insert(topicPlaceholders[topic.name], {nameButton = nameButton, messageFontString = messageColumn, timeFontString = timeColumn, messageFrame = messageFrame, creationTimestamp = nil})
 
                 table.insert(tempChatMessageFrames, messageFrame)
                 table.insert(tempChatMessageColumns, messageColumn)
@@ -487,7 +499,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
-                table.insert( topicPlaceholders[topic.name].FontStrings, {nil, messageColumn, timeColumn, messageFrame})
+                table.insert( topicPlaceholders[topic.name], {nameButton = nil, messageFontString = messageColumn, timeFontString = timeColumn, messageFrame = messageFrame, creationTimestamp = nil})
 
                 table.insert(tempSystemMessageFrames, messageFrame)
                 table.insert(tempSystemMessageColumns, messageColumn)
@@ -526,6 +538,9 @@ local function createScrollFrameForMainFrame(scrollFrameName)
 end
 
 function DifficultBulletinBoardMainFrame.InitializeMainFrame()
+    --call it once before OnUpdate so the time doesnt just magically appear
+    DifficultBulletinBoardMainFrame.UpdateServerTime()
+
     groupScrollFrame, groupScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Group_ScrollFrame")
     createTopicListWithNameMessageDateColumns(groupScrollChild, DifficultBulletinBoardVars.allGroupTopics, groupTopicPlaceholders, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
     professionScrollFrame, professionScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Profession_ScrollFrame")
@@ -557,3 +572,72 @@ mainFrame:SetScript("OnSizeChanged", function()
     end
 end)
 
+
+function DifficultBulletinBoardMainFrame.UpdateServerTime()
+    local serverTimeString = date("%H:%M:%S") -- Format server time
+    DifficultBulletinBoardMainFrame_ServerTime:SetText("Time: " .. serverTimeString) -- Set text
+end
+
+-- Helper function to convert HH:MM:SS to seconds
+local function timeToSeconds(timeString)
+    --idk how else to do it :/ just loop over and return the first match
+    for hours, minutes, seconds in string_gfind(timeString, "(%d+):(%d+):(%d+)") do
+        return (tonumber(hours) * 3600) + (tonumber(minutes) * 60) + tonumber(seconds)
+    end
+end
+    
+-- Helper function to format seconds into MM:SS
+local function secondsToMMSS(totalSeconds)
+    local minutes = math.floor(totalSeconds / 60)
+    local seconds = totalSeconds - math.floor(totalSeconds / 60) * 60
+
+    -- Return "OLD" if minutes exceed 99
+    if minutes > 99 then
+        return "OLD"
+    end
+
+    return string.format("%02d:%02d", minutes, seconds)
+end
+
+-- Calculate delta in MM:SS format
+local function calculateDelta(creationTimestamp, currentTime)
+    local creationInSeconds = timeToSeconds(creationTimestamp)
+    local currentInSeconds = timeToSeconds(currentTime)
+    local deltaSeconds = currentInSeconds - creationInSeconds
+
+    -- Handle negative delta (e.g., crossing midnight)
+    if deltaSeconds < 0 then
+        deltaSeconds = deltaSeconds + 86400 -- Add a day's worth of seconds
+    end
+
+    return secondsToMMSS(deltaSeconds)
+end
+
+function DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
+    for topicName, entries in pairs(groupTopicPlaceholders) do
+        for _, entry in ipairs(entries) do
+            if entry and entry.timeFontString and  entry.timeFontString:GetText() ~= "-" then
+                local delta = calculateDelta(entry.creationTimestamp,  date("%H:%M:%S"))
+                entry.timeFontString:SetText(delta)
+            end
+        end
+    end
+
+    for topicName, entries in pairs(professionTopicPlaceholders) do
+        for _, entry in ipairs(entries) do
+            if entry and entry.timeFontString and  entry.timeFontString:GetText() ~= "-" then
+                local delta = calculateDelta(entry.creationTimestamp,  date("%H:%M:%S"))
+                entry.timeFontString:SetText(delta)
+            end
+        end
+    end
+
+    for topicName, entries in pairs(hardcoreTopicPlaceholders) do
+        for _, entry in ipairs(entries) do
+            if entry and entry.timeFontString and  entry.timeFontString:GetText() ~= "-" then
+                local delta = calculateDelta(entry.creationTimestamp,  date("%H:%M:%S"))
+                entry.timeFontString:SetText(delta)
+            end
+        end
+    end
+end
