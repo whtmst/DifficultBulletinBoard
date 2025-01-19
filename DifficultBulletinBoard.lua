@@ -26,8 +26,14 @@ end
 function DifficultBulletinBoard_ToggleOptionFrame()
     if optionFrame then
         if optionFrame:IsShown() then
+            if DifficultBulletinBoardVars.optionFrameSound == "true" then
+                PlaySound("igMainMenuClose");
+            end
             optionFrame:Hide()
         else
+            if DifficultBulletinBoardVars.optionFrameSound == "true" then
+                PlaySound("igMainMenuClose");
+            end
             optionFrame:Show()
             mainFrame:Hide()
         end
@@ -39,8 +45,14 @@ end
 function DifficultBulletinBoard_ToggleMainFrame()
     if mainFrame then
         if mainFrame:IsShown() then
+            if DifficultBulletinBoardVars.mainFrameSound == "true" then
+                PlaySound("igQuestLogOpen");
+            end
             mainFrame:Hide()
         else
+            if DifficultBulletinBoardVars.mainFrameSound == "true" then
+                PlaySound("igQuestLogClose");
+            end
             mainFrame:Show()
             optionFrame:Hide()
         end

@@ -6,6 +6,10 @@ DifficultBulletinBoardDefaults.defaultFontSize = 14
 
 DifficultBulletinBoardDefaults.defaultTimeFormat = "fixed"
 
+DifficultBulletinBoardDefaults.defaultMainFrameSound = "true"
+
+DifficultBulletinBoardDefaults.defaultOptionFrameSound = "true"
+
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {

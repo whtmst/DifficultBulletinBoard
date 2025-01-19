@@ -61,13 +61,43 @@ local hardcoreTopicListObject = {
     labelToolTip = "Check to enable scanning for messages related to this hardcore topic in chat. Uncheck to stop searching.\n\nTags should be separated by spaces, and only the first match will be searched. Once a match is found, the message will be added to the bulletin board.",
 }
 
-local timeFormatDropDownItems = {
-    { text = "Fixed Time (HH:MM:SS)", value = "fixed"},
-    { text = "Elapsed Time (MM:SS)", value = "elapsed"}
+-- Option Data for the timestamp format
+local timeFormatDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Time_Dropdown",
+    labelText = "Select Time Format:",
+    labelToolTip = "Choose a time format for displaying timestamps.\n\nFixed format displays the exact time, while elapsed format shows the time since the message was posted.",
+    items = {
+        { text = "Fixed Time (HH:MM:SS)", value = "fixed"},
+        { text = "Elapsed Time (MM:SS)", value = "elapsed"}
+    }
+}
+
+-- Option Data for MainFrame sound being played
+local mainFrameSoundDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_MainFrame_Sound_Dropdown",
+    labelText = "Play Sound for Bulletin Board:",
+    labelToolTip = "Enable or disable the sound that plays when the Bulletin Board is opened and closed.",
+    items = {
+        { text = "Enable Sound", value = "true" },
+        { text = "Disable Sound", value = "false" }
+    }
+}
+
+-- Option Data for OptionFrame sound being played
+local optionFrameSoundDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_OptionFrame_Sound_Dropdown",
+    labelText = "Play Sound for Option Window:",
+    labelToolTip = "Enable or disable the sound that plays when the Optin Window is opened and closed.",
+    items = {
+        { text = "Enable Sound", value = "true" },
+        { text = "Disable Sound", value = "false" }
+    }
 }
 
 local fontSizeOptionInputBox
 local timeFormatDropDown
+local mainFrameSoundDropDown
+local optionFrameSoundDropDown
 local groupOptionInputBox
 local professionOptionInputBox
 local hardcoreOptionInputBox
@@ -109,7 +139,7 @@ local function addScrollFrameToOptionFrame()
     optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
-local function addDropDownOptionToOptionFrame(dropdownItems)
+local function addDropDownOptionToOptionFrame(options, defaultValue)
     -- Adjust vertical offset for the dropdown
     optionYOffset = optionYOffset - 50
 
@@ -121,7 +151,7 @@ local function addDropDownOptionToOptionFrame(dropdownItems)
     -- Create the label (FontString) inside the frame
     local label = labelFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     label:SetAllPoints(labelFrame)
-    label:SetText("Select Time Format:")
+    label:SetText(options.labelText)
     label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
 
     -- Set labelFrame width based on the text width with padding
@@ -131,8 +161,7 @@ local function addDropDownOptionToOptionFrame(dropdownItems)
     labelFrame:EnableMouse(true)
     labelFrame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Choose a time format for displaying timestamps.\n\n", nil, nil, nil, nil, true)
-        GameTooltip:AddLine("Fixed format displays the exact time, while elapsed format shows the time since the message was posted.", nil, nil, nil, true)
+        GameTooltip:SetText(options.labelToolTip, nil, nil, nil, nil, true)
         GameTooltip:Show()
     end)
     labelFrame:SetScript("OnLeave", function()
@@ -140,14 +169,14 @@ local function addDropDownOptionToOptionFrame(dropdownItems)
     end)
 
     -- Create the dropdown menu
-    local dropdown = CreateFrame("Frame", "ExampleDropdown", optionScrollChild, "UIDropDownMenuTemplate")
+    local dropdown = CreateFrame("Frame", options.frameName, optionScrollChild, "UIDropDownMenuTemplate")
     dropdown:SetPoint("LEFT", labelFrame, "RIGHT", 0, 0)
     
     
     local maxWidth = 0
     -- Initialize the dropdown menu
     UIDropDownMenu_Initialize(dropdown, function()
-        for id, item in ipairs(dropdownItems) do
+        for id, item in ipairs(options.items) do
             local info = {}
             info.text = item.text
             info.value = item.value
@@ -177,7 +206,7 @@ local function addDropDownOptionToOptionFrame(dropdownItems)
     UIDropDownMenu_SetWidth(maxWidth + 20, dropdown)
 
     -- Set the default value
-    UIDropDownMenu_SetSelectedValue(dropdown, DifficultBulletinBoardVars.timeFormat, false)
+    UIDropDownMenu_SetSelectedValue(dropdown, defaultValue, false)
 
     return dropdown
 end
@@ -308,7 +337,11 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
 
     fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
     
-    timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownItems)
+    timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
+
+    mainFrameSoundDropDown = addDropDownOptionToOptionFrame(mainFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.mainFrameSound)
+
+    optionFrameSoundDropDown = addDropDownOptionToOptionFrame(optionFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.optionFrameSound)
 
     groupOptionInputBox = addInputBoxOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
     
@@ -330,6 +363,9 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 
     DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
 
+    DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
+    DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
+
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
     DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders
@@ -345,6 +381,9 @@ function DifficultBulletinBoard_SaveVariablesAndReload()
     DifficultBulletinBoardSavedVariables.fontSize = fontSizeOptionInputBox:GetText()
 
     DifficultBulletinBoardSavedVariables.timeFormat = UIDropDownMenu_GetSelectedValue(timeFormatDropDown)
+
+    DifficultBulletinBoardSavedVariables.mainFrameSound = UIDropDownMenu_GetSelectedValue(mainFrameSoundDropDown)
+    DifficultBulletinBoardSavedVariables.optionFrameSound = UIDropDownMenu_GetSelectedValue(optionFrameSoundDropDown)
 
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
