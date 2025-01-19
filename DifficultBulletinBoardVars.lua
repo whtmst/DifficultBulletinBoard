@@ -76,6 +76,20 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
         DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardVars.timeFormat
     end
 
+    if DifficultBulletinBoardSavedVariables.mainFrameSound and DifficultBulletinBoardSavedVariables.mainFrameSound ~= "" then
+        DifficultBulletinBoardVars.mainFrameSound = DifficultBulletinBoardSavedVariables.mainFrameSound
+    else
+        DifficultBulletinBoardVars.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
+        DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardVars.mainFrameSound
+    end
+
+    if DifficultBulletinBoardSavedVariables.optionFrameSound and DifficultBulletinBoardSavedVariables.optionFrameSound ~= "" then
+        DifficultBulletinBoardVars.optionFrameSound = DifficultBulletinBoardSavedVariables.optionFrameSound
+    else
+        DifficultBulletinBoardVars.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
+        DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardVars.optionFrameSound
+    end
+
     if DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders and DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders ~= "" then
         DifficultBulletinBoardVars.numberOfGroupPlaceholders = DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders
     else

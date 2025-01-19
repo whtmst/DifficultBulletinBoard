@@ -35,7 +35,7 @@ end
 
 local function topicPlaceholdersContainsCharacterName(topicPlaceholders, topicName, characterName)
     local topicData = topicPlaceholders[topicName]
-    if not topicData or not topicData then
+    if not topicData then
         print("Nothing in here yet")
         return false, nil
     end
@@ -260,7 +260,7 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
     
     local stringWithoutNoise = replaceSymbolsWithSpace(chatMessage)
 
-    print(stringWithoutNoise)
+    print(characterName .. ": " .. stringWithoutNoise)
 
     local words = DifficultBulletinBoard.SplitIntoLowerWords(stringWithoutNoise)
 
