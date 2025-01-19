@@ -4,6 +4,8 @@ DifficultBulletinBoardDefaults.version = 8
 
 DifficultBulletinBoardDefaults.defaultFontSize = 14
 
+DifficultBulletinBoardDefaults.defaultTimeFormat = "fixed"
+
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {
