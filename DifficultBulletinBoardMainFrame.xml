@@ -44,19 +44,6 @@
                     </Anchors>
                 </FontString>
 
-                <!-- Icon -->
-                <Texture name="$parent_Icon" file="Interface\AddOns\DifficultBulletinBoard\icons\icon">
-                    <Size>
-                        <AbsDimension x="17" y="17"/>
-                    </Size>
-                    <Anchors>
-                        <Anchor point="LEFT" relativeTo="$parent_ExpansionLabel" relativePoint="LEFT">
-                            <Offset>
-                                <AbsDimension x="-20" y="0"/>
-                            </Offset>
-                        </Anchor>
-                    </Anchors>
-                </Texture>
             </Layer>
         </Layers>
 

@@ -52,6 +52,30 @@ local function topicPlaceholdersContainsCharacterName(topicPlaceholders, topicNa
     return false, nil
 end
 
+local function getClassIconFromClassName(class) 
+    if class == "Druid" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\druid_class_icon"
+    elseif class == "Hunter" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\hunter_class_icon"
+    elseif class == "Mage" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\mage_class_icon"
+    elseif class == "Paladin" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\paladin_class_icon"
+    elseif class == "Priest" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\priest_class_icon"
+    elseif class == "Rogue" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\rogue_class_icon"
+    elseif class == "Shaman" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\shaman_class_icon"
+    elseif class == "Warlock" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\warlock_class_icon"
+    elseif class == "Warrior" then
+        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\warrior_class_icon"
+    else
+        return nil
+    end
+end
+
 -- Updates the specified placeholder for a topic with new name, message, and timestamp,
 -- then moves the updated entry to the top of the list, shifting other entries down.
 local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message, index)
@@ -70,6 +94,7 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
         topicData[i].messageFontString:SetText(topicData[i - 1].messageFontString:GetText())
         topicData[i].timeFontString:SetText(topicData[i - 1].timeFontString:GetText())
         topicData[i].creationTimestamp = topicData[i - 1].creationTimestamp
+        topicData[i].icon:SetTexture(topicData[i - 1].icon:GetTexture())
     end
 
     -- Place the updated entry's data at the top
@@ -77,6 +102,9 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
     topicData[1].messageFontString:SetText("[" .. channelName .. "] " .. message or "No Message")
     topicData[1].timeFontString:SetText(timestamp)
     topicData[1].creationTimestamp = date("%H:%M:%S")
+    local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
+    print(class)
+    topicData[1].icon:SetTexture(getClassIconFromClassName(class))
 
     -- Update the GameTooltip
     for i = numberOfPlaceholders, 1, -1 do
@@ -115,6 +143,8 @@ local function calculateDelta(creationTimestamp, currentTime)
 end
     
 
+
+
 -- Function to add a new entry to the given topic with and shift other entries down
 local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message)
     local topicData = topicPlaceholders[topic]
@@ -140,6 +170,7 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOf
         currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
         currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
         currentFontString.creationTimestamp = previousFontString.creationTimestamp
+        currentFontString.icon:SetTexture(previousFontString.icon:GetTexture())
     end
 
     -- Update the first placeholder with the new data
@@ -148,6 +179,9 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOf
     firstFontString.messageFontString:SetText("[" .. channelName .. "] " .. message)
     firstFontString.timeFontString:SetText(timestamp)
     firstFontString.creationTimestamp = date("%H:%M:%S")
+    local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
+    print(class)
+    firstFontString.icon:SetTexture(getClassIconFromClassName(class))
 
     -- Update the GameTooltip
     for i = numberOfPlaceholders, 1, -1 do
@@ -355,8 +389,14 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
             topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {FontStrings = {}}
 
             for i = 1, numberOfPlaceholders do
+
+                local icon = contentFrame:CreateTexture("$parent_Icon", "ARTWORK")
+                icon:SetHeight(16)
+                icon:SetWidth(16)
+                icon:SetPoint("LEFT", contentFrame, "LEFT", 10, topicYOffset - 4)
+
                 local nameButton = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_Name", contentFrame, nil)
-                nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
+                nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 25, topicYOffset)
                 nameButton:SetWidth(150)
                 nameButton:SetHeight(10)
 
@@ -433,7 +473,7 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
                 timeColumn:SetTextColor(1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
 
-                table.insert(topicPlaceholders[topic.name], {nameButton = nameButton, messageFontString = messageColumn, timeFontString = timeColumn, messageFrame = messageFrame, creationTimestamp = nil})
+                table.insert(topicPlaceholders[topic.name], {icon = icon, nameButton = nameButton, messageFontString = messageColumn, timeFontString = timeColumn, messageFrame = messageFrame, creationTimestamp = nil})
 
                 table.insert(tempChatMessageFrames, messageFrame)
                 table.insert(tempChatMessageColumns, messageColumn)
@@ -591,9 +631,9 @@ local function secondsToMMSS(totalSeconds)
     local minutes = math.floor(totalSeconds / 60)
     local seconds = totalSeconds - math.floor(totalSeconds / 60) * 60
 
-    -- Return "OLD" if minutes exceed 99
+    -- Return "99:59" if minutes exceed 99
     if minutes > 99 then
-        return "OLD"
+        return "99:59"
     end
 
     return string.format("%02d:%02d", minutes, seconds)
