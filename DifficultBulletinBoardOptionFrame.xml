@@ -58,7 +58,7 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        DifficultBulletinBoardOptionFrame:Hide();
+                        DifficultBulletinBoard_ToggleOptionFrame();
                     </OnClick>
                 </Scripts>
             </Button>

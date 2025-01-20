@@ -72,7 +72,7 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        DifficultBulletinBoardMainFrame:Hide();
+                        DifficultBulletinBoard_ToggleMainFrame();
                     </OnClick>
                 </Scripts>
             </Button>
