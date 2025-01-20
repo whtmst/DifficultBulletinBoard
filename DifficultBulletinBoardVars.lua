@@ -17,13 +17,65 @@ DifficultBulletinBoardVars.allGroupTopics = {}
 DifficultBulletinBoardVars.allProfessionTopics = {}
 DifficultBulletinBoardVars.allHardcoreTopics = {}
 
+DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
+
 
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
 end
 
+-- Function to add a player to the database
+function DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
+    local realmName = GetRealmName()
+
+    -- Add or update the player entry
+    print("Getting Class for: " .. name)
+    if DifficultBulletinBoardSavedVariables.playerList[realmName][name] then
+        return DifficultBulletinBoardSavedVariables.playerList[realmName][name].class
+    else
+        return nil
+    end
+end
+
+-- Function to add a player to the database
+function DifficultBulletinBoardVars.AddPlayerToDatabase(name, class)
+    local realmName = GetRealmName()
+
+    -- Add or update the player entry
+    print("Adding: " .. name .. " " .. class)
+    DifficultBulletinBoardSavedVariables.playerList[realmName][name] = {
+        class = class
+    }
+
+    -- Debugging: Print the players table to verify
+    --print("Players data:")
+    --local index = 0
+    --for realm, realmPlayers in pairs(DifficultBulletinBoardSavedVariables.playerList) do
+    --    print("Realm:", realm)
+    --    for name, data in pairs(realmPlayers) do
+    --       print(index .. ": " .. name .. " Class:" .. data.class)
+    --       index = index + 1
+    --    end
+    --end
+end
+
+
+-- Function to load saved variables
 function DifficultBulletinBoardVars.LoadSavedVariables()
     print("Start Loading DifficultBulletinBoardVars")
+
+    -- Ensure the root table exists
+    DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
+
+    -- Ensure the playerList table exists
+    DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
+
+    -- Helper to get the current realm name
+    local realmName = GetRealmName()
+
+    -- Ensure the realm-specific table exists
+    DifficultBulletinBoardSavedVariables.playerList[realmName] = DifficultBulletinBoardSavedVariables.playerList[realmName] or {}
+
 
     if DifficultBulletinBoardSavedVariables.version then
         local savedVersion = DifficultBulletinBoardSavedVariables.version
