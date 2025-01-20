@@ -59,7 +59,7 @@ It’s also a good idea to reset the tags after updating the addon, as I may imp
 
 ## Contact
 
-Have feature suggestions or need further assistance? Feel free to reach out to me on <br>Discord: **justimani**  
+Have feature suggestions or need further assistance? Feel free to [create an issue](https://github.com/DeterminedPanda/DifficultBulletinBoard/issues) on this repository and I will help you as soon as possible.
 
 
 ## To-Do List:
