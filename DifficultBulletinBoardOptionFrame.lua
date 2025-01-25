@@ -94,7 +94,23 @@ local optionFrameSoundDropDownOptionObject = {
     }
 }
 
+-- Option Data for the timestamp format
+local serverTimePositionDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Server_Time_Dropdown",
+    labelText = "Select Server Time Position:",
+    labelToolTip = "Choose where to display the server time or disable it:\n\n" ..
+    "Disabled: Hides the server time completely.\n\n" ..
+    "Top Left: Displays the server time to the left of the title, at the top of the bulletin board.\n\n" ..
+    "To the Right of Tab Buttons: Displays the server time on the same level as the tab buttons, sticking to the right above where the time columns normally are.",
+    items = {
+        { text = "Top Left of Title", value = "top-left" },
+        { text = "To the Right of Tab Buttons", value = "right-of-tabs" },
+        { text = "Disable Time Display", value = "disabled" }
+    }
+}
+
 local fontSizeOptionInputBox
+local serverTimePositionDropDown
 local timeFormatDropDown
 local mainFrameSoundDropDown
 local optionFrameSoundDropDown
@@ -336,6 +352,8 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     addScrollFrameToOptionFrame()
 
     fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
+
+    serverTimePositionDropDown = addDropDownOptionToOptionFrame(serverTimePositionDropDownOptionObject, DifficultBulletinBoardVars.serverTimePosition)
     
     timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
 
@@ -361,6 +379,8 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 
     DifficultBulletinBoardSavedVariables.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
 
+    DifficultBulletinBoardSavedVariables.serverTimePosition = DifficultBulletinBoardDefaults.defaultServerTimePosition
+
     DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
 
     DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
@@ -381,6 +401,8 @@ function DifficultBulletinBoard_SaveVariablesAndReload()
     DifficultBulletinBoardSavedVariables.fontSize = fontSizeOptionInputBox:GetText()
 
     DifficultBulletinBoardSavedVariables.timeFormat = UIDropDownMenu_GetSelectedValue(timeFormatDropDown)
+
+    DifficultBulletinBoardSavedVariables.serverTimePosition = UIDropDownMenu_GetSelectedValue(serverTimePositionDropDown)
 
     DifficultBulletinBoardSavedVariables.mainFrameSound = UIDropDownMenu_GetSelectedValue(mainFrameSoundDropDown)
     DifficultBulletinBoardSavedVariables.optionFrameSound = UIDropDownMenu_GetSelectedValue(optionFrameSoundDropDown)
