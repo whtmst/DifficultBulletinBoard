@@ -7,6 +7,8 @@ DifficultBulletinBoardVars.version = DifficultBulletinBoardDefaults.version
 
 DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
 
+DifficultBulletinBoardVars.serverTimePosition = DifficultBulletinBoardDefaults.defaultServerTimePosition
+
 DifficultBulletinBoardVars.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
 
 DifficultBulletinBoardVars.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
@@ -60,20 +62,28 @@ function DifficultBulletinBoardVars.AddPlayerToDatabase(name, class)
 end
 
 
+local function setSavedVariable(savedVar, defaultVar, savedName)
+    print("Checking saved variable for: " .. savedName)  -- Debug: Log when the function is called
+
+    if savedVar and savedVar ~= "" then
+        print("Found saved variable for " .. savedName .. ": " .. tostring(savedVar))  -- Debug: Log when saved variable is found
+        return savedVar
+    else
+        print("Saved variable for " .. savedName .. " is missing or empty. Using default: " .. tostring(defaultVar))  -- Debug: Log when the default is used
+        DifficultBulletinBoardSavedVariables[savedName] = defaultVar
+        return defaultVar
+    end
+end
+
+
 -- Function to load saved variables
 function DifficultBulletinBoardVars.LoadSavedVariables()
     print("Start Loading DifficultBulletinBoardVars")
 
-    -- Ensure the root table exists
+    -- Ensure the root and playerList tables exist
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
-
-    -- Ensure the playerList table exists
     DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
-
-    -- Helper to get the current realm name
     local realmName = GetRealmName()
-
-    -- Ensure the realm-specific table exists
     DifficultBulletinBoardSavedVariables.playerList[realmName] = DifficultBulletinBoardSavedVariables.playerList[realmName] or {}
 
 
@@ -114,75 +124,22 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
         DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardVars.allHardcoreTopics
     end
 
-    if DifficultBulletinBoardSavedVariables.fontSize and DifficultBulletinBoardSavedVariables.fontSize ~= "" then
-        DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardSavedVariables.fontSize
-    else
-        DifficultBulletinBoardVars.fontSize = DifficultBulletinBoardDefaults.defaultFontSize
-        DifficultBulletinBoardSavedVariables.fontSize = DifficultBulletinBoardVars.fontSize
-    end
+    -- Set the saved or default variables for different settings
+    DifficultBulletinBoardVars.serverTimePosition = setSavedVariable(DifficultBulletinBoardSavedVariables.serverTimePosition, DifficultBulletinBoardDefaults.defaultServerTimePosition, "serverTimePosition")
+    DifficultBulletinBoardVars.fontSize = setSavedVariable(DifficultBulletinBoardSavedVariables.fontSize, DifficultBulletinBoardDefaults.defaultFontSize, "fontSize")
+    DifficultBulletinBoardVars.timeFormat = setSavedVariable(DifficultBulletinBoardSavedVariables.timeFormat, DifficultBulletinBoardDefaults.defaultTimeFormat, "timeFormat")
+    DifficultBulletinBoardVars.mainFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.mainFrameSound, DifficultBulletinBoardDefaults.defaultMainFrameSound, "mainFrameSound")
+    DifficultBulletinBoardVars.optionFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.optionFrameSound, DifficultBulletinBoardDefaults.defaultOptionFrameSound, "optionFrameSound")
 
-    if DifficultBulletinBoardSavedVariables.timeFormat and DifficultBulletinBoardSavedVariables.timeFormat ~= "" then
-        DifficultBulletinBoardVars.timeFormat = DifficultBulletinBoardSavedVariables.timeFormat
-    else
-        DifficultBulletinBoardVars.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
-        DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardVars.timeFormat
-    end
+    -- Set placeholders variables
+    DifficultBulletinBoardVars.numberOfGroupPlaceholders = setSavedVariable(DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders, DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders, "numberOfGroupPlaceholders")
+    DifficultBulletinBoardVars.numberOfProfessionPlaceholders = setSavedVariable(DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders, DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders, "numberOfProfessionPlaceholders")
+    DifficultBulletinBoardVars.numberOfHardcorePlaceholders = setSavedVariable(DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders, DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders, "numberOfHardcorePlaceholders")
 
-    if DifficultBulletinBoardSavedVariables.mainFrameSound and DifficultBulletinBoardSavedVariables.mainFrameSound ~= "" then
-        DifficultBulletinBoardVars.mainFrameSound = DifficultBulletinBoardSavedVariables.mainFrameSound
-    else
-        DifficultBulletinBoardVars.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
-        DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardVars.mainFrameSound
-    end
-
-    if DifficultBulletinBoardSavedVariables.optionFrameSound and DifficultBulletinBoardSavedVariables.optionFrameSound ~= "" then
-        DifficultBulletinBoardVars.optionFrameSound = DifficultBulletinBoardSavedVariables.optionFrameSound
-    else
-        DifficultBulletinBoardVars.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
-        DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardVars.optionFrameSound
-    end
-
-    if DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders and DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders ~= "" then
-        DifficultBulletinBoardVars.numberOfGroupPlaceholders = DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders
-    else
-        DifficultBulletinBoardVars.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
-        DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoardVars.numberOfGroupPlaceholders
-    end
-
-    if DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders and DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders ~= "" then
-        DifficultBulletinBoardVars.numberOfProfessionPlaceholders = DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders
-    else
-        DifficultBulletinBoardVars.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
-        DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoardVars.numberOfProfessionPlaceholders
-    end
-
-    if DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders and DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders ~= "" then
-        DifficultBulletinBoardVars.numberOfHardcorePlaceholders = DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders
-    else
-        DifficultBulletinBoardVars.numberOfHardcorePlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders
-        DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = DifficultBulletinBoardVars.numberOfHardcorePlaceholders
-    end
-
-    if DifficultBulletinBoardSavedVariables.activeGroupTopics then 
-        DifficultBulletinBoardVars.allGroupTopics = DifficultBulletinBoardSavedVariables.activeGroupTopics
-    else
-        DifficultBulletinBoardVars.allGroupTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultGroupTopics)
-        DifficultBulletinBoardSavedVariables.activeGroupTopics = DifficultBulletinBoardVars.allGroupTopics
-    end
-
-    if DifficultBulletinBoardSavedVariables.activeProfessionTopics then
-        DifficultBulletinBoardVars.allProfessionTopics = DifficultBulletinBoardSavedVariables.activeProfessionTopics
-    else
-        DifficultBulletinBoardVars.allProfessionTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultProfessionTopics)
-        DifficultBulletinBoardSavedVariables.activeProfessionTopics = DifficultBulletinBoardVars.allProfessionTopics
-    end
-
-    if DifficultBulletinBoardSavedVariables.activeHardcoreTopics then
-        DifficultBulletinBoardVars.allHardcoreTopics = DifficultBulletinBoardSavedVariables.activeHardcoreTopics
-    else
-        DifficultBulletinBoardVars.allHardcoreTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics)
-        DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardVars.allHardcoreTopics
-    end
+    -- Set active topics, or default if not found
+    DifficultBulletinBoardVars.allGroupTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeGroupTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultGroupTopics), "activeGroupTopics")
+    DifficultBulletinBoardVars.allProfessionTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeProfessionTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultProfessionTopics), "activeProfessionTopics")
+    DifficultBulletinBoardVars.allHardcoreTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeHardcoreTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics), "activeHardcoreTopics")
 
     print("Finished Loading DifficultBulletinBoardVars")
 end

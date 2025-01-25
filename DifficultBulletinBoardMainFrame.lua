@@ -614,8 +614,19 @@ end)
 
 
 function DifficultBulletinBoardMainFrame.UpdateServerTime()
+    if DifficultBulletinBoardVars.serverTimePosition == "disabled" then
+        return
+    end
+
     local serverTimeString = date("%H:%M:%S") -- Format server time
-    DifficultBulletinBoardMainFrame_ServerTime:SetText("Time: " .. serverTimeString) -- Set text
+
+    if DifficultBulletinBoardVars.serverTimePosition == "right-of-tabs" then
+        DifficultBulletinBoardMainFrameServerTimeRight:SetText("Time: " .. serverTimeString)
+    end
+
+    if DifficultBulletinBoardVars.serverTimePosition == "top-left" then
+        DifficultBulletinBoardMainFrameServerTimeTopLeft:SetText("Time: " .. serverTimeString)
+    end
 end
 
 -- Helper function to convert HH:MM:SS to seconds

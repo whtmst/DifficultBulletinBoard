@@ -31,7 +31,7 @@
                 </FontString>
 
                 <!-- Server Time positioned at top-left -->
-                <FontString name="$parent_ServerTime" inherits="GameFontHighlight" justifyH="CENTER" text="">
+                <FontString name="DifficultBulletinBoardMainFrameServerTimeTopLeft" inherits="GameFontHighlight" justifyH="CENTER" text="">
                     <Size>
                         <AbsDimension x="0" y="0" />
                     </Size>
@@ -43,8 +43,8 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-
             </Layer>
+
         </Layers>
 
         <!-- Close Button -->
@@ -132,6 +132,33 @@
                     </Layer>
                 </Layers>
             </Button>
+
+            <!-- Server Time positioned at right of the tab buttons -->
+            <Frame name="DifficultBulletinBoardMainFrameNewLabelFrame" parent="DifficultBulletinBoardMainFrame">
+                <Size>
+                    <AbsDimension x="150" y="22" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-20" y="-35" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="DifficultBulletinBoardMainFrameServerTimeRight" inherits="GameFontHighlight" justifyH="CENTER" text="">
+                            <Size>
+                                <AbsDimension x="150" y="22" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER" />
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
 
             <!-- Resize Grip -->
             <Button name="$DifficultBulletinBoardMainFrameResizeButton">
