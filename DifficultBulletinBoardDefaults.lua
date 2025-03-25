@@ -2,7 +2,7 @@ DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
 DifficultBulletinBoardDefaults.version = 8
 
-DifficultBulletinBoardDefaults.defaultFontSize = 14
+DifficultBulletinBoardDefaults.defaultFontSize = 11
 
 DifficultBulletinBoardDefaults.defaultServerTimePosition = "top-left"
 
@@ -11,6 +11,8 @@ DifficultBulletinBoardDefaults.defaultTimeFormat = "fixed"
 DifficultBulletinBoardDefaults.defaultMainFrameSound = "true"
 
 DifficultBulletinBoardDefaults.defaultOptionFrameSound = "true"
+
+DifficultBulletinBoardDefaults.defaultFilterMatchedMessages = "false"
 
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 

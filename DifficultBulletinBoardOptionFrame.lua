@@ -1,3 +1,4 @@
+-- DifficultBulletinBoardOptionFrame.lua
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
 DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
@@ -72,6 +73,17 @@ local timeFormatDropDownOptionObject = {
     }
 }
 
+-- Option Data for filtering matched messages
+local filterMatchedMessagesDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_FilterMatched_Dropdown",
+    labelText = "Filter Matched Messages from Chat:",
+    labelToolTip = "When enabled, messages that match criteria and are added to the bulletin board will be hidden from your chat window.",
+    items = {
+        { text = "Enable Filtering", value = "true" },
+        { text = "Disable Filtering", value = "false" }
+    }
+}
+
 -- Option Data for MainFrame sound being played
 local mainFrameSoundDropDownOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_MainFrame_Sound_Dropdown",
@@ -114,12 +126,40 @@ local serverTimePositionDropDown
 local timeFormatDropDown
 local mainFrameSoundDropDown
 local optionFrameSoundDropDown
+local filterMatchedMessagesDropDown
 local groupOptionInputBox
 local professionOptionInputBox
 local hardcoreOptionInputBox
 
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
+end
+
+-- Create a global registry to manage all dropdown menus
+local dropdownMenuRegistry = {}
+local currentTopMenu = nil
+local MENU_BASE_LEVEL = 100
+
+-- Function to show a dropdown menu and ensure it's on top
+local function showDropdownMenu(dropdown)
+    local menuFrame = dropdown.menuFrame
+    
+    -- Hide all other menus first
+    for _, otherDropdown in ipairs(dropdownMenuRegistry) do
+        if otherDropdown ~= dropdown and otherDropdown.menuFrame:IsShown() then
+            otherDropdown.menuFrame:Hide()
+        end
+    end
+    
+    -- Set this as the current top menu
+    currentTopMenu = dropdown
+    
+    -- Ensure this menu is at the highest strata and level
+    menuFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+    menuFrame:SetFrameLevel(MENU_BASE_LEVEL)
+    
+    -- Show the menu
+    menuFrame:Show()
 end
 
 local function overwriteTagsForAllTopics(allTopics, tempTags)
@@ -138,30 +178,98 @@ end
 local function addScrollFrameToOptionFrame()
     local parentFrame = optionFrame
 
-    -- Create the ScrollFrame
+    -- Create the ScrollFrame with modern styling
     local optionScrollFrame = CreateFrame("ScrollFrame", "DifficultBulletinBoardOptionFrame_ScrollFrame", parentFrame, "UIPanelScrollFrameTemplate")
     optionScrollFrame:EnableMouseWheel(true)
 
-    -- Set ScrollFrame anchors
-    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -50)
-    optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -27, 75)
+    -- Get the scroll bar reference
+    local scrollBar = getglobal(optionScrollFrame:GetName().."ScrollBar")
+    
+    -- Get references to the scroll buttons
+    local upButton = getglobal(scrollBar:GetName().."ScrollUpButton")
+    local downButton = getglobal(scrollBar:GetName().."ScrollDownButton")
+    
+    -- Completely remove the scroll buttons from the layout
+    upButton:SetHeight(0.001)
+    upButton:SetWidth(0.001)
+    upButton:SetAlpha(0)
+    upButton:EnableMouse(false)
+    upButton:ClearAllPoints()
+    upButton:SetPoint("TOP", scrollBar, "TOP", 0, 1000)
+    
+    -- Same for down button
+    downButton:SetHeight(0.001)
+    downButton:SetWidth(0.001)
+    downButton:SetAlpha(0)
+    downButton:EnableMouse(false)
+    downButton:ClearAllPoints()
+    downButton:SetPoint("BOTTOM", scrollBar, "BOTTOM", 0, -1000)
+    
+    -- Adjust scroll bar position
+    scrollBar:ClearAllPoints()
+    scrollBar:SetPoint("TOPLEFT", optionScrollFrame, "TOPRIGHT", 2, 0)
+    scrollBar:SetPoint("BOTTOMLEFT", optionScrollFrame, "BOTTOMRIGHT", 2, 0)
+    
+    -- Style the scroll bar to be slimmer
+    scrollBar:SetWidth(8)
+    
+    -- Set up the thumb texture with 10% darker colors
+    local thumbTexture = scrollBar:GetThumbTexture()
+    thumbTexture:SetWidth(8)
+    thumbTexture:SetHeight(50)
+    thumbTexture:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    -- 10% darker gradient (multiplied color values by 0.9)
+    thumbTexture:SetGradientAlpha("VERTICAL", 0.504, 0.504, 0.576, 0.7, 0.648, 0.648, 0.72, 0.9)
+    
+    -- Style the scroll bar track with 10% darker background
+    scrollBar:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = nil,
+        tile = true, tileSize = 8,
+        insets = { left = 0, right = 0, top = 0, bottom = 0 }
+    })
+    scrollBar:SetBackdropColor(0.072, 0.072, 0.108, 0.3)
+    
+    -- Set ScrollFrame anchors with better positioning
+    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 8, -50)
+    optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -16, 50)
     optionScrollFrame:SetWidth(460)
     optionScrollFrame:SetHeight(1)
 
-    -- Create the ScrollChild
+    -- Create the ScrollChild with proper styling
     optionScrollChild = CreateFrame("Frame", nil, optionScrollFrame)
-    optionScrollChild:SetWidth(480)
+    optionScrollChild:SetWidth(460)
     optionScrollChild:SetHeight(1)
+    
+    -- Set the background for better visual distinction
+    local background = optionScrollChild:CreateTexture(nil, "BACKGROUND")
+    background:SetAllPoints()
+    background:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    background:SetGradientAlpha("VERTICAL", 0.1, 0.1, 0.1, 0.5, 0.1, 0.1, 0.1, 0.0)
+    
+    -- Use both mouse wheel directions for scrolling
+    optionScrollFrame:SetScript("OnMouseWheel", function()
+        local scrollBar = getglobal(this:GetName().."ScrollBar")
+        local currentValue = scrollBar:GetValue()
+        
+        if arg1 > 0 then
+            scrollBar:SetValue(currentValue - (scrollBar:GetHeight() / 2))
+        else
+            scrollBar:SetValue(currentValue + (scrollBar:GetHeight() / 2))
+        end
+    end)
+    
     optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
+-- Dropdown option function with proper z-ordering
 local function addDropDownOptionToOptionFrame(options, defaultValue)
     -- Adjust vertical offset for the dropdown
-    optionYOffset = optionYOffset - 50
+    optionYOffset = optionYOffset - 30
 
     -- Create a frame to hold the label and enable mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
-    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 0, optionYOffset)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
     labelFrame:SetHeight(20)
 
     -- Create the label (FontString) inside the frame
@@ -169,6 +277,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     label:SetAllPoints(labelFrame)
     label:SetText(options.labelText)
     label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
+    label:SetTextColor(0.9, 0.9, 0.9, 1.0)
 
     -- Set labelFrame width based on the text width with padding
     labelFrame:SetWidth(label:GetStringWidth() + 20)
@@ -184,59 +293,225 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         GameTooltip:Hide()
     end)
 
-    -- Create the dropdown menu
-    local dropdown = CreateFrame("Frame", options.frameName, optionScrollChild, "UIDropDownMenuTemplate")
-    dropdown:SetPoint("LEFT", labelFrame, "RIGHT", 0, 0)
+    -- Create a container frame for our custom dropdown
+    local dropdownContainer = CreateFrame("Frame", options.frameName.."Container", optionScrollChild)
+    dropdownContainer:SetPoint("LEFT", labelFrame, "RIGHT", 10, 0)
+    dropdownContainer:SetWidth(133)
+    dropdownContainer:SetHeight(22)
     
+    -- Create the dropdown button with modern styling
+    local dropdown = CreateFrame("Button", options.frameName, dropdownContainer)
+    dropdown:SetPoint("TOPLEFT", dropdownContainer, "TOPLEFT", 0, 0)
+    dropdown:SetPoint("BOTTOMRIGHT", dropdownContainer, "BOTTOMRIGHT", 0, 0)
     
-    local maxWidth = 0
-    -- Initialize the dropdown menu
-    UIDropDownMenu_Initialize(dropdown, function()
-        for id, item in ipairs(options.items) do
-            local info = {}
-            info.text = item.text
-            info.value = item.value
-
-            -- Create a hidden FontString so we can get the width of the string (this sucks I know...)
-            local fontString = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            fontString:SetText(info.text)
-            fontString:Hide()
-            
-            local textWidth = fontString:GetStringWidth()
-
-            if textWidth > maxWidth then
-                maxWidth = textWidth
-            end
-
-            info.func = function()
-                UIDropDownMenu_SetSelectedValue(dropdown, info.value, false)
-                print("Selected: " .. info.value .. " " .. info.text)
-                print(UIDropDownMenu_GetText(dropdown))
-                print(UIDropDownMenu_GetSelectedValue(dropdown))
-            end
-
-            UIDropDownMenu_AddButton(info)
+    -- Add modern backdrop
+    dropdown:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 8,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    dropdown:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+    dropdown:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+    
+    -- Create the selected text display
+    local selectedText = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    selectedText:SetPoint("LEFT", dropdown, "LEFT", 8, 0)
+    selectedText:SetPoint("RIGHT", dropdown, "RIGHT", -24, 0) -- Leave room for arrow
+    selectedText:SetJustifyH("LEFT")
+    selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0)
+    
+    -- Create dropdown arrow texture
+    local arrow = dropdown:CreateTexture(nil, "OVERLAY")
+    arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+    arrow:SetWidth(16)
+    arrow:SetHeight(16)
+    arrow:SetPoint("RIGHT", dropdown, "RIGHT", -4, 0)
+    
+    -- Store references to the text object and value
+    dropdown.value = defaultValue
+    dropdown.text = selectedText
+    dropdown.arrow = arrow
+    
+    -- Initialize with default value
+    local matchFound = false
+    for _, item in ipairs(options.items) do
+        if item.value == defaultValue then
+            selectedText:SetText(item.text)
+            matchFound = true
+            break
+        end
+    end
+    
+    -- Fallback: Set to first option if no match found
+    if not matchFound then
+        if options.items and options.items[1] then
+            selectedText:SetText(options.items[1].text)
+            dropdown.value = options.items[1].value
+        end
+    end
+    
+    -- Create the menu frame - keep it simple
+    local menuFrame = CreateFrame("Frame", options.frameName.."Menu", UIParent)
+    menuFrame:SetFrameStrata("TOOLTIP") -- Use TOOLTIP strata to appear above everything
+    menuFrame:SetWidth(dropdown:GetWidth())
+    menuFrame:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", 
+        tile = true, tileSize = 16, edgeSize = 8, 
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    menuFrame:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
+    menuFrame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1.0)
+    menuFrame:Hide()
+    
+    -- Create menu items
+    local menuHeight = 0
+    local itemHeight = 24
+    
+    for i, item in ipairs(options.items) do
+        local menuItem = CreateFrame("Button", options.frameName.."MenuItem"..i, menuFrame)
+        menuItem:SetHeight(itemHeight)
+        menuItem:SetPoint("TOPLEFT", menuFrame, "TOPLEFT", 4, -4 - (i-1)*itemHeight)
+        menuItem:SetPoint("TOPRIGHT", menuFrame, "TOPRIGHT", -4, -4 - (i-1)*itemHeight)
+        
+        menuItem.value = item.value
+        menuItem.text = item.text
+        
+        -- Normal state
+        menuItem:SetBackdrop({
+            bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+            edgeFile = nil,
+            tile = true, tileSize = 16, edgeSize = 0,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        menuItem:SetBackdropColor(0.12, 0.12, 0.12, 0.0)
+        
+        -- Item text
+        local itemText = menuItem:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        itemText:SetPoint("LEFT", menuItem, "LEFT", 8, 0)
+        itemText:SetPoint("RIGHT", menuItem, "RIGHT", -8, 0)
+        itemText:SetJustifyH("LEFT")
+        itemText:SetText(item.text)
+        itemText:SetTextColor(0.9, 0.9, 0.9, 1.0)
+        
+        -- Highlight state - update to match headline color
+        menuItem:SetScript("OnEnter", function()
+            this:SetBackdropColor(0.2, 0.2, 0.25, 1.0)
+            itemText:SetTextColor(0.9, 0.9, 1.0, 1.0) -- Updated to match headline color
+        end)
+        
+        menuItem:SetScript("OnLeave", function()
+            this:SetBackdropColor(0.12, 0.12, 0.12, 0.0)
+            itemText:SetTextColor(0.9, 0.9, 0.9, 1.0)
+        end)
+        
+        -- Click handler
+        menuItem:SetScript("OnClick", function()
+            dropdown.value = this.value
+            dropdown.text:SetText(this.text)
+            menuFrame:Hide()
+        end)
+        
+        menuHeight = menuHeight + itemHeight
+    end
+    
+    -- Set menu height
+    menuFrame:SetHeight(menuHeight + 8)
+    
+    -- Position update function
+    local function updateMenuPosition()
+        local dropLeft, dropBottom = dropdown:GetLeft(), dropdown:GetBottom()
+        if dropLeft and dropBottom then
+            menuFrame:ClearAllPoints()
+            menuFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", dropLeft, dropBottom - 2)
+        end
+    end
+    
+    -- Toggle menu
+    dropdown:SetScript("OnClick", function()
+        if menuFrame:IsShown() then
+            menuFrame:Hide()
+        else
+            updateMenuPosition()
+            menuFrame:Show()
         end
     end)
-
-    UIDropDownMenu_SetWidth(maxWidth + 20, dropdown)
-
-    -- Set the default value
-    UIDropDownMenu_SetSelectedValue(dropdown, defaultValue, false)
-
+    
+    -- Hover effect - update text color to match headline
+    dropdown:SetScript("OnEnter", function()
+        this:SetBackdropColor(0.15, 0.15, 0.18, 0.8)
+        this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)
+        selectedText:SetTextColor(0.9, 0.9, 1.0, 1.0) -- Added to match headline color
+    end)
+    
+    dropdown:SetScript("OnLeave", function()
+        this:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+        this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+        selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0) -- Reset to normal color
+    end)
+    
+    -- Store menu reference
+    dropdown.menuFrame = menuFrame
+    
+    -- Close menu when clicking elsewhere
+    if not DROPDOWN_MENUS_LIST then
+        DROPDOWN_MENUS_LIST = {}
+        
+        -- Global click handler
+        local clickHandler = CreateFrame("Frame")
+        clickHandler:SetScript("OnEvent", function()
+            if event == "GLOBAL_MOUSE_DOWN" then
+                for _, menu in ipairs(DROPDOWN_MENUS_LIST) do
+                    if menu:IsShown() then
+                        menu:Hide()
+                    end
+                end
+            end
+        end)
+        clickHandler:RegisterEvent("GLOBAL_MOUSE_DOWN")
+    end
+    
+    table.insert(DROPDOWN_MENUS_LIST, menuFrame)
+    
+    -- Custom functions
+    dropdown.GetSelectedValue = function(self)
+        return self.value
+    end
+    
+    dropdown.SetSelectedValue = function(self, value, text)
+        self.value = value
+        
+        if text then
+            self.text:SetText(text)
+        else
+            for _, item in ipairs(options.items) do
+                if item.value == value then
+                    self.text:SetText(item.text)
+                    break
+                end
+            end
+        end
+    end
+    
+    dropdown.GetText = function(self)
+        return self.text:GetText()
+    end
+    
+    dropdown.SetText = function(self, text)
+        self.text:SetText(text)
+    end
+    
     return dropdown
 end
 
-
-
-
 local function addInputBoxOptionToOptionFrame(option, value)
     -- Adjust Y offset for the new option
-    optionYOffset = optionYOffset - 50
+    optionYOffset = optionYOffset - 30
 
     -- Create a frame to hold the label and allow for mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
-    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 0, optionYOffset)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
     labelFrame:SetHeight(20)
 
     -- Create the label (FontString) inside the frame
@@ -244,6 +519,7 @@ local function addInputBoxOptionToOptionFrame(option, value)
     label:SetAllPoints(labelFrame) -- Make the label take up the full frame
     label:SetText(option.labelText)
     label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
+    label:SetTextColor(0.9, 0.9, 0.9, 1.0)
 
     --set labelFrame width afterwards with padding so the label is not cut off
     labelFrame:SetWidth(label:GetStringWidth() + 20)
@@ -259,14 +535,35 @@ local function addInputBoxOptionToOptionFrame(option, value)
         GameTooltip:Hide()
     end)
 
-    -- Create the input field (EditBox)
-    local inputBox = CreateFrame("EditBox", option.frameName, optionScrollChild, "InputBoxTemplate")
+    -- Create a backdrop for the input box for a modern look
+    local inputBackdrop = {
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 8,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    }
+
+    -- Create the input field (EditBox) with modern styling
+    local inputBox = CreateFrame("EditBox", option.frameName, optionScrollChild)
     inputBox:SetPoint("LEFT", labelFrame, "RIGHT", 10, 0)
-    inputBox:SetWidth(30)
+    inputBox:SetWidth(33)
     inputBox:SetHeight(20)
+    inputBox:SetBackdrop(inputBackdrop)
+    inputBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+    inputBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
     inputBox:SetText(value)
-    inputBox:EnableMouse(true)
+    inputBox:SetFontObject(GameFontHighlight)
+    inputBox:SetTextColor(1, 1, 1, 1)
     inputBox:SetAutoFocus(false)
+    inputBox:SetJustifyH("CENTER")
+    
+    -- Add highlight effect on focus
+    inputBox:SetScript("OnEditFocusGained", function()
+        this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+    end)
+    inputBox:SetScript("OnEditFocusLost", function()
+        this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+    end)
 
     return inputBox
 end
@@ -280,15 +577,15 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 
     -- Create a frame to hold the label and allow for mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
-    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 0, optionYOffset)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
     labelFrame:SetHeight(20)
-
 
     -- Create the label (FontString) inside the frame
     local scrollLabel = labelFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     scrollLabel:SetAllPoints(labelFrame) -- Make the label take up the full frame
     scrollLabel:SetText(topicObject.labelText)
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
+    scrollLabel:SetTextColor(0.9, 0.9, 1.0, 1.0)
 
     --set labelFrame width afterwards with padding so the label is not cut off
     labelFrame:SetWidth(scrollLabel:GetStringWidth() + 20)
@@ -304,13 +601,26 @@ local function addTopicListToOptionFrame(topicObject, topicList)
         GameTooltip:Hide()
     end)
 
+    -- Create a separator line
+    local separator = parentFrame:CreateTexture(nil, "BACKGROUND")
+    separator:SetHeight(1)
+    separator:SetWidth(450)
+    separator:SetPoint("TOPLEFT", labelFrame, "BOTTOMLEFT", -5, -5)
+    separator:SetTexture(1, 1, 1, 0.2)
+
     for _, topic in ipairs(topicList) do
         optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
 
-        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", parentFrame, "UICheckButtonTemplate")
-        checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+        -- Create modern checkbox with background
+        local checkboxBg = CreateFrame("Frame", nil, parentFrame)
+        checkboxBg:SetWidth(25)
+        checkboxBg:SetHeight(25)
+        checkboxBg:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+        
+        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", checkboxBg, "UICheckButtonTemplate")
         checkbox:SetWidth(25)
         checkbox:SetHeight(25)
+        checkbox:SetPoint("CENTER", checkboxBg, "CENTER")
         checkbox:SetChecked(topic.selected)
 
         local currentTopic = topic
@@ -318,22 +628,44 @@ local function addTopicListToOptionFrame(topicObject, topicList)
             currentTopic.selected = checkbox:GetChecked()
         end)
 
-        -- Add a label next to the checkbox displaying the topic
+        -- Add a label next to the checkbox displaying the topic with improved styling
         local topicLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         topicLabel:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
         topicLabel:SetText(topic.name)
         topicLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+        topicLabel:SetTextColor(0.9, 0.9, 0.9, 1.0)
         topicLabel:SetJustifyH("LEFT")
         topicLabel:SetWidth(175)
 
-        -- Add a text box next to the topic label for tags input
-        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame, "InputBoxTemplate")
+        -- Create a backdrop for tags textbox
+        local tagsBackdrop = {
+            bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 8,
+            insets = { left = 2, right = 2, top = 2, bottom = 2 }
+        }
+
+        -- Add a text box next to the topic label for tags input with modern styling
+        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame)
         tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
         tagsTextBox:SetWidth(200)
-        tagsTextBox:SetHeight(20)
+        tagsTextBox:SetHeight(24)
+        tagsTextBox:SetBackdrop(tagsBackdrop)
+        tagsTextBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+        tagsTextBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
         tagsTextBox:SetText(table.concat(topic.tags, " "))
-        tagsTextBox:EnableMouse(true)
+        tagsTextBox:SetFontObject(GameFontHighlight)
+        tagsTextBox:SetTextColor(1, 1, 1, 1)
         tagsTextBox:SetAutoFocus(false)
+        tagsTextBox:SetJustifyH("LEFT")
+        
+        -- Add highlight effect on focus
+        tagsTextBox:SetScript("OnEditFocusGained", function()
+            this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+        end)
+        tagsTextBox:SetScript("OnEditFocusLost", function()
+            this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+        end)
 
         local topicName = topic.name -- save a reference for the onTextChanged event
         tagsTextBox:SetScript("OnTextChanged", function()
@@ -342,7 +674,6 @@ local function addTopicListToOptionFrame(topicObject, topicList)
         end)
 
         table.insert(tempTagsTextBoxes, tagsTextBox)
-
     end
 
     return tempTags
@@ -353,9 +684,12 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
 
     fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
 
+    -- Create the dropdowns with modern styling
     serverTimePositionDropDown = addDropDownOptionToOptionFrame(serverTimePositionDropDownOptionObject, DifficultBulletinBoardVars.serverTimePosition)
     
     timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
+
+    filterMatchedMessagesDropDown = addDropDownOptionToOptionFrame(filterMatchedMessagesDropDownOptionObject, DifficultBulletinBoardVars.filterMatchedMessages)
 
     mainFrameSoundDropDown = addDropDownOptionToOptionFrame(mainFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.mainFrameSound)
 
@@ -372,6 +706,10 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     hardcoreOptionInputBox = addInputBoxOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
     
     tempHardcoreTags = addTopicListToOptionFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
+    
+    -- Make sure scroll frame shows everything
+    local totalHeight = math.abs(optionYOffset) + 100  -- Add padding
+    optionScrollChild:SetHeight(totalHeight)
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
@@ -382,6 +720,8 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
     DifficultBulletinBoardSavedVariables.serverTimePosition = DifficultBulletinBoardDefaults.defaultServerTimePosition
 
     DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
+
+    DifficultBulletinBoardSavedVariables.filterMatchedMessages = DifficultBulletinBoardDefaults.defaultFilterMatchedMessages
 
     DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
     DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
@@ -400,22 +740,24 @@ end
 function DifficultBulletinBoard_SaveVariablesAndReload()
     DifficultBulletinBoardSavedVariables.fontSize = fontSizeOptionInputBox:GetText()
 
-    DifficultBulletinBoardSavedVariables.timeFormat = UIDropDownMenu_GetSelectedValue(timeFormatDropDown)
+    DifficultBulletinBoardSavedVariables.timeFormat = timeFormatDropDown:GetSelectedValue()
 
-    DifficultBulletinBoardSavedVariables.serverTimePosition = UIDropDownMenu_GetSelectedValue(serverTimePositionDropDown)
+    DifficultBulletinBoardSavedVariables.serverTimePosition = serverTimePositionDropDown:GetSelectedValue()
 
-    DifficultBulletinBoardSavedVariables.mainFrameSound = UIDropDownMenu_GetSelectedValue(mainFrameSoundDropDown)
-    DifficultBulletinBoardSavedVariables.optionFrameSound = UIDropDownMenu_GetSelectedValue(optionFrameSoundDropDown)
+    DifficultBulletinBoardSavedVariables.filterMatchedMessages = filterMatchedMessagesDropDown:GetSelectedValue()
+
+    DifficultBulletinBoardSavedVariables.mainFrameSound = mainFrameSoundDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrameSoundDropDown:GetSelectedValue()
 
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = hardcoreOptionInputBox:GetText()
     
-    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allGroupTopics, tempGroupTags); 
-    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allProfessionTopics, tempProfessionTags); 
-    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags); 
+    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allGroupTopics, tempGroupTags)
+    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allProfessionTopics, tempProfessionTags)
+    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags)
 
-    ReloadUI();
+    ReloadUI()
 end
 
 optionFrame:SetScript("OnSizeChanged", function()

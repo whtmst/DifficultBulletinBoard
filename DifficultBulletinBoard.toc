@@ -11,7 +11,9 @@ DifficultBulletinBoardVars.lua
 DifficultBulletinBoardMinimapButton.xml
 DifficultBulletinBoardOptionFrame.xml
 DifficultBulletinBoardMainFrame.xml
+DifficultBulletinBoardBlacklistFrame.xml
 DifficultBulletinBoardOptionFrame.lua
 DifficultBulletinBoardMainFrame.lua
+DifficultBulletinBoardBlacklistFrame.lua
 DifficultBulletinBoardPlayerScanner.lua
 DifficultBulletinBoard.lua
