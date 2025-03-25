@@ -17,7 +17,7 @@ local string_gfind = string.gmatch or string.gfind
 
 local mainFrame = DifficultBulletinBoardMainFrame
 
-local chatMessageWidthDelta = 200
+local chatMessageWidthDelta = 220
 local systemMessageWidthDelta = 155
 
 local groupScrollFrame
@@ -610,6 +610,7 @@ local tempChatMessageFrames = {}
 local tempChatMessageColumns = {}
 
 -- Create topic list with name, message, and date columns
+-- Used for Groups, Groups Logs, and Professions tabs
 local function createTopicListWithNameMessageDateColumns(
   contentFrame,
   topicList,
@@ -633,9 +634,16 @@ local function createTopicListWithNameMessageDateColumns(
     header:SetWidth(mainFrame:GetWidth())
     header:SetJustifyH("LEFT")
     header:SetTextColor(0.9, 0.9, 1.0, 1.0)
-    header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
-
+    header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
+    
+    -- Calculate vertical offset for entries - add extra space for Group Logs tab
     local topicYOffset = yOffset - 20
+    
+    -- Add extra padding below the header in the Group Logs tab
+    if topic.name == "Group Logs" then
+      topicYOffset = topicYOffset - 5  -- Add 5px extra spacing for filter box
+    end
+    
     yOffset = topicYOffset - 110
 
     topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {
@@ -665,17 +673,17 @@ local function createTopicListWithNameMessageDateColumns(
      local buttonText = nameButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
      buttonText:SetText("-")
      buttonText:SetPoint("LEFT", nameButton, "LEFT", 5, 0)
-     buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+     buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
      buttonText:SetTextColor(1, 1, 1)
      nameButton:SetFontString(buttonText)
 
      nameButton:SetScript("OnEnter", function()
-      buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+      buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
       buttonText:SetTextColor(0.9, 0.9, 1.0)
      end)
 
      nameButton:SetScript("OnLeave", function()
-      buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+      buttonText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
       buttonText:SetTextColor(1, 1, 1)
      end)
 
@@ -702,7 +710,7 @@ local function createTopicListWithNameMessageDateColumns(
      messageColumn:SetHeight(10)
      messageColumn:SetJustifyH("LEFT")
      messageColumn:SetTextColor(1, 1, 1)
-     messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+     messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
      local timeColumn =
       contentFrame:CreateFontString(
@@ -715,60 +723,59 @@ local function createTopicListWithNameMessageDateColumns(
      timeColumn:SetWidth(100)
      timeColumn:SetJustifyH("LEFT")
      timeColumn:SetTextColor(1, 1, 1)
-     timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+     timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
      -- Store reference to message column directly in the button for easy access
      nameButton.messageFontString = messageColumn
 
-	nameButton:SetScript("OnClick", function()
-	  print("Clicked on: " .. nameButton:GetText())
-	  local pressedButton = arg1
-	  local targetName = nameButton:GetText()
+     nameButton:SetScript("OnClick", function()
+      print("Clicked on: " .. nameButton:GetText())
+      local pressedButton = arg1
+      local targetName = nameButton:GetText()
 
-	  -- dont do anything when its a placeholder
-	  if targetName == "-" then
-	   return
-	  end
+      -- dont do anything when its a placeholder
+      if targetName == "-" then
+       return
+      end
 
-	  if pressedButton == "LeftButton" then
-	   if IsControlKeyDown() then
-		-- Get the message text using the direct reference
-		local messageText = this.messageFontString:GetText()
-		if messageText and messageText ~= "-" then
-		 -- Extract the raw message by removing the channel prefix
-		 -- Using string.find and string.sub instead of string.match
-		 local rawMessage = messageText
-		 local startPos, endPos = string.find(messageText, "%[.*%] ")
-		 if startPos and endPos then
-			rawMessage = string.sub(messageText, endPos + 1)
-		 end
-		 
-		 DifficultBulletinBoardSavedVariables.messageBlacklist[rawMessage] = true
+      if pressedButton == "LeftButton" then
+       if IsControlKeyDown() then
+        -- Get the message text using the direct reference
+        local messageText = this.messageFontString:GetText()
+        if messageText and messageText ~= "-" then
+         -- Extract the raw message by removing the channel prefix
+         -- Using string.find and string.sub instead of string.match
+         local rawMessage = messageText
+         local startPos, endPos = string.find(messageText, "%[.*%] ")
+         if startPos and endPos then
+            rawMessage = string.sub(messageText, endPos + 1)
+         end
+         
+         DifficultBulletinBoardSavedVariables.messageBlacklist[rawMessage] = true
 
-		 -- Truncate message for display
-		 local truncatedMessage =
-		  string.sub(rawMessage, 1, 40) ..
-		  (string.len(rawMessage) > 40 and "..." or "")
+         -- Truncate message for display
+         local truncatedMessage =
+          string.sub(rawMessage, 1, 40) ..
+          (string.len(rawMessage) > 40 and "..." or "")
 
-		 DEFAULT_CHAT_FRAME:AddMessage(
-		  "|cFFFFCC00[DBB]|r Added: " .. truncatedMessage .. " to blacklist."
-		 )
+         DEFAULT_CHAT_FRAME:AddMessage(
+          "|cFFFFCC00[DBB]|r Added: " .. truncatedMessage .. " to blacklist."
+         )
 
-		 -- Refresh the blacklist panel if it's open
-		 -- Added nil check to prevent error when frame isn't initialized yet
-		 if DifficultBulletinBoardBlacklistFrame and DifficultBulletinBoardBlacklistFrame:IsShown() then
-		  DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
-		 end
-		end
-	   elseif IsShiftKeyDown() then
-		print("who")
-		SendWho(targetName)
-	   else
-		print("whisp")
-		ChatFrame_OpenChat("/w " .. targetName)
-	   end
-	  end
-	end)
+         -- Refresh the blacklist panel if it's open
+         if DifficultBulletinBoardBlacklistFrame and DifficultBulletinBoardBlacklistFrame:IsShown() then
+          DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
+         end
+        end
+       elseif IsShiftKeyDown() then
+        print("who")
+        SendWho(targetName)
+       else
+        print("whisp")
+        ChatFrame_OpenChat("/w " .. targetName)
+       end
+      end
+     end)
 
      -- OnClick doesnt support right clicking... so lets just check OnMouseDown
      -- instead
@@ -801,6 +808,26 @@ local function createTopicListWithNameMessageDateColumns(
      table.insert(tempChatMessageFrames, messageFrame)
      table.insert(tempChatMessageColumns, messageColumn)
 
+     -- Update the GameTooltip with smaller Arial Narrow font
+     messageFrame:SetScript("OnEnter", function()
+       local currentMessage = messageColumn:GetText()
+       if currentMessage ~= nil and currentMessage ~= "-" then
+         GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+         GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+         
+         -- Try Arial Narrow which appears smaller than default
+         if GameTooltipTextLeft1 then
+           GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
+         end
+         
+         GameTooltip:Show()
+       end
+     end)
+
+     messageFrame:SetScript("OnLeave", function()
+       GameTooltip:Hide()
+     end)
+
      topicYOffset = topicYOffset - 18
     end
 
@@ -813,6 +840,7 @@ local tempSystemMessageFrames = {}
 local tempSystemMessageColumns = {}
 
 -- Function to create the placeholders and font strings for a topic
+-- Used for Hardcore Logs tab
 local function createTopicListWithMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
@@ -827,7 +855,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
             header:SetWidth(mainFrame:GetWidth())
             header:SetJustifyH("LEFT")
             header:SetTextColor(0.9, 0.9, 1.0, 1.0)
-            header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+            header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
             -- Store the header Y offset for the current topic
             local topicYOffset = yOffset - 20 -- space between header and first placeholder
@@ -852,7 +880,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
                 messageColumn:SetTextColor(1, 1, 1)
-                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+                messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
                 -- Create Time column
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
@@ -861,12 +889,32 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
                 timeColumn:SetTextColor(1, 1, 1)
-                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+                timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
                 table.insert(topicPlaceholders[topic.name], {nameButton = nil, messageFontString = messageColumn, timeFontString = timeColumn, messageFrame = messageFrame, creationTimestamp = nil})
 
                 table.insert(tempSystemMessageFrames, messageFrame)
                 table.insert(tempSystemMessageColumns, messageColumn)
+
+                -- Update the GameTooltip with smaller Arial Narrow font
+                messageFrame:SetScript("OnEnter", function()
+                    local currentMessage = messageColumn:GetText()
+                    if currentMessage ~= nil and currentMessage ~= "-" then
+                      GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+                      GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                      
+                      -- Try Arial Narrow which appears smaller than default
+                      if GameTooltipTextLeft1 then
+                        GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
+                      end
+                      
+                      GameTooltip:Show()
+                    end
+                end)
+
+                messageFrame:SetScript("OnLeave", function()
+                    GameTooltip:Hide()
+                end)
 
                 -- Increment the Y-offset for the next placeholder
                 topicYOffset = topicYOffset - 18 -- space between placeholders
@@ -911,10 +959,10 @@ local function createScrollFrameForMainFrame(scrollFrameName)
     downButton:ClearAllPoints()
     downButton:SetPoint("BOTTOM", scrollBar, "BOTTOM", 0, -1000)
     
-    -- Adjust scroll bar position
+    -- Adjust scroll bar position - changed from 16 to 8 pixels for consistency
     scrollBar:ClearAllPoints()
-    scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", 16, 0)
-    scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", 16, 0)
+    scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", 8, 0)
+    scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", 8, 0)
     
     -- Style the scroll bar to be slimmer
     scrollBar:SetWidth(8)
@@ -972,22 +1020,22 @@ local function createGroupsLogsSearchBox()
     -- Create a temporary font string to calculate the width of "Group Logs"
     -- with the current font size
     local tempFontString = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    tempFontString:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 2)
+    tempFontString:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
     tempFontString:SetText("Group Logs")
     local headerWidth = tempFontString:GetStringWidth()
     tempFontString:Hide()
     
-    -- Position settings
+    -- Position settings - balanced vertical offset for even border visibility
     local xOffset = headerWidth + 20  -- Horizontal position after header
-    local yOffset = 1                -- Vertical position (negative moves down)
+    local yOffset = 4                -- Adjusted for balanced borders
     
     -- Create a frame to hold the search box
     local frame = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_GroupsLogs_SearchFrame", groupsLogsScrollChild)
     
-    -- Position based on calculated width and anchor right side with 30px margin
+    -- Position based on calculated width and anchor right side with margin
     frame:SetPoint("TOPLEFT", groupsLogsScrollChild, "TOPLEFT", xOffset, yOffset)
-    frame:SetPoint("RIGHT", groupsLogsScrollFrame, "RIGHT", 0, 0)
-    frame:SetHeight(16)
+    frame:SetPoint("RIGHT", groupsLogsScrollFrame, "RIGHT", -10, 0)
+    frame:SetHeight(22)
     
     -- Ensure the frame is visible above the scroll content
     frame:SetFrameLevel(groupsLogsScrollChild:GetFrameLevel() + 5)
@@ -1000,13 +1048,12 @@ local function createGroupsLogsSearchBox()
         insets = { left = 2, right = 2, top = 2, bottom = 2 }
     }
 
-    -- Create the search box
+    -- Create the search box with balanced margins from container frame
     local searchBox = CreateFrame("EditBox", "DifficultBulletinBoardMainFrame_GroupsLogs_SearchBox", frame)
-    searchBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    searchBox:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    searchBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
+    searchBox:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
     searchBox:SetBackdrop(searchBackdrop)
-    searchBox:SetBackdropColor(0.9, 0.9, 1.0, 0.07)
-    -- Set border color to a dimmer version of the headline color
+    searchBox:SetBackdropColor(0.1, 0.1, 0.1, 0.7)
     searchBox:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
     searchBox:SetText("")
     searchBox:SetFontObject(GameFontHighlight)
@@ -1014,8 +1061,8 @@ local function createGroupsLogsSearchBox()
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     
-    -- Add 3px padding on the left side of text
-    searchBox:SetTextInsets(3, 0, 0, 0)
+    -- Add padding on the left side of text
+    searchBox:SetTextInsets(5, 3, 2, 2)
 
     -- Add placeholder text
     local placeholderText = searchBox:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -1042,7 +1089,7 @@ local function createGroupsLogsSearchBox()
         end
     end)
 
-    -- Fix: Make sure to call applyGroupsLogsFilter when text changes
+    -- Apply filter when text changes
     searchBox:SetScript("OnTextChanged", function()
         -- Get text and convert to lowercase for case-insensitive search
         currentGroupsLogsFilter = string.lower(this:GetText() or "")
@@ -1084,6 +1131,14 @@ local function createGroupsLogsSearchBox()
     else
         placeholderText:Hide()
     end
+    
+    -- Create spacing between filter box and content below
+    -- This adds an invisible spacer below the filter box
+    local spacer = groupsLogsScrollChild:CreateTexture(nil, "BACKGROUND")
+    spacer:SetHeight(12) -- Adjust this value to control spacing
+    spacer:SetWidth(1)
+    spacer:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, -5)
+    spacer:SetAlpha(0) -- Invisible spacer
     
     -- Store the frame reference
     groupsLogsSearchFrame = frame

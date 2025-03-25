@@ -62,42 +62,54 @@ local function createKeywordFilterFooter()
     -- Create separator line at the top of footer
     local separator = footer:CreateTexture(nil, "BACKGROUND")
     separator:SetHeight(1)
-    separator:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, 0)  -- Anchor to top of footer
-    separator:SetPoint("TOPRIGHT", footer, "TOPRIGHT", 0, 0)  -- Anchor to top of footer
-    separator:SetTexture(1, 1, 1, 0.2)  -- Match options panel style
+    separator:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, 0)
+    separator:SetPoint("TOPRIGHT", footer, "TOPRIGHT", 0, 0)
+    separator:SetTexture(1, 1, 1, 0.2)
     
     -- Create label with spacing from the separator
     local label = footer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetPoint("TOPLEFT", separator, "BOTTOMLEFT", 5, -7)  -- 7px below separator
+    label:SetPoint("TOPLEFT", separator, "BOTTOMLEFT", 5, -7)
     label:SetText("Keyword Filter (comma separated):")
     label:SetTextColor(0.9, 0.9, 0.9, 1.0)
     
-    -- Create backdrop for the input
-    local inputBackdrop = {
+    -- Create backdrop for the input box - matching Groups Logs search box
+    local searchBackdrop = {
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true, tileSize = 16, edgeSize = 8,
         insets = { left = 2, right = 2, top = 2, bottom = 2 }
     }
     
-    -- Create input field - fixed height
+    -- Create input field - matching Groups Logs search box style
     local input = CreateFrame("EditBox", "DifficultBulletinBoardKeywordFilterInput", footer)
-    input:SetPoint("TOPLEFT", label, "TOPRIGHT", 10, 3)
-    input:SetPoint("RIGHT", footer, "RIGHT", -5, 0)  -- Only anchor right side horizontally
-    input:SetHeight(18)  -- Explicitly set height to 18px
-    input:SetBackdrop(inputBackdrop)
-    input:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
-    input:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+    input:SetPoint("TOPLEFT", label, "TOPRIGHT", 10, 3)  -- Position after label
+    input:SetPoint("RIGHT", footer, "RIGHT", -5, 0)
+    input:SetHeight(22)  -- Match the 22px height
+    input:SetBackdrop(searchBackdrop)
+    input:SetBackdropColor(0.1, 0.1, 0.1, 0.7)
+    input:SetBackdropBorderColor(0.5, 0.5, 0.6, 1.0)  -- Default border color
     input:SetFontObject(GameFontHighlight)
-    input:SetTextColor(1, 1, 1, 1)
+    input:SetTextColor(0.9, 0.9, 1.0, 1.0)
     input:SetAutoFocus(false)
     input:SetJustifyH("LEFT")
-    input:SetJustifyV("CENTER")
-    input:SetTextInsets(8, 8, 0, 0)
+    input:SetTextInsets(5, 3, 2, 2)  -- Match the text insets
+    
+    -- Add placeholder text (optional)
+    local placeholderText = input:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    placeholderText:SetPoint("LEFT", input, "LEFT", 6, 0)
+    placeholderText:SetText("Enter filter terms...")
+    placeholderText:SetTextColor(0.5, 0.5, 0.5, 0.7)
+    
+    -- Track focus state
+    input.hasFocus = false
     
     -- Load saved keywords
     if DifficultBulletinBoardSavedVariables.keywordBlacklist then
         input:SetText(DifficultBulletinBoardSavedVariables.keywordBlacklist)
+        -- Hide placeholder if there's text
+        if input:GetText() ~= "" then
+            placeholderText:Hide()
+        end
     else
         input:SetText("")
     end
@@ -106,15 +118,29 @@ local function createKeywordFilterFooter()
     input:SetScript("OnTextChanged", function()
         local text = this:GetText()
         DifficultBulletinBoardSavedVariables.keywordBlacklist = text
+        
+        -- Update placeholder visibility
+        if this:GetText() == "" and not this.hasFocus then
+            placeholderText:Show()
+        else
+            placeholderText:Hide()
+        end
     end)
     
     -- Handle focus
     input:SetScript("OnEditFocusGained", function()
-        this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+        this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)  -- Brighter border on focus
+        this.hasFocus = true
+        placeholderText:Hide()  -- Always hide on focus
     end)
     
     input:SetScript("OnEditFocusLost", function()
-        this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+        this:SetBackdropBorderColor(0.5, 0.5, 0.6, 1.0)  -- Dimmer border when not focused
+        this.hasFocus = false
+        -- Show placeholder only if text is empty
+        if this:GetText() == "" then
+            placeholderText:Show()
+        end
     end)
     
     -- Handle enter and escape keys
@@ -131,6 +157,7 @@ local function createKeywordFilterFooter()
     
     return footer
 end
+
 
 -- Create a scroll frame for the blacklist panel
 local function createBlacklistScrollFrame()
@@ -252,51 +279,52 @@ local function createBlacklistEntry(message, index)
     messageText:SetWidth(entryWidth - 40) -- Explicit width setting for vanilla WoW
     messageText:SetJustifyH("LEFT")
     messageText:SetJustifyV("TOP")
+    
+    -- Use the user's font size setting
+    messageText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
     messageText:SetTextColor(1, 1, 1, 1)
     messageText:SetText(message)
     
     -- Critical: Store messageText in entry for updates
     entry.messageText = messageText
     
-    -- Create remove button
+    -- Create remove button - styled like main close button but 50% size
     local removeButton = CreateFrame("Button", nil, entry)
-    removeButton:SetWidth(12)
-    removeButton:SetHeight(12)
+    removeButton:SetWidth(18) -- 50% of 24px
+    removeButton:SetHeight(18) -- 50% of 24px
     removeButton:SetPoint("RIGHT", entry, "RIGHT", -8, 0)
 
-    -- Style the remove button
+    -- Style the remove button with same backdrop as main close button
     removeButton:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true,
-        tileSize = 8,
-        edgeSize = 8,
+        tile = true, tileSize = 8, edgeSize = 8,
         insets = { left = 2, right = 2, top = 2, bottom = 2 },
     })
-    removeButton:SetBackdropColor(0.2, 0.1, 0.1, 1.0)
-    removeButton:SetBackdropBorderColor(0.4, 0.3, 0.3, 1.0)
+    removeButton:SetBackdropColor(0.2, 0.1, 0.1, 1.0) -- Same as main close button
+    removeButton:SetBackdropBorderColor(0.4, 0.3, 0.3, 1.0) -- Same as main close button
 
-    -- Add X texture to remove button
-    local removeTexture = removeButton:CreateTexture(nil, "OVERLAY")
-    removeTexture:SetTexture("Interface\\Buttons\\UI-Panel-ExitButton-Up")
-    removeTexture:SetWidth(8)
-    removeTexture:SetHeight(8)
-    removeTexture:SetPoint("CENTER", removeButton, "CENTER", 0, 0)
+    -- Add "×" text instead of texture
+    local removeText = removeButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    removeText:SetText("×")
+    removeText:SetPoint("CENTER", removeButton, "CENTER", -0.5, -0.5) -- Scaled offset
+    removeText:SetTextColor(0.9, 0.7, 0.7, 1.0) -- Same as main close button
+    removeText:SetFont("Fonts\\FRIZQT__.TTF", 14) -- 50% of main button's 18px font
 
     -- Store properties in the button
     removeButton.messageToRemove = message
-    removeButton.textureObj = removeTexture
+    removeButton.textObj = removeText
     removeButton.entry = entry
 
-    -- Button hover effects
+    -- Button hover effects - matches main close button
     removeButton:SetScript("OnEnter", function()
         this:SetBackdropColor(0.3, 0.1, 0.1, 1.0)
-        this.textureObj:SetVertexColor(1.0, 0.8, 0.8)
+        this.textObj:SetTextColor(1.0, 0.8, 0.8, 1.0)
     end)
 
     removeButton:SetScript("OnLeave", function()
         this:SetBackdropColor(0.2, 0.1, 0.1, 1.0)
-        this.textureObj:SetVertexColor(1.0, 1.0, 1.0)
+        this.textObj:SetTextColor(0.9, 0.7, 0.7, 1.0)
     end)
 
     -- Remove button click handler - FIXED to work in vanilla with deferred processing
@@ -306,13 +334,13 @@ local function createBlacklistEntry(message, index)
         updateFrame:Show() -- Start the update process
     end)
 
-    -- Button visual feedback 
+    -- Button visual feedback - matches main close button
     removeButton:SetScript("OnMouseDown", function()
-        this.textureObj:SetPoint("CENTER", removeButton, "CENTER", 1, -1)
+        this.textObj:SetPoint("CENTER", removeButton, "CENTER", 0, -1) -- Scaled movement
     end)
 
     removeButton:SetScript("OnMouseUp", function()
-        this.textureObj:SetPoint("CENTER", removeButton, "CENTER", 0, 0)
+        this.textObj:SetPoint("CENTER", removeButton, "CENTER", -0.5, -0.5) -- Return to default position
     end)
 
     -- Track this entry for resize updates
@@ -419,6 +447,29 @@ function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
     
     -- Force update the entry widths
     updateBlacklistEntries()
+    
+    -- Force scrollbar update to ensure it appears when needed
+    if blacklistScrollFrame then
+        local scrollBar = getglobal(blacklistScrollFrame:GetName().."ScrollBar")
+        if scrollBar then
+            -- Force show/hide based on content size
+            if totalHeight > blacklistScrollFrame:GetHeight() then
+                scrollBar:Show()
+                scrollBar:EnableMouse(true)
+            else
+                scrollBar:Hide()
+            end
+            
+            -- Update the scroll range
+            blacklistScrollFrame:UpdateScrollChildRect()
+            
+            -- Ensure thumb texture is visible
+            local thumbTexture = scrollBar:GetThumbTexture()
+            if thumbTexture then
+                thumbTexture:Show()
+            end
+        end
+    end
 end
 
 -- Initialize the blacklist frame

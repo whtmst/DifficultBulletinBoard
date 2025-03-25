@@ -175,6 +175,7 @@ local function overwriteTagsForAllTopics(allTopics, tempTags)
     end
 end
 
+-- Create scroll frame with hidden arrows and modern styling
 local function addScrollFrameToOptionFrame()
     local parentFrame = optionFrame
 
@@ -205,10 +206,10 @@ local function addScrollFrameToOptionFrame()
     downButton:ClearAllPoints()
     downButton:SetPoint("BOTTOM", scrollBar, "BOTTOM", 0, -1000)
     
-    -- Adjust scroll bar position
+    -- Adjust scroll bar position - changed from 2 to 8 pixels for consistency
     scrollBar:ClearAllPoints()
-    scrollBar:SetPoint("TOPLEFT", optionScrollFrame, "TOPRIGHT", 2, 0)
-    scrollBar:SetPoint("BOTTOMLEFT", optionScrollFrame, "BOTTOMRIGHT", 2, 0)
+    scrollBar:SetPoint("TOPLEFT", optionScrollFrame, "TOPRIGHT", 8, 0)
+    scrollBar:SetPoint("BOTTOMLEFT", optionScrollFrame, "BOTTOMRIGHT", 8, 0)
     
     -- Style the scroll bar to be slimmer
     scrollBar:SetWidth(8)
@@ -230,15 +231,13 @@ local function addScrollFrameToOptionFrame()
     })
     scrollBar:SetBackdropColor(0.072, 0.072, 0.108, 0.3)
     
-    -- Set ScrollFrame anchors with better positioning
-    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 8, -50)
-    optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -16, 50)
-    optionScrollFrame:SetWidth(460)
-    optionScrollFrame:SetHeight(1)
-
+    -- FIXED: Set ScrollFrame anchors to match other panels
+    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 15, -55)
+    optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 50)
+    
     -- Create the ScrollChild with proper styling
     optionScrollChild = CreateFrame("Frame", nil, optionScrollFrame)
-    optionScrollChild:SetWidth(460)
+    optionScrollChild:SetWidth(optionScrollFrame:GetWidth() - 10) -- Adjusted width calculation
     optionScrollChild:SetHeight(1)
     
     -- Set the background for better visual distinction

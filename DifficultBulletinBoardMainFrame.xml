@@ -14,20 +14,20 @@
             <Anchor point="CENTER" />
         </Anchors>
         
-        <!-- Updated backdrop to match other frames -->
-        <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
-            <EdgeSize>
-                <AbsValue val="14"/>
-            </EdgeSize>
-            <TileSize>
-                <AbsValue val="16"/>
-            </TileSize>
-            <BackgroundInsets>
-                <AbsInset left="4" right="4" top="4" bottom="4"/>
-            </BackgroundInsets>
-            <Color r="0.1" g="0.1" b="0.1" a="0.9"/>
-            <BorderColor r="0.3" g="0.3" b="0.3" a="1"/>
-        </Backdrop>
+		<!-- Updated backdrop to match other frames -->
+		<Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+			<EdgeSize>
+				<AbsValue val="14"/>
+			</EdgeSize>
+			<TileSize>
+				<AbsValue val="16"/>
+			</TileSize>
+			<BackgroundInsets>
+				<AbsInset left="4" right="4" top="4" bottom="4"/>
+			</BackgroundInsets>
+			<Color r="0.1" g="0.1" b="0.1" a="0.9"/>
+			<BorderColor r="0.3" g="0.3" b="0.3" a="1"/>
+		</Backdrop>
 
         <Layers>
             <Layer level="OVERLAY">
@@ -69,7 +69,7 @@
 			<!-- Close Button - Improved visibility while maintaining position -->
 			<Button name="DifficultBulletinBoard_Main_CloseButton">
 				<Size>
-					<AbsDimension x="24" y="24" />
+					<AbsDimension x="22" y="22" />
 				</Size>
 				<Anchors>
 					<Anchor point="TOPRIGHT" relativeTo="DifficultBulletinBoardMainFrame" relativePoint="TOPRIGHT">

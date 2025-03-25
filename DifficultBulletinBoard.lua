@@ -14,6 +14,7 @@ local string_gfind = string.gmatch or string.gfind
 
 local mainFrame = DifficultBulletinBoardMainFrame
 local optionFrame = DifficultBulletinBoardOptionFrame
+local blacklistFrame = DifficultBulletinBoardBlacklistFrame
 
 -- Flag to track if the last processed message was matched
 local lastMessageWasMatched = false
@@ -48,6 +49,7 @@ function DifficultBulletinBoard.SplitIntoLowerWords(input)
 end
 
 -- Toggle the options frame visibility
+-- Modify the DifficultBulletinBoard_ToggleOptionFrame function to close the blacklist frame
 function DifficultBulletinBoard_ToggleOptionFrame()
     if optionFrame then
         if optionFrame:IsShown() then
@@ -57,6 +59,10 @@ function DifficultBulletinBoard_ToggleOptionFrame()
             -- Hide all dropdowns before hiding the frame
             DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
             optionFrame:Hide()
+            -- Also hide the blacklist frame when closing the option frame
+            if blacklistFrame and blacklistFrame:IsShown() then
+                blacklistFrame:Hide()
+            end
         else
             if DifficultBulletinBoardVars.optionFrameSound == "true" then
                 PlaySound("igMainMenuClose");
@@ -70,6 +76,7 @@ function DifficultBulletinBoard_ToggleOptionFrame()
 end
 
 -- Toggle the main bulletin board frame visibility
+-- Modify the DifficultBulletinBoard_ToggleMainFrame function to close the blacklist frame
 function DifficultBulletinBoard_ToggleMainFrame()
     if mainFrame then
         if mainFrame:IsShown() then
@@ -87,6 +94,10 @@ function DifficultBulletinBoard_ToggleMainFrame()
             end
             mainFrame:Show()
             optionFrame:Hide()
+            -- Also hide the blacklist frame when opening the main frame
+            if blacklistFrame and blacklistFrame:IsShown() then
+                blacklistFrame:Hide()
+            end
         end
     else
         print("Main frame not found")
