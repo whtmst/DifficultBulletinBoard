@@ -428,15 +428,24 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         end
     end
     
-    -- Toggle menu
-    dropdown:SetScript("OnClick", function()
-        if menuFrame:IsShown() then
-            menuFrame:Hide()
-        else
-            updateMenuPosition()
-            menuFrame:Show()
-        end
-    end)
+	-- Toggle menu
+	dropdown:SetScript("OnClick", function()
+		if menuFrame:IsShown() then
+			menuFrame:Hide()
+		else
+			-- Hide all other open dropdown menus first
+			if DROPDOWN_MENUS_LIST then
+				for _, menu in ipairs(DROPDOWN_MENUS_LIST) do
+					if menu ~= menuFrame and menu:IsShown() then
+						menu:Hide()
+					end
+				end
+			end
+			
+			updateMenuPosition()
+			menuFrame:Show()
+		end
+	end)
     
     -- Hover effect - update text color to match headline
     dropdown:SetScript("OnEnter", function()
@@ -758,6 +767,18 @@ function DifficultBulletinBoard_SaveVariablesAndReload()
     overwriteTagsForAllTopics(DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags)
 
     ReloadUI()
+end
+
+-- Function to hide all dropdown menus
+function DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
+    -- Hide menus in the global list
+    if DROPDOWN_MENUS_LIST then
+        for _, menu in ipairs(DROPDOWN_MENUS_LIST) do
+            if menu:IsShown() then
+                menu:Hide()
+            end
+        end
+    end
 end
 
 optionFrame:SetScript("OnSizeChanged", function()

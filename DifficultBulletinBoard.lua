@@ -54,6 +54,8 @@ function DifficultBulletinBoard_ToggleOptionFrame()
             if DifficultBulletinBoardVars.optionFrameSound == "true" then
                 PlaySound("igMainMenuClose");
             end
+            -- Hide all dropdowns before hiding the frame
+            DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
             optionFrame:Hide()
         else
             if DifficultBulletinBoardVars.optionFrameSound == "true" then
@@ -78,6 +80,10 @@ function DifficultBulletinBoard_ToggleMainFrame()
         else
             if DifficultBulletinBoardVars.mainFrameSound == "true" then
                 PlaySound("igQuestLogClose");
+            end
+            -- Hide any open dropdowns when showing main frame
+            if DifficultBulletinBoardOptionFrame.HideAllDropdownMenus then
+                DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
             end
             mainFrame:Show()
             optionFrame:Hide()
@@ -420,9 +426,22 @@ function FrameLinker.PositionBlacklistRelativeToOption()
     local optionFrame = DifficultBulletinBoardOptionFrame
     
     if blacklistFrame and optionFrame and blacklistFrame:IsShown() and optionFrame:IsShown() then
-        blacklistFrame:ClearAllPoints()
-        blacklistFrame:SetPoint("TOPLEFT", optionFrame, "TOPRIGHT", 
-                             FrameLinker.FRAME_OFFSET_X, FrameLinker.FRAME_OFFSET_Y)
+        -- Store current position before we change anything
+        local wasAnchored = false
+        
+        -- Only proceed if blacklist frame isn't already positioned relative to option frame
+        if not wasAnchored then
+            -- Use absolute positioning instead of relative positioning
+            local optionRight = optionFrame:GetRight()
+            local optionTop = optionFrame:GetTop()
+            
+            if optionRight and optionTop then
+                blacklistFrame:ClearAllPoints()
+                blacklistFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 
+                                     optionRight + FrameLinker.FRAME_OFFSET_X, 
+                                     optionTop + FrameLinker.FRAME_OFFSET_Y)
+            end
+        end
     end
 end
 
