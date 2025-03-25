@@ -720,54 +720,55 @@ local function createTopicListWithNameMessageDateColumns(
      -- Store reference to message column directly in the button for easy access
      nameButton.messageFontString = messageColumn
 
-     nameButton:SetScript("OnClick", function()
-      print("Clicked on: " .. nameButton:GetText())
-      local pressedButton = arg1
-      local targetName = nameButton:GetText()
+	nameButton:SetScript("OnClick", function()
+	  print("Clicked on: " .. nameButton:GetText())
+	  local pressedButton = arg1
+	  local targetName = nameButton:GetText()
 
-      -- dont do anything when its a placeholder
-      if targetName == "-" then
-       return
-      end
+	  -- dont do anything when its a placeholder
+	  if targetName == "-" then
+	   return
+	  end
 
-      if pressedButton == "LeftButton" then
-       if IsControlKeyDown() then
-        -- Get the message text using the direct reference
-        local messageText = this.messageFontString:GetText()
-        if messageText and messageText ~= "-" then
-         -- Extract the raw message by removing the channel prefix
-         -- Using string.find and string.sub instead of string.match
-         local rawMessage = messageText
-         local startPos, endPos = string.find(messageText, "%[.*%] ")
-         if startPos and endPos then
-            rawMessage = string.sub(messageText, endPos + 1)
-         end
-         
-         DifficultBulletinBoardSavedVariables.messageBlacklist[rawMessage] = true
+	  if pressedButton == "LeftButton" then
+	   if IsControlKeyDown() then
+		-- Get the message text using the direct reference
+		local messageText = this.messageFontString:GetText()
+		if messageText and messageText ~= "-" then
+		 -- Extract the raw message by removing the channel prefix
+		 -- Using string.find and string.sub instead of string.match
+		 local rawMessage = messageText
+		 local startPos, endPos = string.find(messageText, "%[.*%] ")
+		 if startPos and endPos then
+			rawMessage = string.sub(messageText, endPos + 1)
+		 end
+		 
+		 DifficultBulletinBoardSavedVariables.messageBlacklist[rawMessage] = true
 
-         -- Truncate message for display
-         local truncatedMessage =
-          string.sub(rawMessage, 1, 40) ..
-          (string.len(rawMessage) > 40 and "..." or "")
+		 -- Truncate message for display
+		 local truncatedMessage =
+		  string.sub(rawMessage, 1, 40) ..
+		  (string.len(rawMessage) > 40 and "..." or "")
 
-         DEFAULT_CHAT_FRAME:AddMessage(
-          "|cFFFFCC00[DBB]|r Added: " .. truncatedMessage .. " to blacklist."
-         )
+		 DEFAULT_CHAT_FRAME:AddMessage(
+		  "|cFFFFCC00[DBB]|r Added: " .. truncatedMessage .. " to blacklist."
+		 )
 
-         -- Refresh the blacklist panel if it's open
-         if DifficultBulletinBoardBlacklistFrame:IsShown() then
-          DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
-         end
-        end
-       elseif IsShiftKeyDown() then
-        print("who")
-        SendWho(targetName)
-       else
-        print("whisp")
-        ChatFrame_OpenChat("/w " .. targetName)
-       end
-      end
-     end)
+		 -- Refresh the blacklist panel if it's open
+		 -- Added nil check to prevent error when frame isn't initialized yet
+		 if DifficultBulletinBoardBlacklistFrame and DifficultBulletinBoardBlacklistFrame:IsShown() then
+		  DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
+		 end
+		end
+	   elseif IsShiftKeyDown() then
+		print("who")
+		SendWho(targetName)
+	   else
+		print("whisp")
+		ChatFrame_OpenChat("/w " .. targetName)
+	   end
+	  end
+	end)
 
      -- OnClick doesnt support right clicking... so lets just check OnMouseDown
      -- instead
