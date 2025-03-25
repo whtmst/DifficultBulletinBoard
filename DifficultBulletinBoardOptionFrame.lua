@@ -262,7 +262,7 @@ local function addScrollFrameToOptionFrame()
     optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
--- Dropdown option function with proper z-ordering
+-- Dropdown option function with proper z-ordering and dynamic width
 local function addDropDownOptionToOptionFrame(options, defaultValue)
     -- Adjust vertical offset for the dropdown
     optionYOffset = optionYOffset - 30
@@ -293,10 +293,51 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         GameTooltip:Hide()
     end)
 
+    -- Create temporary exact clone of the GameFontHighlight to measure text properly
+    local tempFont = UIParent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    local fontPath, fontSize, fontFlags = GameFontHighlight:GetFont()
+    tempFont:SetFont(fontPath, fontSize, fontFlags)
+    
+    -- Set extra wide width to ensure accurate measurements
+    tempFont:SetWidth(500)
+    
+    local maxTextWidth = 0
+
+    -- Check width of dropdown items with accurate measurement
+    for _, item in ipairs(options.items) do
+        tempFont:SetText(item.text)
+        -- Use exact pixel measurements to avoid truncation
+        local width = tempFont:GetStringWidth()
+        if width > maxTextWidth then
+            maxTextWidth = width
+        end
+    end
+
+    -- Force a bigger width for common menu options that are known to be long
+    for _, item in ipairs(options.items) do
+        if item.text == "Fixed Time (HH:MM:SS)" then
+            -- Hardcode a minimum width for this specific item
+            if maxTextWidth < 160 then
+                maxTextWidth = 160
+            end
+        end
+    end
+
+    -- Clean up temporary font
+    tempFont:Hide()
+
+    -- Add generous padding for the dropdown (50+ pixels rather than 36)
+    local dropdownWidth = maxTextWidth + 52
+
+    -- Ensure minimum width of 150 (increased from 133)
+    if dropdownWidth < 150 then
+        dropdownWidth = 150
+    end
+
     -- Create a container frame for our custom dropdown
     local dropdownContainer = CreateFrame("Frame", options.frameName.."Container", optionScrollChild)
     dropdownContainer:SetPoint("LEFT", labelFrame, "RIGHT", 10, 0)
-    dropdownContainer:SetWidth(133)
+    dropdownContainer:SetWidth(dropdownWidth)
     dropdownContainer:SetHeight(22)
     
     -- Create the dropdown button with modern styling
@@ -314,10 +355,10 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     dropdown:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
     dropdown:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
     
-    -- Create the selected text display
+    -- Create the selected text display with more right padding for arrow
     local selectedText = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     selectedText:SetPoint("LEFT", dropdown, "LEFT", 8, 0)
-    selectedText:SetPoint("RIGHT", dropdown, "RIGHT", -24, 0) -- Leave room for arrow
+    selectedText:SetPoint("RIGHT", dropdown, "RIGHT", -28, 0) -- Increased from -24 to -28
     selectedText:SetJustifyH("LEFT")
     selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0)
     
@@ -351,10 +392,10 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         end
     end
     
-    -- Create the menu frame - keep it simple
+    -- Create the menu frame with matching width
     local menuFrame = CreateFrame("Frame", options.frameName.."Menu", UIParent)
-    menuFrame:SetFrameStrata("TOOLTIP") -- Use TOOLTIP strata to appear above everything
-    menuFrame:SetWidth(dropdown:GetWidth())
+    menuFrame:SetFrameStrata("TOOLTIP")
+    menuFrame:SetWidth(dropdownWidth)
     menuFrame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", 
@@ -398,7 +439,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         -- Highlight state - update to match headline color
         menuItem:SetScript("OnEnter", function()
             this:SetBackdropColor(0.2, 0.2, 0.25, 1.0)
-            itemText:SetTextColor(0.9, 0.9, 1.0, 1.0) -- Updated to match headline color
+            itemText:SetTextColor(0.9, 0.9, 1.0, 1.0)
         end)
         
         menuItem:SetScript("OnLeave", function()
@@ -428,36 +469,36 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         end
     end
     
-	-- Toggle menu
-	dropdown:SetScript("OnClick", function()
-		if menuFrame:IsShown() then
-			menuFrame:Hide()
-		else
-			-- Hide all other open dropdown menus first
-			if DROPDOWN_MENUS_LIST then
-				for _, menu in ipairs(DROPDOWN_MENUS_LIST) do
-					if menu ~= menuFrame and menu:IsShown() then
-						menu:Hide()
-					end
-				end
-			end
-			
-			updateMenuPosition()
-			menuFrame:Show()
-		end
-	end)
+    -- Toggle menu
+    dropdown:SetScript("OnClick", function()
+        if menuFrame:IsShown() then
+            menuFrame:Hide()
+        else
+            -- Hide all other open dropdown menus first
+            if DROPDOWN_MENUS_LIST then
+                for _, menu in ipairs(DROPDOWN_MENUS_LIST) do
+                    if menu ~= menuFrame and menu:IsShown() then
+                        menu:Hide()
+                    end
+                end
+            end
+            
+            updateMenuPosition()
+            menuFrame:Show()
+        end
+    end)
     
-    -- Hover effect - update text color to match headline
+    -- Hover effect
     dropdown:SetScript("OnEnter", function()
         this:SetBackdropColor(0.15, 0.15, 0.18, 0.8)
         this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)
-        selectedText:SetTextColor(0.9, 0.9, 1.0, 1.0) -- Added to match headline color
+        selectedText:SetTextColor(0.9, 0.9, 1.0, 1.0)
     end)
     
     dropdown:SetScript("OnLeave", function()
         this:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
         this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
-        selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0) -- Reset to normal color
+        selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0)
     end)
     
     -- Store menu reference
