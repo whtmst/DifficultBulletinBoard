@@ -840,7 +840,7 @@ local tempSystemMessageFrames = {}
 local tempSystemMessageColumns = {}
 
 -- Function to create the placeholders and font strings for a topic
--- Used for Hardcore Logs tab with precise alignment to match other tabs
+-- Used for Hardcore Logs tab with precise alignment and resize support
 local function createTopicListWithMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
@@ -881,17 +881,13 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                 messageColumn:SetTextColor(1, 1, 1, 1)
                 messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
-                -- Create Time column with refined absolute positioning
+                -- Create Time column with correct positioning for proper resize behavior
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
                 
-                -- Calculate the exact position for time column
-                -- In other tabs, the time is positioned at:
-                -- message start (100px) + message width + 57px offset
-                local messageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
-                local timeXPosition = 100 + messageWidth + 57
-                
-                timeColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", timeXPosition, topicYOffset)
+                -- Important: Attach time column to message column for consistent resizing behavior
+                -- Use the user-specified offset of 57px instead of the default 20px
+                timeColumn:SetPoint("LEFT", messageColumn, "RIGHT", 40, 0)
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
                 timeColumn:SetTextColor(1, 1, 1, 1)
