@@ -1,4 +1,5 @@
 -- DifficultBulletinBoardOptionFrame.lua
+-- Handles the options interface and configuration settings for Difficult Bulletin Board
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
 DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
@@ -301,37 +302,42 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     tempFont:SetWidth(500)
     
     local maxTextWidth = 0
+    local itemsWithLongText = {}
 
-    -- Check width of dropdown items with accurate measurement
-    for _, item in ipairs(options.items) do
+    -- First pass: Check width of dropdown items and identify longer items
+    for i, item in ipairs(options.items) do
         tempFont:SetText(item.text)
-        -- Use exact pixel measurements to avoid truncation
         local width = tempFont:GetStringWidth()
+        
+        -- Store the actual width for each item
+        itemsWithLongText[i] = width
+        
         if width > maxTextWidth then
             maxTextWidth = width
         end
     end
 
-    -- Force a bigger width for common menu options that are known to be long
-    for _, item in ipairs(options.items) do
-        if item.text == "Fixed Time (HH:MM:SS)" then
-            -- Hardcode a minimum width for this specific item
-            if maxTextWidth < 160 then
-                maxTextWidth = 160
-            end
-        end
+    -- Add proper padding for dropdown elements
+    -- Account for: left padding (8px) + arrow width (16px) + arrow right padding (8px) + right text padding (4px)
+    local ARROW_WIDTH = 16
+    local TEXT_PADDING = 12 -- Total horizontal text padding (left + right)
+    local ARROW_PADDING = 8 -- Space to the right of text before arrow
+    local BORDER_PADDING = 4 -- Extra space for border elements
+    
+    -- Calculate required dropdown width with proper padding
+    local dropdownWidth = maxTextWidth + TEXT_PADDING + ARROW_WIDTH + ARROW_PADDING + BORDER_PADDING
+    
+    -- Minimum width with proper padding
+    local MIN_WIDTH = 120 -- Base minimum without text
+    if dropdownWidth < MIN_WIDTH then
+        dropdownWidth = MIN_WIDTH
     end
+    
+    -- Round up to nearest even number for better visual appearance
+    dropdownWidth = math.ceil(dropdownWidth / 2) * 2
 
     -- Clean up temporary font
     tempFont:Hide()
-
-    -- Add generous padding for the dropdown (50+ pixels rather than 36)
-    local dropdownWidth = maxTextWidth + 52
-
-    -- Ensure minimum width of 150 (increased from 133)
-    if dropdownWidth < 150 then
-        dropdownWidth = 150
-    end
 
     -- Create a container frame for our custom dropdown
     local dropdownContainer = CreateFrame("Frame", options.frameName.."Container", optionScrollChild)
@@ -354,24 +360,26 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     dropdown:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
     dropdown:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
     
-    -- Create the selected text display with more right padding for arrow
+    -- Create the selected text display with proper padding for arrow
     local selectedText = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     selectedText:SetPoint("LEFT", dropdown, "LEFT", 8, 0)
-    selectedText:SetPoint("RIGHT", dropdown, "RIGHT", -28, 0) -- Increased from -24 to -28
+    selectedText:SetPoint("RIGHT", dropdown, "RIGHT", -(ARROW_WIDTH + ARROW_PADDING), 0)
     selectedText:SetJustifyH("LEFT")
     selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0)
     
-    -- Create dropdown arrow texture
+    -- Create dropdown arrow texture using down.tga as default
     local arrow = dropdown:CreateTexture(nil, "OVERLAY")
-    arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
-    arrow:SetWidth(16)
+    arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
+    arrow:SetWidth(ARROW_WIDTH)
     arrow:SetHeight(16)
     arrow:SetPoint("RIGHT", dropdown, "RIGHT", -4, 0)
+    arrow:SetTexCoord(0, 1, 0, 1) -- Use full texture
     
     -- Store references to the text object and value
     dropdown.value = defaultValue
     dropdown.text = selectedText
     dropdown.arrow = arrow
+    dropdown.menuOpen = false -- Track menu state
     
     -- Initialize with default value
     local matchFound = false
@@ -451,6 +459,9 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             dropdown.value = this.value
             dropdown.text:SetText(this.text)
             menuFrame:Hide()
+            dropdown.menuOpen = false
+            -- Reset arrow to normal state when menu closes
+            dropdown.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
         end)
         
         menuHeight = menuHeight + itemHeight
@@ -471,8 +482,13 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     -- Toggle menu
     dropdown:SetScript("OnClick", function()
         if menuFrame:IsShown() then
+            -- Menu is closing
             menuFrame:Hide()
+            dropdown.menuOpen = false
+            -- Reset arrow to normal state
+            this.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
         else
+            -- Menu is opening
             -- Hide all other open dropdown menus first
             if DROPDOWN_MENUS_LIST then
                 for _, menu in ipairs(DROPDOWN_MENUS_LIST) do
@@ -482,12 +498,16 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
                 end
             end
             
+            -- Change arrow to gradient when menu opens
+            this.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\gradient_down.tga")
+            dropdown.menuOpen = true
+            
             updateMenuPosition()
             menuFrame:Show()
         end
     end)
     
-    -- Hover effect
+    -- Hover effect without changing arrow texture
     dropdown:SetScript("OnEnter", function()
         this:SetBackdropColor(0.15, 0.15, 0.18, 0.8)
         this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)
@@ -502,6 +522,12 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     
     -- Store menu reference
     dropdown.menuFrame = menuFrame
+    
+    -- Add menu hide handler to reset arrow
+    menuFrame:SetScript("OnHide", function()
+        dropdown.menuOpen = false
+        dropdown.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
+    end)
     
     -- Close menu when clicking elsewhere
     if not DROPDOWN_MENUS_LIST then
@@ -618,6 +644,20 @@ local function addInputBoxOptionToOptionFrame(option, value)
 end
 
 local tempTagsTextBoxes = {}
+local checkboxes = {} -- Track all checkboxes we create for texture updates
+
+-- Helper function to update checkbox textures after they've been created
+local function updateCheckboxTextures()
+    for i, checkbox in ipairs(checkboxes) do
+        if checkbox and checkbox:GetChecked() and checkbox.customCheckTexture then
+            checkbox.customCheckTexture:Show()
+        elseif checkbox and checkbox.customCheckTexture then
+            checkbox.customCheckTexture:Hide()
+        end
+    end
+end
+
+-- Creates a customized topic list with checkboxes and tag inputs
 local function addTopicListToOptionFrame(topicObject, topicList)
     local parentFrame = optionScrollChild
     local tempTags = {}
@@ -636,7 +676,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
     scrollLabel:SetTextColor(0.9, 0.9, 1.0, 1.0)
 
-    --set labelFrame width afterwards with padding so the label is not cut off
+    -- Set labelFrame width afterwards with padding so the label is not cut off
     labelFrame:SetWidth(scrollLabel:GetStringWidth() + 20)
 
     -- Add a GameTooltip to the labelFrame
@@ -660,24 +700,80 @@ local function addTopicListToOptionFrame(topicObject, topicList)
     for _, topic in ipairs(topicList) do
         optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
 
-        -- Create modern checkbox with background
-        local checkboxBg = CreateFrame("Frame", nil, parentFrame)
-        checkboxBg:SetWidth(25)
-        checkboxBg:SetHeight(25)
-        checkboxBg:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
+        -- Create a custom checkbox button (without using the template)
+        local checkbox = CreateFrame("Button", nil, parentFrame)
+        checkbox:SetWidth(20)
+        checkbox:SetHeight(20)
+        checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
         
-        local checkbox = CreateFrame("CheckButton", "$parent_" .. topic.name .. "_Checkbox", checkboxBg, "UICheckButtonTemplate")
-        checkbox:SetWidth(25)
-        checkbox:SetHeight(25)
-        checkbox:SetPoint("CENTER", checkboxBg, "CENTER")
-        checkbox:SetChecked(topic.selected)
-
-        local currentTopic = topic
+        -- Create empty checkbox background texture
+        local emptyBoxTexture = checkbox:CreateTexture(nil, "BACKGROUND")
+        emptyBoxTexture:SetTexture("Interface\\Buttons\\UI-CheckBox-Up")
+        emptyBoxTexture:SetAllPoints(checkbox)
+        checkbox:SetNormalTexture(emptyBoxTexture)
+        
+        -- Create pushed state texture
+        local pushedTexture = checkbox:CreateTexture(nil, "BACKGROUND")
+        pushedTexture:SetTexture("Interface\\Buttons\\UI-CheckBox-Down")
+        pushedTexture:SetAllPoints(checkbox)
+        checkbox:SetPushedTexture(pushedTexture)
+        
+        -- Create highlight texture
+        local highlightTexture = checkbox:CreateTexture(nil, "HIGHLIGHT")
+        highlightTexture:SetTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+        highlightTexture:SetAllPoints(checkbox)
+        highlightTexture:SetBlendMode("ADD")
+        checkbox:SetHighlightTexture(highlightTexture)
+        
+        -- Create custom check mark frame with adjustable dimensions and position
+        local checkMarkFrame = CreateFrame("Frame", nil, checkbox)
+        
+        -- Set the desired size for the check mark
+        local checkMarkWidth = 12   -- Width of check mark
+        local checkMarkHeight = 12  -- Height of check mark
+        local xOffset = 0           -- Horizontal positioning (negative = left, positive = right)
+        local yOffset = 2           -- Vertical positioning (negative = down, positive = up)
+        
+        checkMarkFrame:SetWidth(checkMarkWidth)
+        checkMarkFrame:SetHeight(checkMarkHeight)
+        checkMarkFrame:SetPoint("CENTER", checkbox, "CENTER", xOffset, yOffset)
+        checkMarkFrame:SetFrameLevel(checkbox:GetFrameLevel() + 5)
+        
+        local checkMarkTexture = checkMarkFrame:CreateTexture(nil, "OVERLAY")
+        checkMarkTexture:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\check_sign.tga")
+        checkMarkTexture:SetAllPoints(checkMarkFrame)
+        
+        -- Store state and references
+        checkbox.isChecked = topic.selected
+        checkbox.checkMarkFrame = checkMarkFrame
+        checkbox.topicRef = topic
+        
+        -- Apply initial state
+        if checkbox.isChecked then
+            checkMarkFrame:Show()
+        else
+            checkMarkFrame:Hide()
+        end
+        
+        -- Handle clicking on the checkbox
         checkbox:SetScript("OnClick", function()
-            currentTopic.selected = checkbox:GetChecked()
+            local self = this
+            
+            -- Toggle checked state
+            self.isChecked = not self.isChecked
+            
+            -- Update topic data
+            self.topicRef.selected = self.isChecked
+            
+            -- Update visual state
+            if self.isChecked then
+                self.checkMarkFrame:Show()
+            else
+                self.checkMarkFrame:Hide()
+            end
         end)
 
-        -- Add a label next to the checkbox displaying the topic with improved styling
+        -- Add a label next to the checkbox
         local topicLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         topicLabel:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
         topicLabel:SetText(topic.name)
@@ -685,6 +781,16 @@ local function addTopicListToOptionFrame(topicObject, topicList)
         topicLabel:SetTextColor(0.9, 0.9, 0.9, 1.0)
         topicLabel:SetJustifyH("LEFT")
         topicLabel:SetWidth(175)
+        
+        -- Make the label clickable too
+        local labelClickArea = CreateFrame("Button", nil, parentFrame)
+        labelClickArea:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
+        labelClickArea:SetWidth(175)
+        labelClickArea:SetHeight(20)
+        labelClickArea:SetScript("OnClick", function()
+            -- Forward clicks to the checkbox
+            checkbox:Click()
+        end)
 
         -- Create a backdrop for tags textbox
         local tagsBackdrop = {
@@ -694,7 +800,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
             insets = { left = 2, right = 2, top = 2, bottom = 2 }
         }
 
-        -- Add a text box next to the topic label for tags input with modern styling
+        -- Add a text box next to the topic label for tags input
         local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame)
         tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
         tagsTextBox:SetWidth(200)
@@ -724,7 +830,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 
         table.insert(tempTagsTextBoxes, tagsTextBox)
     end
-
+    
     return tempTags
 end
 
