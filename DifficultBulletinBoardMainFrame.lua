@@ -840,7 +840,7 @@ local tempSystemMessageFrames = {}
 local tempSystemMessageColumns = {}
 
 -- Function to create the placeholders and font strings for a topic
--- Used for Hardcore Logs tab
+-- Used for Hardcore Logs tab with precise alignment to match other tabs
 local function createTopicListWithMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = 0
@@ -851,7 +851,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
         if topic.selected then
             local header = contentFrame:CreateFontString("$parent_" .. topic.name ..  "Header", "OVERLAY", "GameFontNormal")
             header:SetText(topic.name)
-            header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 5, yOffset)  -- Changed from 10 to 5
+            header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 5, yOffset)
             header:SetWidth(mainFrame:GetWidth())
             header:SetJustifyH("LEFT")
             header:SetTextColor(0.9, 0.9, 1.0, 1.0)
@@ -864,46 +864,57 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
             topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {FontStrings = {}}
 
             for i = 1, numberOfPlaceholders do
-
                 -- Create an invisible button to act as a parent
                 local messageFrame = CreateFrame("Button", "$parent_" .. topic.name .. "Placeholder" .. i .. "_MessageFrame", contentFrame)
-                messageFrame:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 8, topicYOffset)  -- Changed from 15 to 8
-                messageFrame:SetWidth(846)
+                messageFrame:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
+                messageFrame:SetWidth(systemMessageWidth)
                 messageFrame:SetHeight(10)
                 messageFrame:EnableMouse(true)
 
-                -- create Message column
+                -- Create Message column with exact alignment
                 local messageColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Message", "OVERLAY", "GameFontNormal")
                 messageColumn:SetText("-")
-                messageColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 8, topicYOffset)  -- Changed from 15 to 8
+                messageColumn:SetPoint("TOPLEFT", messageFrame, "TOPLEFT", 5, 0)  -- Add 5px offset to match name column text
                 messageColumn:SetWidth(systemMessageWidth)
                 messageColumn:SetHeight(10)
                 messageColumn:SetJustifyH("LEFT")
-                messageColumn:SetTextColor(1, 1, 1)
+                messageColumn:SetTextColor(1, 1, 1, 1)
                 messageColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
-                -- Create Time column
+                -- Create Time column with refined absolute positioning
                 local timeColumn = contentFrame:CreateFontString("$parent_" .. topic.name .. "Placeholder" .. i .. "_Time", "OVERLAY", "GameFontNormal")
                 timeColumn:SetText("-")
-                timeColumn:SetPoint("TOPLEFT", messageColumn, "TOPRIGHT", 20, 0)
+                
+                -- Calculate the exact position for time column
+                -- In other tabs, the time is positioned at:
+                -- message start (100px) + message width + 57px offset
+                local messageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
+                local timeXPosition = 100 + messageWidth + 57
+                
+                timeColumn:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", timeXPosition, topicYOffset)
                 timeColumn:SetWidth(100)
                 timeColumn:SetJustifyH("LEFT")
-                timeColumn:SetTextColor(1, 1, 1)
+                timeColumn:SetTextColor(1, 1, 1, 1)
                 timeColumn:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
 
-                table.insert(topicPlaceholders[topic.name], {nameButton = nil, messageFontString = messageColumn, timeFontString = timeColumn, messageFrame = messageFrame, creationTimestamp = nil})
+                table.insert(topicPlaceholders[topic.name], {
+                    nameButton = nil, 
+                    messageFontString = messageColumn, 
+                    timeFontString = timeColumn, 
+                    messageFrame = messageFrame, 
+                    creationTimestamp = nil
+                })
 
                 table.insert(tempSystemMessageFrames, messageFrame)
                 table.insert(tempSystemMessageColumns, messageColumn)
 
-                -- Update the GameTooltip with smaller Arial Narrow font
+                -- Update the GameTooltip
                 messageFrame:SetScript("OnEnter", function()
                     local currentMessage = messageColumn:GetText()
                     if currentMessage ~= nil and currentMessage ~= "-" then
                       GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
                       GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
                       
-                      -- Try Arial Narrow which appears smaller than default
                       if GameTooltipTextLeft1 then
                         GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
                       end
