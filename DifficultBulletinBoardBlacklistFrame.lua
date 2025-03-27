@@ -5,17 +5,20 @@
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardBlacklistFrame = DifficultBulletinBoardBlacklistFrame or {}
 
-local blacklistFrame = DifficultBulletinBoardBlacklistFrame
-local blacklistScrollFrame
-local blacklistScrollChild
+-- Track initialization state
+DifficultBulletinBoardBlacklistFrame.initialized = false
 
+-- Module references
+local blacklistFrame = DifficultBulletinBoardBlacklistFrame
+DifficultBulletinBoardBlacklistFrame.scrollFrame = nil
+DifficultBulletinBoardBlacklistFrame.scrollChild = nil
+DifficultBulletinBoardBlacklistFrame.entryFrames = {}
+
+-- Constants
 local BLACKLIST_ENTRY_HEIGHT = 35
 local BLACKLIST_ENTRY_PADDING = 5
 local FOOTER_HEIGHT = 30
 local FOOTER_TOP_PADDING = 25  -- Padding between scroll content and footer
-
--- Array to track all blacklist entry frames for resize handling
-local blacklistEntryFrames = {}
 
 -- Global tracker for pending removals
 local pendingMessageRemoval = nil
@@ -49,6 +52,34 @@ end)
 
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
+end
+
+-- Pre-initialization check and setup
+function DifficultBulletinBoardBlacklistFrame.EnsureInitialized()
+    -- Already initialized, nothing to do
+    if DifficultBulletinBoardBlacklistFrame.initialized then
+        return true
+    end
+    
+    -- Check if blacklist frame exists
+    if not DifficultBulletinBoardBlacklistFrame then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: BlacklistFrame module not found")
+        return false
+    end
+    
+    -- Initialize proper defaults
+    if not DifficultBulletinBoardSavedVariables.messageBlacklist then
+        DifficultBulletinBoardSavedVariables.messageBlacklist = {}
+    end
+    
+    if not DifficultBulletinBoardSavedVariables.keywordBlacklist then
+        DifficultBulletinBoardSavedVariables.keywordBlacklist = ""
+    end
+    
+    -- Run initialization
+    DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
+    
+    return DifficultBulletinBoardBlacklistFrame.initialized
 end
 
 -- Create a footer with keyword filter input
@@ -236,11 +267,24 @@ local function createBlacklistScrollFrame()
         end
     end)
 
+    -- Save references in the module table for global access
+    DifficultBulletinBoardBlacklistFrame.scrollFrame = scrollFrame
+    DifficultBulletinBoardBlacklistFrame.scrollChild = scrollChild
+
     return scrollFrame, scrollChild
 end
 
 -- Create an entry for a blacklisted message
 local function createBlacklistEntry(message, index)
+    -- Get the scrollChild from the module table
+    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
+    
+    -- Safety check with visible error
+    if not blacklistScrollChild then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: ScrollChild not found in createBlacklistEntry")
+        return nil
+    end
+    
     local entry = CreateFrame(
         "Frame",
         "DifficultBulletinBoardBlacklistEntry" .. index,
@@ -327,14 +371,14 @@ local function createBlacklistEntry(message, index)
         this.textObj:SetTextColor(0.9, 0.7, 0.7, 1.0)
     end)
 
-    -- Remove button click handler - FIXED to work in vanilla with deferred processing
+    -- Remove button click handler
     removeButton:SetScript("OnClick", function()
         -- Schedule removal for next frame update
         pendingMessageRemoval = this.messageToRemove
         updateFrame:Show() -- Start the update process
     end)
 
-    -- Button visual feedback - matches main close button
+    -- Button visual feedback
     removeButton:SetScript("OnMouseDown", function()
         this.textObj:SetPoint("CENTER", removeButton, "CENTER", 0, -1) -- Scaled movement
     end)
@@ -344,13 +388,15 @@ local function createBlacklistEntry(message, index)
     end)
 
     -- Track this entry for resize updates
-    table.insert(blacklistEntryFrames, entry)
+    table.insert(DifficultBulletinBoardBlacklistFrame.entryFrames, entry)
 
     return entry
 end
 
 -- Update all blacklist entries when frame size changes
 local function updateBlacklistEntries()
+    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
+    
     if not blacklistScrollChild then return end
     
     -- Get new width for entries
@@ -358,8 +404,8 @@ local function updateBlacklistEntries()
     local newTextWidth = newEntryWidth - 40
     
     -- Update each entry in the tracking array
-    for i = 1, table.getn(blacklistEntryFrames) do
-        local entry = blacklistEntryFrames[i]
+    for i = 1, table.getn(DifficultBulletinBoardBlacklistFrame.entryFrames) do
+        local entry = DifficultBulletinBoardBlacklistFrame.entryFrames[i]
         if entry and entry:IsShown() then
             -- Update entry width
             entry:SetWidth(newEntryWidth)
@@ -374,6 +420,16 @@ end
 
 -- Refresh the blacklist entries with stable sorting
 function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
+    -- Get module references 
+    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
+    local blacklistScrollFrame = DifficultBulletinBoardBlacklistFrame.scrollFrame
+    
+    -- Safety check
+    if not blacklistScrollChild then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: ScrollChild not found in RefreshBlacklist")
+        return
+    end
+    
     -- Clean up existing entries from screen
     if blacklistScrollChild then
         -- Remove any existing "no entries" message first
@@ -384,13 +440,13 @@ function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
         end
         
         -- First destroy all children we're tracking
-        for i = table.getn(blacklistEntryFrames), 1, -1 do
-            local entry = blacklistEntryFrames[i]
+        for i = table.getn(DifficultBulletinBoardBlacklistFrame.entryFrames), 1, -1 do
+            local entry = DifficultBulletinBoardBlacklistFrame.entryFrames[i]
             if entry then
                 entry:Hide()
                 entry:ClearAllPoints()
                 entry:SetParent(nil)
-                blacklistEntryFrames[i] = nil
+                DifficultBulletinBoardBlacklistFrame.entryFrames[i] = nil
             end
         end
         
@@ -406,20 +462,27 @@ function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
         end
     end
     
-    -- Clear the tracking array completely (redundant but thorough)
-    while table.getn(blacklistEntryFrames) > 0 do
-        table.remove(blacklistEntryFrames)
+    -- IMPORTANT FIX: Clear the tracking array properly for Vanilla WoW
+    -- We need to empty the array, not create a new one
+    while table.getn(DifficultBulletinBoardBlacklistFrame.entryFrames) > 0 do
+        table.remove(DifficultBulletinBoardBlacklistFrame.entryFrames)
     end
     
     -- Reset scroll child height
     blacklistScrollChild:SetHeight(1)
     
-    -- Sort blacklisted messages into a stable array for consistent display order
+    -- Debug message showing blacklist count
+    local count = 0
+    for _ in pairs(DifficultBulletinBoardSavedVariables.messageBlacklist or {}) do 
+        count = count + 1 
+    end
+    
+    -- Sort blacklisted messages into a stable array
     local sortedMessages = {}
-    for message, _ in pairs(DifficultBulletinBoardSavedVariables.messageBlacklist) do
+    for message, _ in pairs(DifficultBulletinBoardSavedVariables.messageBlacklist or {}) do
         table.insert(sortedMessages, message)
     end
-    table.sort(sortedMessages) -- Sort alphabetically for consistent order
+    table.sort(sortedMessages) -- Sort alphabetically
     
     -- Add entries in sorted order
     local index = 1
@@ -429,15 +492,17 @@ function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
     -- Create new entries from the sorted messages
     for _, message in ipairs(sortedMessages) do
         local entry = createBlacklistEntry(message, index)
-        totalHeight = totalHeight + BLACKLIST_ENTRY_HEIGHT + BLACKLIST_ENTRY_PADDING
-        index = index + 1
-        hasEntries = true
+        if entry then
+            totalHeight = totalHeight + BLACKLIST_ENTRY_HEIGHT + BLACKLIST_ENTRY_PADDING
+            index = index + 1
+            hasEntries = true
+        end
     end
     
     -- Update scroll child height
     blacklistScrollChild:SetHeight(totalHeight + 10)
     
-    -- Show "no entries" message if needed - with a unique global name for tracking
+    -- Show "no entries" message if needed
     if not hasEntries then
         local noEntriesText = blacklistScrollChild:CreateFontString("DifficultBulletinBoardNoEntriesText", "OVERLAY", "GameFontNormal")
         noEntriesText:SetPoint("CENTER", blacklistScrollChild, "CENTER")
@@ -448,7 +513,7 @@ function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
     -- Force update the entry widths
     updateBlacklistEntries()
     
-    -- Force scrollbar update to ensure it appears when needed
+    -- Force scrollbar update
     if blacklistScrollFrame then
         local scrollBar = getglobal(blacklistScrollFrame:GetName().."ScrollBar")
         if scrollBar then
@@ -474,36 +539,61 @@ end
 
 -- Initialize the blacklist frame
 function DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
-    -- Create the scroll frame and child
-    blacklistScrollFrame, blacklistScrollChild = createBlacklistScrollFrame()
+    -- Prevent double initialization
+    if DifficultBulletinBoardBlacklistFrame.initialized then
+        return
+    end
     
-    -- Create the keyword filter footer
-    local footer = createKeywordFilterFooter()
+    -- Create the scroll frame and child if they don't exist
+    if not DifficultBulletinBoardBlacklistFrame.scrollFrame then
+        local scrollFrame, scrollChild = createBlacklistScrollFrame()
+        
+        -- Store references in the module
+        DifficultBulletinBoardBlacklistFrame.scrollFrame = scrollFrame
+        DifficultBulletinBoardBlacklistFrame.scrollChild = scrollChild
+        
+        -- Create the keyword filter footer
+        local footer = createKeywordFilterFooter()
+    end
+    
+    -- Mark as initialized
+    DifficultBulletinBoardBlacklistFrame.initialized = true
     
     -- Populate with initial blacklisted messages
     DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
 end
 
--- Toggle blacklist frame visibility
+-- Toggle blacklist frame visibility with proper error handling
 function DifficultBulletinBoard_ToggleBlacklistFrame()
-    if blacklistFrame:IsShown() then
-        blacklistFrame:Hide()
+    -- Make sure blacklist frame exists
+    if not DifficultBulletinBoardBlacklistFrame then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: BlacklistFrame not found")
+        return
+    end
+    
+    if DifficultBulletinBoardBlacklistFrame:IsShown() then
+        DifficultBulletinBoardBlacklistFrame:Hide()
     else
-        -- Initialize if needed
-        if not blacklistScrollFrame then
-            DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
-        else
-            -- Refresh to show latest blacklisted messages
-            DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
+        -- Ensure all components are properly initialized
+        if not DifficultBulletinBoardBlacklistFrame.EnsureInitialized() then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: Could not initialize blacklist frame")
+            return
         end
         
-        blacklistFrame:Show()
+        -- Show the fully initialized frame
+        DifficultBulletinBoardBlacklistFrame:Show()
+        
+        -- Refresh the display
+        DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
     end
 end
 
 -- OnSizeChanged script - update scroll child and entries in real-time
 blacklistFrame:SetScript("OnSizeChanged", function()
     -- Make sure we have required frames
+    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
+    local blacklistScrollFrame = DifficultBulletinBoardBlacklistFrame.scrollFrame
+    
     if not blacklistScrollChild then return end
     
     -- Set equal margins on left and right sides

@@ -431,27 +431,27 @@ linkUpdateFrame:SetScript("OnUpdate", function()
     end
 end)
 
--- Position blacklist relative to option frame
+-- Position blacklist relative to option frame with robust error handling
 function FrameLinker.PositionBlacklistRelativeToOption()
     local blacklistFrame = DifficultBulletinBoardBlacklistFrame
     local optionFrame = DifficultBulletinBoardOptionFrame
     
-    if blacklistFrame and optionFrame and blacklistFrame:IsShown() and optionFrame:IsShown() then
-        -- Store current position before we change anything
-        local wasAnchored = false
+    -- Verify both frames exist and are shown
+    if not blacklistFrame or not optionFrame then
+        return -- Silently exit if frames don't exist
+    end
+    
+    if blacklistFrame:IsShown() and optionFrame:IsShown() then
+        -- Safely get frame positions
+        local optionRight = optionFrame:GetRight()
+        local optionTop = optionFrame:GetTop()
         
-        -- Only proceed if blacklist frame isn't already positioned relative to option frame
-        if not wasAnchored then
-            -- Use absolute positioning instead of relative positioning
-            local optionRight = optionFrame:GetRight()
-            local optionTop = optionFrame:GetTop()
-            
-            if optionRight and optionTop then
-                blacklistFrame:ClearAllPoints()
-                blacklistFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 
-                                     optionRight + FrameLinker.FRAME_OFFSET_X, 
-                                     optionTop + FrameLinker.FRAME_OFFSET_Y)
-            end
+        if optionRight and optionTop then
+            -- Position blacklist frame to the right of option frame
+            blacklistFrame:ClearAllPoints()
+            blacklistFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 
+                                 optionRight + FrameLinker.FRAME_OFFSET_X, 
+                                 optionTop + FrameLinker.FRAME_OFFSET_Y)
         end
     end
 end
@@ -459,29 +459,47 @@ end
 -- Store original toggle function
 local originalToggleBlacklist = DifficultBulletinBoard_ToggleBlacklistFrame
 
--- Override blacklist toggle to maintain positioning when both frames are visible
+-- Override blacklist toggle function with robust error handling
 DifficultBulletinBoard_ToggleBlacklistFrame = function()
-    -- Call original toggle function if it exists
-    if originalToggleBlacklist then
-        originalToggleBlacklist()
+    -- Make sure the module exists
+    if not DifficultBulletinBoardBlacklistFrame then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: BlacklistFrame module not found")
+        return
+    end
+    
+    -- Toggle visibility with proper initialization
+    if DifficultBulletinBoardBlacklistFrame:IsShown() then
+        DifficultBulletinBoardBlacklistFrame:Hide()
     else
-        -- Fallback toggle behavior if original function isn't available
-        if DifficultBulletinBoardBlacklistFrame:IsShown() then
-            DifficultBulletinBoardBlacklistFrame:Hide()
-        else
-            DifficultBulletinBoardBlacklistFrame:Show()
-            
-            -- Initialize if needed (from original function)
-            if not blacklistScrollFrame and DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame then
-                DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
-            elseif DifficultBulletinBoardBlacklistFrame.RefreshBlacklist then
-                DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
+        -- Use the EnsureInitialized function to guarantee proper setup
+        if DifficultBulletinBoardBlacklistFrame.EnsureInitialized then
+            if not DifficultBulletinBoardBlacklistFrame.EnsureInitialized() then
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: Failed to initialize blacklist frame")
+                return
             end
+        else
+            -- Fallback to direct initialization if EnsureInitialized isn't available
+            if DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame then
+                DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: Cannot initialize blacklist frame")
+                return
+            end
+        end
+        
+        -- Show the frame after successful initialization
+        DifficultBulletinBoardBlacklistFrame:Show()
+        
+        -- Refresh the content
+        if DifficultBulletinBoardBlacklistFrame.RefreshBlacklist then
+            DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
         end
     end
     
-    -- Update position when both frames are visible
-    FrameLinker.PositionBlacklistRelativeToOption()
+    -- Position the frame if needed
+    if FrameLinker and FrameLinker.PositionBlacklistRelativeToOption then
+        FrameLinker.PositionBlacklistRelativeToOption()
+    end
 end
 
 -- Start tracking frame movement
