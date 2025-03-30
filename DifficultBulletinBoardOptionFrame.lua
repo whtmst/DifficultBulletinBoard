@@ -11,6 +11,9 @@ local optionYOffset = 30 -- Starting vertical offset for the first option
 
 local optionScrollChild
 
+-- Standard WoW scrollbar width including padding
+local SCROLL_BAR_WIDTH = 16
+
 local tagsTextBoxWidthDelta = 260
 
 local tempGroupTags = {}
@@ -141,6 +144,15 @@ local dropdownMenuRegistry = {}
 local currentTopMenu = nil
 local MENU_BASE_LEVEL = 100
 
+-- Margin for left alignment of option labels
+local OPTION_LABEL_LEFT_MARGIN = 5  -- Distance in pixels from left edge
+
+-- Spacing between labels and their input controls
+local OPTION_INPUT_SPACING = -10  -- Horizontal space between label and input elements
+
+-- Extra padding to prevent text cutoff at larger font sizes
+local DROPDOWN_EXTRA_PADDING = 10
+
 -- Function to show a dropdown menu and ensure it's on top
 local function showDropdownMenu(dropdown)
     local menuFrame = dropdown.menuFrame
@@ -269,7 +281,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
 
     -- Create a frame to hold the label and enable mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
-    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", OPTION_LABEL_LEFT_MARGIN, optionYOffset)
     labelFrame:SetHeight(20)
 
     -- Create the label (FontString) inside the frame
@@ -278,8 +290,9 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     label:SetText(options.labelText)
     label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
     label:SetTextColor(0.9, 0.9, 0.9, 1.0)
+    label:SetJustifyH("LEFT") -- Explicitly set left alignment for consistent text starting position
 
-    -- Set labelFrame width based on the text width with padding
+    --set labelFrame width afterwards with padding so the label is not cut off
     labelFrame:SetWidth(label:GetStringWidth() + 20)
 
     -- Add a GameTooltip to the labelFrame
@@ -317,15 +330,22 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         end
     end
 
-    -- Add proper padding for dropdown elements
+    -- Add proper padding for dropdown elements with extra buffer
     -- Account for: left padding (8px) + arrow width (16px) + arrow right padding (8px) + right text padding (4px)
     local ARROW_WIDTH = 16
     local TEXT_PADDING = 12 -- Total horizontal text padding (left + right)
     local ARROW_PADDING = 8 -- Space to the right of text before arrow
     local BORDER_PADDING = 4 -- Extra space for border elements
+    local DROPDOWN_EXTRA_PADDING = 10  -- Extra padding to prevent text cutoff at larger font sizes
     
-    -- Calculate required dropdown width with proper padding
-    local dropdownWidth = maxTextWidth + TEXT_PADDING + ARROW_WIDTH + ARROW_PADDING + BORDER_PADDING
+    -- Calculate required dropdown width with proper padding and font size adjustment
+    local fontSizeAdjustment = (tonumber(DifficultBulletinBoardVars.fontSize) - 11) * 1.5  -- Additional width per font size point above default
+    local dropdownWidth = maxTextWidth + TEXT_PADDING + ARROW_WIDTH + ARROW_PADDING + BORDER_PADDING + DROPDOWN_EXTRA_PADDING
+    
+    -- Add extra width for larger font sizes
+    if tonumber(DifficultBulletinBoardVars.fontSize) > 11 then
+        dropdownWidth = dropdownWidth + fontSizeAdjustment
+    end
     
     -- Minimum width with proper padding
     local MIN_WIDTH = 120 -- Base minimum without text
@@ -341,7 +361,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
 
     -- Create a container frame for our custom dropdown
     local dropdownContainer = CreateFrame("Frame", options.frameName.."Container", optionScrollChild)
-    dropdownContainer:SetPoint("LEFT", labelFrame, "RIGHT", 10, 0)
+    dropdownContainer:SetPoint("LEFT", labelFrame, "RIGHT", OPTION_INPUT_SPACING, 0)
     dropdownContainer:SetWidth(dropdownWidth)
     dropdownContainer:SetHeight(22)
     
@@ -580,13 +600,14 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     return dropdown
 end
 
+-- Creates an input box option with label and tooltip
 local function addInputBoxOptionToOptionFrame(option, value)
     -- Adjust Y offset for the new option
     optionYOffset = optionYOffset - 30
 
     -- Create a frame to hold the label and allow for mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
-    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", OPTION_LABEL_LEFT_MARGIN, optionYOffset)
     labelFrame:SetHeight(20)
 
     -- Create the label (FontString) inside the frame
@@ -595,6 +616,7 @@ local function addInputBoxOptionToOptionFrame(option, value)
     label:SetText(option.labelText)
     label:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
     label:SetTextColor(0.9, 0.9, 0.9, 1.0)
+    label:SetJustifyH("LEFT") -- Explicitly set left alignment for consistent text starting position
 
     --set labelFrame width afterwards with padding so the label is not cut off
     labelFrame:SetWidth(label:GetStringWidth() + 20)
@@ -620,7 +642,7 @@ local function addInputBoxOptionToOptionFrame(option, value)
 
     -- Create the input field (EditBox) with modern styling
     local inputBox = CreateFrame("EditBox", option.frameName, optionScrollChild)
-    inputBox:SetPoint("LEFT", labelFrame, "RIGHT", 10, 0)
+    inputBox:SetPoint("LEFT", labelFrame, "RIGHT", OPTION_INPUT_SPACING, 0)
     inputBox:SetWidth(33)
     inputBox:SetHeight(20)
     inputBox:SetBackdrop(inputBackdrop)
@@ -666,7 +688,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 
     -- Create a frame to hold the label and allow for mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
-    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", 10, optionYOffset)
+    labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", OPTION_LABEL_LEFT_MARGIN, optionYOffset)
     labelFrame:SetHeight(20)
 
     -- Create the label (FontString) inside the frame
@@ -675,8 +697,9 @@ local function addTopicListToOptionFrame(topicObject, topicList)
     scrollLabel:SetText(topicObject.labelText)
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
     scrollLabel:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    scrollLabel:SetJustifyH("LEFT") -- Explicitly set left alignment for consistent text starting position
 
-    -- Set labelFrame width afterwards with padding so the label is not cut off
+    -- Set width based on actual text width plus padding
     labelFrame:SetWidth(scrollLabel:GetStringWidth() + 20)
 
     -- Add a GameTooltip to the labelFrame
@@ -800,27 +823,29 @@ local function addTopicListToOptionFrame(topicObject, topicList)
             insets = { left = 2, right = 2, top = 2, bottom = 2 }
         }
 
-        -- Add a text box next to the topic label for tags input
-        local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame)
-        tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
-        tagsTextBox:SetWidth(200)
-        tagsTextBox:SetHeight(24)
-        tagsTextBox:SetBackdrop(tagsBackdrop)
-        tagsTextBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
-        tagsTextBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
-        tagsTextBox:SetText(table.concat(topic.tags, " "))
-        tagsTextBox:SetFontObject(GameFontHighlight)
-        tagsTextBox:SetTextColor(1, 1, 1, 1)
-        tagsTextBox:SetAutoFocus(false)
-        tagsTextBox:SetJustifyH("LEFT")
-        
-        -- Add highlight effect on focus
-        tagsTextBox:SetScript("OnEditFocusGained", function()
-            this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
-        end)
-        tagsTextBox:SetScript("OnEditFocusLost", function()
-            this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
-        end)
+		-- Add a text box next to the topic label for tags input
+		local tagsTextBox = CreateFrame("EditBox", "$parent_" .. topic.name .. "_TagsTextBox", parentFrame)
+		tagsTextBox:SetPoint("LEFT", topicLabel, "RIGHT", 10, 0)
+		tagsTextBox:SetWidth(200)
+		tagsTextBox:SetHeight(24)
+		tagsTextBox:SetBackdrop(tagsBackdrop)
+		tagsTextBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+		tagsTextBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+		tagsTextBox:SetText(table.concat(topic.tags, " "))
+		tagsTextBox:SetFontObject(GameFontHighlight)
+		tagsTextBox:SetTextColor(1, 1, 1, 1)
+		tagsTextBox:SetAutoFocus(false)
+		tagsTextBox:SetJustifyH("LEFT")
+		-- Add text insets to create padding within the input field
+		tagsTextBox:SetTextInsets(5, 3, 2, 2)  -- Left, right, top, bottom padding
+				
+		-- Add highlight effect on focus
+		tagsTextBox:SetScript("OnEditFocusGained", function()
+			this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+		end)
+		tagsTextBox:SetScript("OnEditFocusLost", function()
+			this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
+		end)
 
         local topicName = topic.name -- save a reference for the onTextChanged event
         tagsTextBox:SetScript("OnTextChanged", function()
@@ -928,7 +953,8 @@ function DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
 end
 
 optionFrame:SetScript("OnSizeChanged", function()
-    local tagsTextBoxWidth = optionFrame:GetWidth() - tagsTextBoxWidthDelta
+    -- Adjust the width calculation to account for scrollbar and padding
+    local tagsTextBoxWidth = optionFrame:GetWidth() - tagsTextBoxWidthDelta - SCROLL_BAR_WIDTH
     for _, msgFrame in ipairs(tempTagsTextBoxes) do
         msgFrame:SetWidth(tagsTextBoxWidth)
     end

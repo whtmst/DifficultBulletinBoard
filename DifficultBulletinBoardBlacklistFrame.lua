@@ -351,7 +351,7 @@ local function createBlacklistEntry(message, index)
     -- Add "×" text instead of texture
     local removeText = removeButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     removeText:SetText("×")
-    removeText:SetPoint("CENTER", removeButton, "CENTER", -0.5, -0.5) -- Scaled offset
+    removeText:SetPoint("CENTER", removeButton, "CENTER", -0.8, -0.5) -- Scaled offset
     removeText:SetTextColor(0.9, 0.7, 0.7, 1.0) -- Same as main close button
     removeText:SetFont("Fonts\\FRIZQT__.TTF", 14) -- 50% of main button's 18px font
 
