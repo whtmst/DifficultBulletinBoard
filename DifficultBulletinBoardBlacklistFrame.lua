@@ -100,35 +100,37 @@ local function createKeywordFilterFooter()
     -- Create label with spacing from the separator
     local label = footer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     label:SetPoint("TOPLEFT", separator, "BOTTOMLEFT", 5, -7)
-    label:SetText("Keyword Filter (comma separated):")
+    label:SetText("Keyword Blacklist:")
     label:SetTextColor(0.9, 0.9, 0.9, 1.0)
     
-    -- Create backdrop for the input box - matching Groups Logs search box
+    -- Create backdrop for the input box - matching main panel style
     local searchBackdrop = {
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 8,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+        tile = true, 
+        tileSize = 16, 
+        edgeSize = 14,  -- Increased from 8 to 14 to match main panel
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }  -- Increased from 2 to 4
     }
     
-    -- Create input field - matching Groups Logs search box style
+    -- Create input field with updated styling
     local input = CreateFrame("EditBox", "DifficultBulletinBoardKeywordFilterInput", footer)
     input:SetPoint("TOPLEFT", label, "TOPRIGHT", 10, 3)  -- Position after label
     input:SetPoint("RIGHT", footer, "RIGHT", -5, 0)
-    input:SetHeight(22)  -- Match the 22px height
+    input:SetHeight(26)  -- Increased from 22 to 26 to match other filters
     input:SetBackdrop(searchBackdrop)
-    input:SetBackdropColor(0.1, 0.1, 0.1, 0.7)
-    input:SetBackdropBorderColor(0.5, 0.5, 0.6, 1.0)  -- Default border color
+    input:SetBackdropColor(0.1, 0.1, 0.1, 0.9)  -- Updated alpha from 0.7 to 0.9
+    input:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Updated to match main panel border
     input:SetFontObject(GameFontHighlight)
     input:SetTextColor(0.9, 0.9, 1.0, 1.0)
     input:SetAutoFocus(false)
     input:SetJustifyH("LEFT")
-    input:SetTextInsets(5, 3, 2, 2)  -- Match the text insets
+    input:SetTextInsets(6, 3, 3, 3)  -- Updated for larger border
     
-    -- Add placeholder text (optional)
+    -- Add placeholder text with adjusted position
     local placeholderText = input:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    placeholderText:SetPoint("LEFT", input, "LEFT", 6, 0)
-    placeholderText:SetText("Enter filter terms...")
+    placeholderText:SetPoint("LEFT", input, "LEFT", 8, 0)  -- Updated from 6 to 8
+    placeholderText:SetText("Filter (separate terms with commas)...")
     placeholderText:SetTextColor(0.5, 0.5, 0.5, 0.7)
     
     -- Track focus state
@@ -158,15 +160,15 @@ local function createKeywordFilterFooter()
         end
     end)
     
-    -- Handle focus
+    -- Handle focus with updated highlight colors
     input:SetScript("OnEditFocusGained", function()
-        this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)  -- Brighter border on focus
+        this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)  -- Updated to subtle highlight
         this.hasFocus = true
         placeholderText:Hide()  -- Always hide on focus
     end)
     
     input:SetScript("OnEditFocusLost", function()
-        this:SetBackdropBorderColor(0.5, 0.5, 0.6, 1.0)  -- Dimmer border when not focused
+        this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Updated to match main panel
         this.hasFocus = false
         -- Show placeholder only if text is empty
         if this:GetText() == "" then
@@ -188,7 +190,6 @@ local function createKeywordFilterFooter()
     
     return footer
 end
-
 
 -- Create a scroll frame for the blacklist panel
 local function createBlacklistScrollFrame()

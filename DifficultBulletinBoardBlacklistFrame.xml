@@ -2,7 +2,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
     <!-- Blacklist Frame -->
     <Frame name="DifficultBulletinBoardBlacklistFrame" resizable="true" parent="UIParent" hidden="true" movable="true" enableMouse="true"
-           clampedToScreen="true">
+           clampedToScreen="True">
         <ResizeBounds>
             <minResize x="450" y="400" />
         </ResizeBounds>

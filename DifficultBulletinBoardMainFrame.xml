@@ -2,7 +2,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
     <!-- Main Frame -->
     <Frame name="DifficultBulletinBoardMainFrame" resizable="true" parent="UIParent" hidden="true"
-        movable="true" enableMouse="true" clampedToScreen="false">
+        movable="true" enableMouse="true" clampedToScreen="true">
         <ResizeBounds>
             <minResize x="450" y="300" />
         </ResizeBounds>

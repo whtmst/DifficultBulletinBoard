@@ -48,6 +48,14 @@ local groupsLogsSearchFrame = nil
 -- Number of entries to show in the Groups Logs tab
 local MAX_GROUPS_LOGS_ENTRIES = 50
 
+-- Keyword filter variables
+local KEYWORD_FILTER_HEIGHT = 30
+local KEYWORD_FILTER_BOTTOM_MARGIN = 4  -- Distance from bottom of frame to filter line
+local KEYWORD_FILTER_SCROLL_MARGIN = 8  -- Distance from filter line to scroll content
+local keywordFilterVisible = false
+local keywordFilterLine = nil
+local keywordFilterInput = nil
+
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
 end
@@ -464,7 +472,7 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
        DifficultBulletinBoardSavedVariables.messageBlacklist[chatMessage] then
         debugPrint("Filtering blacklisted message: " .. string.sub(chatMessage, 1, 40) .. "...")
         return true -- Skip this message as it's blacklisted
-    end  -- Fixed: changed closing curly brace '}' to proper 'end' statement
+    end
     
     local stringWithoutNoise = replaceSymbolsWithSpace(chatMessage)
 
@@ -940,9 +948,13 @@ local function createScrollFrameForMainFrame(scrollFrameName)
     scrollFrame:EnableMouseWheel(true)
 
     -- Set ScrollFrame anchors with reduced left margin (50% less)
-    scrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)  -- Changed from 30 to 15
-    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 20)
-
+    -- Use 25px bottom padding for balanced spacing above filter line
+    scrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)  
+    scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, 25)  -- Changed to 25px padding
+    
+    -- Store original bottom point for filter toggle adjustment
+    scrollFrame.originalBottomOffset = 25  -- Also update stored value
+    
     -- Get the scroll bar reference
     local scrollBar = getglobal(scrollFrame:GetName().."ScrollBar")
     
@@ -1032,27 +1044,30 @@ local function createGroupsLogsSearchBox()
     local headerWidth = tempFontString:GetStringWidth()
     tempFontString:Hide()
     
-    -- Position settings - balanced vertical offset for even border visibility
-    local xOffset = headerWidth + 20  -- Horizontal position after header
-    local yOffset = 4                -- Adjusted for balanced borders
+    -- Position settings - adjust this value to control how far to the left the search box starts
+    local HEADER_TO_SEARCH_GAP = 42  -- Spacing between header text and search box (increase to move right)
+    local xOffset = headerWidth + HEADER_TO_SEARCH_GAP  -- Horizontal position after header
+    local yOffset = 4  -- Vertical offset for even border visibility
     
     -- Create a frame to hold the search box
     local frame = CreateFrame("Frame", "DifficultBulletinBoardMainFrame_GroupsLogs_SearchFrame", groupsLogsScrollChild)
     
-    -- Position based on calculated width and anchor right side with margin
+    -- Position based on calculated width and maintain right edge anchoring
     frame:SetPoint("TOPLEFT", groupsLogsScrollChild, "TOPLEFT", xOffset, yOffset)
     frame:SetPoint("RIGHT", groupsLogsScrollFrame, "RIGHT", -10, 0)
-    frame:SetHeight(22)
+    frame:SetHeight(26)
     
     -- Ensure the frame is visible above the scroll content
     frame:SetFrameLevel(groupsLogsScrollChild:GetFrameLevel() + 5)
 
-    -- Create a backdrop for the search box
+    -- Create a backdrop for the search box - updated to match main panel style
     local searchBackdrop = {
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 8,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+        tile = true, 
+        tileSize = 16, 
+        edgeSize = 14,  -- Match main panel edge size
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }  -- Match main panel insets
     }
 
     -- Create the search box with balanced margins from container frame
@@ -1060,35 +1075,35 @@ local function createGroupsLogsSearchBox()
     searchBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
     searchBox:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
     searchBox:SetBackdrop(searchBackdrop)
-    searchBox:SetBackdropColor(0.1, 0.1, 0.1, 0.7)
-    searchBox:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+    searchBox:SetBackdropColor(0.1, 0.1, 0.1, 0.9)  -- Match main panel background color
+    searchBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Match main panel border color
     searchBox:SetText("")
     searchBox:SetFontObject(GameFontHighlight)
     searchBox:SetTextColor(0.9, 0.9, 1.0, 1.0)
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     
-    -- Add padding on the left side of text
-    searchBox:SetTextInsets(5, 3, 2, 2)
+    -- Add padding on the left side of text - adjusted for larger insets
+    searchBox:SetTextInsets(6, 3, 3, 3)
 
-    -- Add placeholder text
+    -- Add placeholder text - adjusted position for larger insets
     local placeholderText = searchBox:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    placeholderText:SetPoint("LEFT", searchBox, "LEFT", 6, 0)
+    placeholderText:SetPoint("LEFT", searchBox, "LEFT", 8, 0)
     placeholderText:SetText("Filter (separate terms with commas)...")
     placeholderText:SetTextColor(0.5, 0.5, 0.5, 0.7)
 
     -- Track focus state with a variable
     searchBox.hasFocus = false
 
-    -- Add placeholder handlers
+    -- Add placeholder handlers with updated highlight colors
     searchBox:SetScript("OnEditFocusGained", function()
-        this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0) -- Headline color
+        this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)  -- Subtle highlight that fits theme
         this.hasFocus = true
         placeholderText:Hide() -- Always hide on focus
     end)
 
     searchBox:SetScript("OnEditFocusLost", function()
-        this:SetBackdropBorderColor(0.5, 0.5, 0.6, 1.0) -- Dimmer version of headline color
+        this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Back to main panel border color
         this.hasFocus = false
         -- Show placeholder only if text is empty
         if this:GetText() == "" then
@@ -1153,6 +1168,293 @@ local function createGroupsLogsSearchBox()
     return frame
 end
 
+-- Create a horizontal line button that toggles the keyword filter
+local function createKeywordFilterLine()
+    -- Match Groups Logs search height for consistency
+    local SEARCH_BOX_HEIGHT = 22  -- Same as Groups Logs search box
+    
+    -- Store the original height of the main frame for positioning
+    local originalHeight = mainFrame:GetHeight()
+    mainFrame.originalHeight = originalHeight
+    
+    -- Create the line button with bottom anchor
+    local line = CreateFrame("Button", "DifficultBulletinBoardMainFrameKeywordLine", mainFrame)
+    line:SetHeight(16)
+    
+    -- Use bottom anchor for stable positioning
+    line:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMLEFT", 15, KEYWORD_FILTER_BOTTOM_MARGIN)
+    line:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, KEYWORD_FILTER_BOTTOM_MARGIN)
+    
+    -- Add text label in the center of the line
+    local text = line:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    text:SetPoint("CENTER", line, "CENTER", 0, 0) -- Position text at center
+    text:SetText("Keyword Blacklist")
+    text:SetTextColor(0.8, 0.8, 0.8, 1.0)
+    
+    -- Get text width to position the line segments properly
+    local textWidth = text:GetStringWidth()
+    local padding = 10 -- Space between text and lines
+    
+    -- Line inset to match input box width with border
+    local LINE_INSET = 2  -- Pixels to inset lines from edges of button
+    
+    -- Create the left line texture with inset from button edge
+    local leftLineTexture = line:CreateTexture(nil, "BACKGROUND")
+    leftLineTexture:SetHeight(1)
+    leftLineTexture:SetPoint("LEFT", line, "LEFT", LINE_INSET, 0)  -- Start LINE_INSET pixels from left edge
+    leftLineTexture:SetPoint("RIGHT", text, "LEFT", -padding, 0)   -- End left of text with padding
+    leftLineTexture:SetTexture(1, 1, 1, 0.3)
+    
+    -- Create the right line texture with inset from button edge
+    local rightLineTexture = line:CreateTexture(nil, "BACKGROUND")
+    rightLineTexture:SetHeight(1)
+    rightLineTexture:SetPoint("LEFT", text, "RIGHT", padding, 0)    -- Start right of text with padding
+    rightLineTexture:SetPoint("RIGHT", line, "RIGHT", -LINE_INSET, 0)  -- End LINE_INSET pixels from right edge
+    rightLineTexture:SetTexture(1, 1, 1, 0.3)
+    
+    -- Add hover effect for both lines and text
+    line:SetScript("OnEnter", function()
+        leftLineTexture:SetTexture(0.9, 0.9, 1.0, 0.5)
+        rightLineTexture:SetTexture(0.9, 0.9, 1.0, 0.5)
+        text:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    end)
+    
+    line:SetScript("OnLeave", function()
+        leftLineTexture:SetTexture(1, 1, 1, 0.3)
+        rightLineTexture:SetTexture(1, 1, 1, 0.3)
+        text:SetTextColor(0.8, 0.8, 0.8, 1.0)
+    end)
+    
+    -- Create the input box positioned below the line
+    local input = CreateFrame("EditBox", "DifficultBulletinBoardMainFrameKeywordInput", mainFrame)
+    input:SetHeight(SEARCH_BOX_HEIGHT)
+    
+    -- Position input directly below the line
+    input:SetPoint("TOPLEFT", line, "BOTTOMLEFT", 0, -4)
+    input:SetPoint("TOPRIGHT", line, "BOTTOMRIGHT", 0, -4)
+    
+    -- Style the input box backdrop to match main panel
+    local mainPanelBackdrop = {
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, 
+        tileSize = 16, 
+        edgeSize = 14,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    }
+    
+    input:SetBackdrop(mainPanelBackdrop)
+    input:SetBackdropColor(0.1, 0.1, 0.1, 0.9)  -- Match main panel background color
+    input:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Match main panel border color
+    
+    input:SetFontObject(GameFontHighlight)
+    input:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    input:SetAutoFocus(false)
+    input:SetJustifyH("LEFT")
+    input:SetTextInsets(6, 3, 3, 3)  -- Adjusted insets for larger border
+    
+    -- Add placeholder text with matching style
+    local placeholderText = input:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    placeholderText:SetPoint("LEFT", input, "LEFT", 8, 0)  -- Adjusted left position for larger insets
+    placeholderText:SetText("Filter (separate terms with commas)...")
+    placeholderText:SetTextColor(0.5, 0.5, 0.5, 0.7)
+    
+    -- Track focus state
+    input.hasFocus = false
+    
+    -- Load saved keywords
+    if DifficultBulletinBoardSavedVariables and DifficultBulletinBoardSavedVariables.keywordBlacklist then
+        input:SetText(DifficultBulletinBoardSavedVariables.keywordBlacklist)
+        -- Hide placeholder if there's text
+        if input:GetText() ~= "" then
+            placeholderText:Hide()
+        end
+    else
+        input:SetText("")
+    end
+    
+    -- Handle text changes
+    input:SetScript("OnTextChanged", function()
+        local text = this:GetText()
+        if DifficultBulletinBoardSavedVariables then
+            DifficultBulletinBoardSavedVariables.keywordBlacklist = text
+        end
+        
+        -- Update placeholder visibility
+        if this:GetText() == "" and not this.hasFocus then
+            placeholderText:Show()
+        else
+            placeholderText:Hide()
+        end
+    end)
+    
+    -- Handle focus with subtle highlight effect matching main panel theme
+    input:SetScript("OnEditFocusGained", function()
+        this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)  -- Subtle highlight that fits theme
+        this.hasFocus = true
+        placeholderText:Hide()  -- Always hide on focus
+    end)
+    
+    input:SetScript("OnEditFocusLost", function()
+        this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Back to main panel border color
+        this.hasFocus = false
+        -- Show placeholder only if text is empty
+        if this:GetText() == "" then
+            placeholderText:Show()
+        end
+    end)
+    
+    -- Handle enter and escape keys
+    input:SetScript("OnEnterPressed", function()
+        this:ClearFocus()
+    end)
+    
+    input:SetScript("OnEscapePressed", function()
+        this:ClearFocus()
+    end)
+    
+    -- Create function to update scroll frames based on filter visibility
+    local function updateScrollFramePositions()
+        local originalBottomOffset = 25
+        local newBottomOffset = 25 + KEYWORD_FILTER_HEIGHT + 8
+        
+        -- Update all scroll frames
+        local scrollFrames = {groupScrollFrame, groupsLogsScrollFrame, 
+                             professionScrollFrame, hardcoreScrollFrame}
+        
+        for _, scrollFrame in ipairs(scrollFrames) do
+            if scrollFrame then
+                scrollFrame:ClearAllPoints()
+                scrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+                scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26,
+                    keywordFilterVisible and newBottomOffset or originalBottomOffset)
+            end
+        end
+    end
+    
+    -- Define a function to fully reset the keyword filter state
+    local function resetKeywordFilterState()
+        -- Hide the input
+        input:Hide()
+        -- Reset tracking variable
+        keywordFilterVisible = false
+        -- Reset frame height to original
+        mainFrame:SetHeight(mainFrame.originalHeight)
+        -- Reset scroll positions
+        updateScrollFramePositions()
+    end
+    
+    -- Get original OnHide handler to preserve existing behavior
+    local originalOnHide = mainFrame:GetScript("OnHide")
+    
+    -- Set OnHide handler to reset keyword filter state
+    mainFrame:SetScript("OnHide", function()
+        -- Call our reset function
+        resetKeywordFilterState()
+        
+        -- Call original handler if it exists
+        if originalOnHide then
+            originalOnHide()
+        end
+    end)
+    
+    -- Toggle filter visibility when clicking the line
+    line:SetScript("OnClick", function()
+        DifficultBulletinBoard_ToggleKeywordFilter()
+    end)
+    
+    -- Store references
+    keywordFilterInput = input
+    keywordFilterLine = line
+    
+    -- Hide input initially (starts collapsed)
+    input:Hide()
+    
+    return line
+end
+
+-- Toggle the keyword filter visibility by expanding/collapsing the main frame
+function DifficultBulletinBoard_ToggleKeywordFilter()
+    if not keywordFilterInput then
+        return
+    end
+    
+    keywordFilterVisible = not keywordFilterVisible
+    
+    if keywordFilterVisible then
+        -- Calculate the amount to expand the frame
+        local expandAmount = KEYWORD_FILTER_HEIGHT + 4 -- Input height + gap
+        
+        -- Adjust the line position before expanding the frame
+        keywordFilterLine:ClearAllPoints()
+        keywordFilterLine:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMLEFT", 15, KEYWORD_FILTER_BOTTOM_MARGIN + expandAmount)
+        keywordFilterLine:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, KEYWORD_FILTER_BOTTOM_MARGIN + expandAmount)
+        
+        -- Now expand the frame
+        mainFrame:SetHeight(mainFrame.originalHeight + expandAmount)
+        
+        -- Show the input
+        keywordFilterInput:Show()
+        
+        -- Adjust all scroll frames to avoid content appearing under the filter
+        local newBottomOffset = 25 + KEYWORD_FILTER_HEIGHT + 4
+        if groupScrollFrame then
+            groupScrollFrame:ClearAllPoints()
+            groupScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            groupScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, newBottomOffset)
+        end
+        if groupsLogsScrollFrame then
+            groupsLogsScrollFrame:ClearAllPoints()
+            groupsLogsScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            groupsLogsScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, newBottomOffset)
+        end
+        if professionScrollFrame then
+            professionScrollFrame:ClearAllPoints()
+            professionScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            professionScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, newBottomOffset)
+        end
+        if hardcoreScrollFrame then
+            hardcoreScrollFrame:ClearAllPoints()
+            hardcoreScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            hardcoreScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, newBottomOffset)
+        end
+    else
+        -- Hide the input first
+        keywordFilterInput:Hide()
+        
+        -- Adjust the line position before collapsing the frame
+        keywordFilterLine:ClearAllPoints()
+        keywordFilterLine:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMLEFT", 15, KEYWORD_FILTER_BOTTOM_MARGIN)
+        keywordFilterLine:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, KEYWORD_FILTER_BOTTOM_MARGIN)
+        
+        -- Restore the main frame to original height
+        mainFrame:SetHeight(mainFrame.originalHeight)
+        
+        -- Restore original scroll frame positions
+        local originalBottomOffset = 25
+        if groupScrollFrame then
+            groupScrollFrame:ClearAllPoints()
+            groupScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            groupScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, originalBottomOffset)
+        end
+        if groupsLogsScrollFrame then
+            groupsLogsScrollFrame:ClearAllPoints()
+            groupsLogsScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            groupsLogsScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, originalBottomOffset)
+        end
+        if professionScrollFrame then
+            professionScrollFrame:ClearAllPoints()
+            professionScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            professionScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, originalBottomOffset)
+        end
+        if hardcoreScrollFrame then
+            hardcoreScrollFrame:ClearAllPoints()
+            hardcoreScrollFrame:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -55)
+            hardcoreScrollFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, originalBottomOffset)
+        end
+    end
+end
+
 function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     --call it once before OnUpdate so the time doesnt just magically appear
     DifficultBulletinBoardMainFrame.UpdateServerTime()
@@ -1176,9 +1478,17 @@ function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     
     -- Create the search box after all scroll frames are created
     createGroupsLogsSearchBox()
+    
+    -- Create the keyword filter components
+    createKeywordFilterLine()
+    
+    -- Initialize filter state
+    keywordFilterVisible = false
 end
 
+-- Resize handler - Updates frame widths and keyword filter positioning when main frame is resized
 mainFrame:SetScript("OnSizeChanged", function()
+    -- Update chat message frames and columns width
     local chatMessageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
     for _, msgFrame in ipairs(tempChatMessageFrames) do
         msgFrame:SetWidth(chatMessageWidth)
@@ -1188,6 +1498,7 @@ mainFrame:SetScript("OnSizeChanged", function()
         msgColumn:SetWidth(chatMessageWidth)
     end
 
+    -- Update system message frames and columns width
     local systemMessageWidth = mainFrame:GetWidth() - systemMessageWidthDelta
     for _, msgFrame in ipairs(tempSystemMessageFrames) do
         msgFrame:SetWidth(systemMessageWidth)
@@ -1195,6 +1506,46 @@ mainFrame:SetScript("OnSizeChanged", function()
 
     for _, msgColumn in ipairs(tempSystemMessageColumns) do
         msgColumn:SetWidth(systemMessageWidth)
+    end
+    
+    -- Update keyword filter components
+    if keywordFilterLine then
+        local currentHeight = mainFrame:GetHeight()
+        
+        if not keywordFilterVisible then
+            -- When collapsed: update originalHeight and maintain line at bottom
+            mainFrame.originalHeight = currentHeight
+            keywordFilterLine:ClearAllPoints()
+            keywordFilterLine:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMLEFT", 15, KEYWORD_FILTER_BOTTOM_MARGIN)
+            keywordFilterLine:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, KEYWORD_FILTER_BOTTOM_MARGIN)
+        else
+            -- When expanded: maintain line at proper distance from bottom
+            local expandAmount = KEYWORD_FILTER_HEIGHT + 4
+            keywordFilterLine:ClearAllPoints()
+            keywordFilterLine:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMLEFT", 15, KEYWORD_FILTER_BOTTOM_MARGIN + expandAmount)
+            keywordFilterLine:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -26, KEYWORD_FILTER_BOTTOM_MARGIN + expandAmount)
+            
+            -- Update the input position to follow the line
+            if keywordFilterInput then
+                keywordFilterInput:ClearAllPoints()
+                keywordFilterInput:SetPoint("TOPLEFT", keywordFilterLine, "BOTTOMLEFT", 0, -4)
+                keywordFilterInput:SetPoint("TOPRIGHT", keywordFilterLine, "BOTTOMRIGHT", 0, -4)
+            end
+        end
+    end
+end)
+
+-- Hide handler - Resets keyword filter when main frame is closed
+mainFrame:SetScript("OnHide", function()
+    -- Reset keyword filter state when main frame is hidden
+    if keywordFilterVisible then
+        keywordFilterVisible = false
+        keywordFilterInput:Hide()
+        
+        -- Only reset height if we've stored the original height
+        if mainFrame.originalHeight then
+            mainFrame:SetHeight(mainFrame.originalHeight)
+        end
     end
 end)
 
