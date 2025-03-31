@@ -11,19 +11,23 @@
 
 ### Group Finder
 
-![screenshot](images/groups.png)
+<img src="https://github.com/user-attachments/assets/cd601b25-fab7-40e3-9198-299cf3e07761" alt="groups" width="740" height="479">
+
 
 ### Group Logs
 
-![screenshot](images/grouplogs.png)
+<img src="https://github.com/user-attachments/assets/44a826e2-52f4-4b95-ad47-11eb5f2d082b" alt="grouplogs" width="740" height="479">
+
 
 ### Profession Search
 
-![screenshot](images/professions.png)
+<img src="https://github.com/user-attachments/assets/e322bb70-cf30-4b24-b6d4-f7bfe6bf0bf5" alt="professions" width="740" height="479">
+
 
 ### Hardcore Messages
 
-![screenshot](images/hardcore.png)
+<img src="https://github.com/user-attachments/assets/e721e7ea-f31d-43c7-9d9f-61796fa3c167" alt="hardcore" width="740" height="479">
+
 
 ## Installation
 
