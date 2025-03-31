@@ -4,13 +4,18 @@
 
 ## Features
 
-- **Group Finder**: Easily locate groups for the content you want to do.
+- **Group**: Easily locate groups for the content you want to do.
+- **Groups Logs**: Track and filter all group-related messages in one consolidated view.
 - **Profession Search**: Quickly find players offering or seeking crafting services.
 - **Hardcore Messages**: Stay updated with hardcore-related events, such as deaths or level-ups.
 
-### Group Finder
+### Group
 
 ![screenshot](images/groups.png)
+
+### Group Logs
+
+![screenshot](images/grouplogs.png)
 
 ### Profession Search
 
