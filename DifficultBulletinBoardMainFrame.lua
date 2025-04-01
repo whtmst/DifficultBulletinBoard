@@ -1079,7 +1079,7 @@ local function createGroupsLogsSearchBox()
     searchBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Match main panel border color
     searchBox:SetText("")
     searchBox:SetFontObject(GameFontHighlight)
-    searchBox:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    searchBox:SetTextColor(0.8, 0.8, 0.8, 1.0)
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     
@@ -1248,7 +1248,7 @@ local function createKeywordFilterLine()
     input:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Match main panel border color
     
     input:SetFontObject(GameFontHighlight)
-    input:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    input:SetTextColor(0.8, 0.8, 0.8, 1.0)
     input:SetAutoFocus(false)
     input:SetJustifyH("LEFT")
     input:SetTextInsets(6, 3, 3, 3)  -- Adjusted insets for larger border

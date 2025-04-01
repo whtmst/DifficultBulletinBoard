@@ -8,6 +8,7 @@ icon.tga
 resize.tga
 DifficultBulletinBoardDefaults.lua
 DifficultBulletinBoardVars.lua
+DifficultBulletinBoardVersionCheck.lua
 DifficultBulletinBoardMinimapButton.xml
 DifficultBulletinBoardOptionFrame.xml
 DifficultBulletinBoardMainFrame.xml

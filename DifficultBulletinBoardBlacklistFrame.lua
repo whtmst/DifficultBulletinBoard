@@ -122,7 +122,7 @@ local function createKeywordFilterFooter()
     input:SetBackdropColor(0.1, 0.1, 0.1, 0.9)  -- Updated alpha from 0.7 to 0.9
     input:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Updated to match main panel border
     input:SetFontObject(GameFontHighlight)
-    input:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    input:SetTextColor(0.8, 0.8, 0.8, 1.0)
     input:SetAutoFocus(false)
     input:SetJustifyH("LEFT")
     input:SetTextInsets(6, 3, 3, 3)  -- Updated for larger border
