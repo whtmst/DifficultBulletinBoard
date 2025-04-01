@@ -1,6 +1,6 @@
 DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
-DifficultBulletinBoardDefaults.version = 8
+DifficultBulletinBoardDefaults.version = 1
 
 DifficultBulletinBoardDefaults.defaultFontSize = 11
 
