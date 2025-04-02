@@ -1273,20 +1273,23 @@ local function createKeywordFilterLine()
         input:SetText("")
     end
     
-    -- Handle text changes
-    input:SetScript("OnTextChanged", function()
-        local text = this:GetText()
-        if DifficultBulletinBoardSavedVariables then
-            DifficultBulletinBoardSavedVariables.keywordBlacklist = text
-        end
-        
-        -- Update placeholder visibility
-        if this:GetText() == "" and not this.hasFocus then
-            placeholderText:Show()
-        else
-            placeholderText:Hide()
-        end
-    end)
+	-- Handle text changes
+	input:SetScript("OnTextChanged", function()
+		local text = this:GetText()
+		if DifficultBulletinBoardSavedVariables then
+			DifficultBulletinBoardSavedVariables.keywordBlacklist = text
+		end
+		
+		-- Sync with the blacklist panel's input
+		DifficultBulletinBoard_SyncKeywordBlacklist(text, this)
+		
+		-- Update placeholder visibility
+		if this:GetText() == "" and not this.hasFocus then
+			placeholderText:Show()
+		else
+			placeholderText:Hide()
+		end
+	end)
     
     -- Handle focus with subtle highlight effect matching main panel theme
     input:SetScript("OnEditFocusGained", function()
