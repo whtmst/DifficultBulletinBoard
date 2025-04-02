@@ -193,31 +193,102 @@ local function messageContainsKeyword(message, keyword)
     -- Add spaces at beginning and end of message to help find boundaries
     lowerMessage = " " .. lowerMessage .. " "
     
-    -- Create a pattern that looks for the keyword with word boundaries
-    -- This searches for the keyword surrounded by spaces, punctuation, or message boundaries
-    local wholeWordPattern = " " .. lowerKeyword .. " "
+    -- If keyword already contains punctuation, use more flexible matching for it
+    if string.find(lowerKeyword, "[.,!?;:\"']") then
+        -- 1. Exact match with spaces (standard case)
+        if string.find(lowerMessage, " " .. lowerKeyword .. " ", 1, true) then
+            return true
+        end
+        
+        -- 2. At beginning of message
+        if string.find(lowerMessage, "^ " .. lowerKeyword, 1, true) then
+            return true
+        end
+        
+        -- 3. At end of message
+        if string.find(lowerMessage, " " .. lowerKeyword .. " $", 1, true) then
+            return true
+        end
+        
+        -- 4. With additional punctuation after (e.g. "members," followed by another punctuation)
+        if string.find(lowerMessage, " " .. lowerKeyword .. "[.,!?;:\"']", 1, false) then
+            return true
+        end
+        
+        -- If we got here, no match found for the custom punctuated keyword
+        return false
+    end
     
-    -- Use literal string matching (true parameter) to avoid pattern matching issues
-    local found = string.find(lowerMessage, wholeWordPattern, 1, true)
+    -- PATTERN MATCHING FOR REGULAR WORDS (without user-added punctuation)
     
-    -- If found as a whole word, return true
-    if found then
+    -- 1. Standard word match with spaces (most common case)
+    if string.find(lowerMessage, " " .. lowerKeyword .. " ", 1, true) then
         return true
     end
     
-    -- Also check for keyword at start or end of original message with punctuation
-    -- First check for beginning of message followed by space or punctuation
-    if string.find(lowerMessage, "^" .. lowerKeyword .. "[ .,!?;:]", 1, false) then
+    -- 2. Word followed by punctuation (catches "members," in text)
+    local punctuation = "[.,!?;:\"'%-%)]"
+    if string.find(lowerMessage, " " .. lowerKeyword .. punctuation, 1, false) then
         return true
     end
     
-    -- Then check for end of message with space or punctuation before keyword
-    if string.find(lowerMessage, "[ .,!?;:]" .. lowerKeyword .. "$", 1, false) then
+    -- 3. Word at start of message
+    if string.find(lowerMessage, "^ " .. lowerKeyword .. "[ " .. punctuation .. "]", 1, false) then
+        return true
+    end
+    
+    -- 4. Word at end of message with possible punctuation
+    if string.find(lowerMessage, " " .. lowerKeyword .. " $", 1, false) then
+        return true
+    end
+    
+    -- 5. Word with opening punctuation before it (less common)
+    if string.find(lowerMessage, "[\"%('%-] *" .. lowerKeyword .. " ", 1, false) then
         return true
     end
     
     -- No whole word match found
     return false
+end
+
+-- Keyword management helper with punctuation support
+function DifficultBulletinBoard_AddKeywordToBlacklist(keyword)
+    -- Skip empty keywords
+    if not keyword or keyword == "" then
+        return
+    end
+    
+    -- Ensure the blacklist variable exists
+    if not DifficultBulletinBoardSavedVariables.keywordBlacklist then
+        DifficultBulletinBoardSavedVariables.keywordBlacklist = ""
+    end
+    
+    -- Trim spaces from the keyword
+    keyword = string.gsub(keyword, "^%s*(.-)%s*$", "%1")
+    
+    -- Check if keyword is already in the blacklist (exact match)
+    local currentBlacklist = DifficultBulletinBoardSavedVariables.keywordBlacklist
+    for existingKeyword in string.gmatch(currentBlacklist, "[^,]+") do
+        existingKeyword = string.gsub(existingKeyword, "^%s*(.-)%s*$", "%1") -- Trim spaces
+        if existingKeyword == keyword then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB]|r Keyword '" .. keyword .. "' is already in the blacklist.")
+            return
+        end
+    end
+    
+    -- Add the keyword to the blacklist with a comma separator
+    if currentBlacklist == "" then
+        DifficultBulletinBoardSavedVariables.keywordBlacklist = keyword
+    else
+        DifficultBulletinBoardSavedVariables.keywordBlacklist = currentBlacklist .. "," .. keyword
+    end
+    
+    -- Update UI elements with the new blacklist
+    if DifficultBulletinBoard_SyncKeywordBlacklist then
+        DifficultBulletinBoard_SyncKeywordBlacklist(DifficultBulletinBoardSavedVariables.keywordBlacklist)
+    end
+    
+    DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB]|r Added keyword '" .. keyword .. "' to blacklist.")
 end
 
 -- Replacement for ChatFrame_OnEvent that implements message filtering
