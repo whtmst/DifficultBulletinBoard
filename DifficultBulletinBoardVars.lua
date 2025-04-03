@@ -22,7 +22,6 @@ DifficultBulletinBoardVars.allProfessionTopics = {}
 DifficultBulletinBoardVars.allHardcoreTopics = {}
 
 DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
-DifficultBulletinBoardSavedVariables.messageBlacklist = DifficultBulletinBoardSavedVariables.messageBlacklist or {}
 DifficultBulletinBoardSavedVariables.keywordBlacklist = DifficultBulletinBoardSavedVariables.keywordBlacklist or ""
 
 
@@ -86,7 +85,6 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     -- Ensure the root and container tables exist
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
     DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
-    DifficultBulletinBoardSavedVariables.messageBlacklist = DifficultBulletinBoardSavedVariables.messageBlacklist or {}
     DifficultBulletinBoardSavedVariables.keywordBlacklist = DifficultBulletinBoardSavedVariables.keywordBlacklist or ""
     
     local realmName = GetRealmName()
@@ -146,13 +144,6 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     DifficultBulletinBoardVars.allGroupTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeGroupTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultGroupTopics), "activeGroupTopics")
     DifficultBulletinBoardVars.allProfessionTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeProfessionTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultProfessionTopics), "activeProfessionTopics")
     DifficultBulletinBoardVars.allHardcoreTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeHardcoreTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics), "activeHardcoreTopics")
-
-    -- Log info about the message blacklist
-    local blacklistCount = 0
-    for _ in pairs(DifficultBulletinBoardSavedVariables.messageBlacklist) do 
-        blacklistCount = blacklistCount + 1 
-    end
-    print("Loaded message blacklist with " .. blacklistCount .. " entries")
     
     -- Log info about the keyword blacklist
     if DifficultBulletinBoardSavedVariables.keywordBlacklist and DifficultBulletinBoardSavedVariables.keywordBlacklist ~= "" then

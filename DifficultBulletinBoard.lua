@@ -310,17 +310,6 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
         end
     end
     
-    -- Check if message is in the blacklist before any other processing
-    if event == "CHAT_MSG_CHANNEL" and DifficultBulletinBoardSavedVariables.messageBlacklist and 
-       DifficultBulletinBoardSavedVariables.messageBlacklist[arg1] then
-        -- Only log if we haven't logged this message recently
-        if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-            debugPrint("Filtering blacklisted message: " .. string.sub(arg1, 1, 40) .. "...")
-            lastFilteredMessages[messageKey] = GetTime()
-        end
-        return -- Skip this message entirely as it's blacklisted
-    end
-    
     -- Check if message contains any blacklisted keywords
     if event == "CHAT_MSG_CHANNEL" and DifficultBulletinBoardSavedVariables.keywordBlacklist and 
        DifficultBulletinBoardSavedVariables.keywordBlacklist ~= "" then
@@ -502,74 +491,14 @@ linkUpdateFrame:SetScript("OnUpdate", function()
     end
 end)
 
--- Position blacklist relative to option frame with robust error handling
-function FrameLinker.PositionBlacklistRelativeToOption()
-    local blacklistFrame = DifficultBulletinBoardBlacklistFrame
-    local optionFrame = DifficultBulletinBoardOptionFrame
-    
-    -- Verify both frames exist and are shown
-    if not blacklistFrame or not optionFrame then
-        return -- Silently exit if frames don't exist
-    end
-    
-    if blacklistFrame:IsShown() and optionFrame:IsShown() then
-        -- Safely get frame positions
-        local optionRight = optionFrame:GetRight()
-        local optionTop = optionFrame:GetTop()
-        
-        if optionRight and optionTop then
-            -- Position blacklist frame to the right of option frame
-            blacklistFrame:ClearAllPoints()
-            blacklistFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 
-                                 optionRight + FrameLinker.FRAME_OFFSET_X, 
-                                 optionTop + FrameLinker.FRAME_OFFSET_Y)
-        end
-    end
-end
-
 -- Store original toggle function
 local originalToggleBlacklist = DifficultBulletinBoard_ToggleBlacklistFrame
 
 -- Override blacklist toggle function with robust error handling
 DifficultBulletinBoard_ToggleBlacklistFrame = function()
-    -- Make sure the module exists
-    if not DifficultBulletinBoardBlacklistFrame then
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: BlacklistFrame module not found")
-        return
-    end
-    
-    -- Toggle visibility with proper initialization
-    if DifficultBulletinBoardBlacklistFrame:IsShown() then
+    -- Always hide the blacklist frame, never show it since we've removed the UI elements to open it
+    if DifficultBulletinBoardBlacklistFrame and DifficultBulletinBoardBlacklistFrame:IsShown() then
         DifficultBulletinBoardBlacklistFrame:Hide()
-    else
-        -- Use the EnsureInitialized function to guarantee proper setup
-        if DifficultBulletinBoardBlacklistFrame.EnsureInitialized then
-            if not DifficultBulletinBoardBlacklistFrame.EnsureInitialized() then
-                DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: Failed to initialize blacklist frame")
-                return
-            end
-        else
-            -- Fallback to direct initialization if EnsureInitialized isn't available
-            if DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame then
-                DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
-            else
-                DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: Cannot initialize blacklist frame")
-                return
-            end
-        end
-        
-        -- Show the frame after successful initialization
-        DifficultBulletinBoardBlacklistFrame:Show()
-        
-        -- Refresh the content
-        if DifficultBulletinBoardBlacklistFrame.RefreshBlacklist then
-            DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
-        end
-    end
-    
-    -- Position the frame if needed
-    if FrameLinker and FrameLinker.PositionBlacklistRelativeToOption then
-        FrameLinker.PositionBlacklistRelativeToOption()
     end
 end
 

@@ -158,50 +158,6 @@
                 </Scripts>
             </Button>
 
-            <!-- Blacklist Button - Added for message blacklist management -->
-            <Button name="$parent_BlacklistButton" text="Manage Blacklist">
-                <Size>
-                    <AbsDimension x="130" y="26"/>
-                </Size>
-                <Anchors>
-                    <Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
-                        <Offset>
-                            <AbsDimension x="0" y="14"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-                <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
-                    <EdgeSize><AbsValue val="8"/></EdgeSize>
-                    <TileSize><AbsValue val="8"/></TileSize>
-                    <BackgroundInsets><AbsInset left="2" right="2" top="2" bottom="2"/></BackgroundInsets>
-                    <Color r="0.15" g="0.15" b="0.15" a="1.0"/>
-                    <BorderColor r="0.3" g="0.3" b="0.3" a="1.0"/>
-                </Backdrop>
-                <Layers>
-                    <Layer level="OVERLAY">
-                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Manage Blacklist">
-                            <Anchors>
-                                <Anchor point="CENTER" />
-                            </Anchors>
-                            <Color r="0.9" g="0.9" b="0.9" a="1.0"/>
-                        </FontString>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnClick>
-                        DifficultBulletinBoard_ToggleBlacklistFrame();
-                    </OnClick>
-                    <OnEnter>
-                        this:SetBackdropColor(0.18, 0.18, 0.2, 1.0)
-                        getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 1.0, 1.0)
-                    </OnEnter>
-                    <OnLeave>
-                        this:SetBackdropColor(0.15, 0.15, 0.15, 1.0)
-                        getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 0.9, 1.0)
-                    </OnLeave>
-                </Scripts>
-            </Button>
-
             <!-- Save Button - modernized -->
             <Button name="$parent_MyButton" text="Save and Reload">
                 <Size>

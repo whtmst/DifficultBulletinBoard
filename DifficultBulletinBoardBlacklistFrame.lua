@@ -1,6 +1,5 @@
 -- DifficultBulletinBoardBlacklistFrame.lua
--- Handles the blacklist functionality for the Difficult Bulletin Board addon
--- Allows players to manage blacklisted messages
+-- Handles the keyword blacklist functionality for the Difficult Bulletin Board addon
 
 DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardBlacklistFrame = DifficultBulletinBoardBlacklistFrame or {}
@@ -16,44 +15,14 @@ local currentVersion = DifficultBulletinBoardBlacklistFrame.versionCounter
 local blacklistFrame = DifficultBulletinBoardBlacklistFrame
 DifficultBulletinBoardBlacklistFrame.scrollFrame = nil
 DifficultBulletinBoardBlacklistFrame.scrollChild = nil
-DifficultBulletinBoardBlacklistFrame.entryFrames = {}
 
 -- Constants - modified for new layout
-local BLACKLIST_ENTRY_HEIGHT = 35
-local BLACKLIST_ENTRY_PADDING = 5
 local FOOTER_HEIGHT = 160  -- Increased to accommodate the taller input box
 local FOOTER_TOP_PADDING = 25  -- Padding between scroll content and footer
-
--- Global tracker for pending removals
-local pendingMessageRemoval = nil
 
 -- Track the keyword filter input field (changed to make it part of the frame)
 DifficultBulletinBoardBlacklistFrame.keywordFilterInput = nil
 local keywordFilterInput = nil  -- Keep local reference for internal use
-
--- Helper frame for scheduling updates
-local updateFrame = CreateFrame("Frame")
-updateFrame:Hide()
-updateFrame:SetScript("OnUpdate", function()
-    -- Process any pending message removal
-    if pendingMessageRemoval then
-        -- Remove from saved variables
-        DifficultBulletinBoardSavedVariables.messageBlacklist[pendingMessageRemoval] = nil
-        
-        -- Clear the pending removal
-        local messageRemoved = pendingMessageRemoval
-        pendingMessageRemoval = nil
-        
-        -- Stop the update frame
-        updateFrame:Hide()
-        
-        -- Refresh the list
-        DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
-        
-        -- Notify user
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB]|r Removed: " .. messageRemoved)
-    end
-end)
 
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
@@ -373,265 +342,6 @@ local function createBlacklistScrollFrame()
     return scrollFrame, scrollChild
 end
 
--- Create an entry for a blacklisted message
-local function createBlacklistEntry(message, index)
-    -- Get the scrollChild from the module table
-    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
-    
-    -- Safety check with visible error
-    if not blacklistScrollChild then
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: ScrollChild not found in createBlacklistEntry")
-        return nil
-    end
-    
-    -- Use versioned name for entry
-    local entryName = "DBB_BlacklistEntry_" .. currentVersion .. "_" .. index
-    local entry = CreateFrame(
-        "Frame",
-        entryName,
-        blacklistScrollChild
-    )
-    entry:SetHeight(BLACKLIST_ENTRY_HEIGHT)
-    
-    -- Calculate width based on current scrollChild width
-    local entryWidth = blacklistScrollChild:GetWidth()
-    entry:SetWidth(entryWidth)
-    
-    entry:SetPoint(
-        "TOPLEFT",
-        blacklistScrollChild,
-        "TOPLEFT",
-        0,
-        -((index - 1) * (BLACKLIST_ENTRY_HEIGHT + BLACKLIST_ENTRY_PADDING))
-    )
-
-    -- Create backdrop
-    entry:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true,
-        tileSize = 16,
-        edgeSize = 8,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 },
-    })
-    entry:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
-    entry:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
-
-    -- Create message text with proper width calculation
-    local messageText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    messageText:SetPoint("TOPLEFT", entry, "TOPLEFT", 10, -5)
-    messageText:SetPoint("BOTTOMRIGHT", entry, "BOTTOMRIGHT", -30, 5)
-    messageText:SetWidth(entryWidth - 40) -- Explicit width setting for vanilla WoW
-    messageText:SetJustifyH("LEFT")
-    messageText:SetJustifyV("TOP")
-    
-    -- Use the user's font size setting
-    messageText:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
-    messageText:SetTextColor(1, 1, 1, 1)
-    messageText:SetText(message)
-    
-    -- Critical: Store messageText in entry for updates
-    entry.messageText = messageText
-    
-    -- Create remove button - styled like main close button but 50% size
-    local removeButton = CreateFrame("Button", nil, entry)
-    removeButton:SetWidth(18) -- 50% of 24px
-    removeButton:SetHeight(18) -- 50% of 24px
-    removeButton:SetPoint("RIGHT", entry, "RIGHT", -8, 0)
-
-    -- Style the remove button with same backdrop as main close button
-    removeButton:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 8, edgeSize = 8,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 },
-    })
-    removeButton:SetBackdropColor(0.2, 0.1, 0.1, 1.0) -- Same as main close button
-    removeButton:SetBackdropBorderColor(0.4, 0.3, 0.3, 1.0) -- Same as main close button
-
-    -- Add "×" text instead of texture
-    local removeText = removeButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    removeText:SetText("×")
-    removeText:SetPoint("CENTER", removeButton, "CENTER", -0.8, -0.5) -- Scaled offset
-    removeText:SetTextColor(0.9, 0.7, 0.7, 1.0) -- Same as main close button
-    removeText:SetFont("Fonts\\FRIZQT__.TTF", 14) -- 50% of main button's 18px font
-
-    -- Store properties in the button
-    removeButton.messageToRemove = message
-    removeButton.textObj = removeText
-    removeButton.entry = entry
-
-    -- Button hover effects - matches main close button
-    removeButton:SetScript("OnEnter", function()
-        this:SetBackdropColor(0.3, 0.1, 0.1, 1.0)
-        this.textObj:SetTextColor(1.0, 0.8, 0.8, 1.0)
-    end)
-
-    removeButton:SetScript("OnLeave", function()
-        this:SetBackdropColor(0.2, 0.1, 0.1, 1.0)
-        this.textObj:SetTextColor(0.9, 0.7, 0.7, 1.0)
-    end)
-
-    -- Remove button click handler
-    removeButton:SetScript("OnClick", function()
-        -- Schedule removal for next frame update
-        pendingMessageRemoval = this.messageToRemove
-        updateFrame:Show() -- Start the update process
-    end)
-
-    -- Button visual feedback
-    removeButton:SetScript("OnMouseDown", function()
-        this.textObj:SetPoint("CENTER", removeButton, "CENTER", 0, -1) -- Scaled movement
-    end)
-
-    removeButton:SetScript("OnMouseUp", function()
-        this.textObj:SetPoint("CENTER", removeButton, "CENTER", -0.5, -0.5) -- Return to default position
-    end)
-
-    -- Track this entry for resize updates
-    table.insert(DifficultBulletinBoardBlacklistFrame.entryFrames, entry)
-
-    return entry
-end
-
--- Update all blacklist entries when frame size changes
-local function updateBlacklistEntries()
-    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
-    
-    if not blacklistScrollChild then return end
-    
-    -- Get new width for entries
-    local newEntryWidth = blacklistScrollChild:GetWidth()
-    local newTextWidth = newEntryWidth - 40
-    
-    -- Update each entry in the tracking array
-    for i = 1, table.getn(DifficultBulletinBoardBlacklistFrame.entryFrames) do
-        local entry = DifficultBulletinBoardBlacklistFrame.entryFrames[i]
-        if entry and entry:IsShown() then
-            -- Update entry width
-            entry:SetWidth(newEntryWidth)
-            
-            -- Update text width - critical for wrapping
-            if entry.messageText then
-                entry.messageText:SetWidth(newTextWidth)
-            end
-        end
-    end
-end
-
--- Refresh the blacklist entries with stable sorting
-function DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
-    -- Get module references 
-    local blacklistScrollChild = DifficultBulletinBoardBlacklistFrame.scrollChild
-    local blacklistScrollFrame = DifficultBulletinBoardBlacklistFrame.scrollFrame
-    
-    -- Safety check
-    if not blacklistScrollChild then
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB]|r Error: ScrollChild not found in RefreshBlacklist")
-        return
-    end
-    
-    -- Clean up existing entries from screen
-    if blacklistScrollChild then
-        -- Remove any existing "no entries" message first
-        local noEntriesText = getglobal("DifficultBulletinBoardNoEntriesText")
-        if noEntriesText then
-            noEntriesText:Hide()
-            noEntriesText:SetParent(nil)
-        end
-        
-        -- First destroy all children we're tracking
-        for i = table.getn(DifficultBulletinBoardBlacklistFrame.entryFrames), 1, -1 do
-            local entry = DifficultBulletinBoardBlacklistFrame.entryFrames[i]
-            if entry then
-                entry:Hide()
-                entry:ClearAllPoints()
-                entry:SetParent(nil)
-                DifficultBulletinBoardBlacklistFrame.entryFrames[i] = nil
-            end
-        end
-        
-        -- Then clean up by name for any stragglers
-        for i = 1, 100 do
-            local childName = "DifficultBulletinBoardBlacklistEntry"..i
-            local child = getglobal(childName)
-            if child then
-                child:Hide()
-                child:ClearAllPoints()
-                child:SetParent(nil)
-            end
-        end
-    end
-    
-    -- IMPORTANT FIX: Clear the tracking array properly for Vanilla WoW
-    -- We need to empty the array, not create a new one
-    while table.getn(DifficultBulletinBoardBlacklistFrame.entryFrames) > 0 do
-        table.remove(DifficultBulletinBoardBlacklistFrame.entryFrames)
-    end
-    
-    -- Reset scroll child height
-    blacklistScrollChild:SetHeight(1)
-    
-    -- Debug message showing blacklist count
-    local count = 0
-    for _ in pairs(DifficultBulletinBoardSavedVariables.messageBlacklist or {}) do 
-        count = count + 1 
-    end
-    
-    -- Sort blacklisted messages into a stable array
-    local sortedMessages = {}
-    for message, _ in pairs(DifficultBulletinBoardSavedVariables.messageBlacklist or {}) do
-        table.insert(sortedMessages, message)
-    end
-    table.sort(sortedMessages) -- Sort alphabetically
-    
-    -- Add entries in sorted order
-    local index = 1
-    local totalHeight = 10 -- Initial padding
-    local hasEntries = false
-    
-    -- Create new entries from the sorted messages
-    for _, message in ipairs(sortedMessages) do
-        local entry = createBlacklistEntry(message, index)
-        if entry then
-            totalHeight = totalHeight + BLACKLIST_ENTRY_HEIGHT + BLACKLIST_ENTRY_PADDING
-            index = index + 1
-            hasEntries = true
-        end
-    end
-    
-    -- Update scroll child height
-    blacklistScrollChild:SetHeight(totalHeight + 10)
-    
-    -- Removed "no entries" message display code
-    
-    -- Force update the entry widths
-    updateBlacklistEntries()
-    
-    -- Force scrollbar update
-    if blacklistScrollFrame then
-        local scrollBar = getglobal(blacklistScrollFrame:GetName().."ScrollBar")
-        if scrollBar then
-            -- Force show/hide based on content size
-            if totalHeight > blacklistScrollFrame:GetHeight() then
-                scrollBar:Show()
-                scrollBar:EnableMouse(true)
-            else
-                scrollBar:Hide()
-            end
-            
-            -- Update the scroll range
-            blacklistScrollFrame:UpdateScrollChildRect()
-            
-            -- Ensure thumb texture is visible
-            local thumbTexture = scrollBar:GetThumbTexture()
-            if thumbTexture then
-                thumbTexture:Show()
-            end
-        end
-    end
-end
-
 -- Initialize the blacklist frame
 function DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
     -- Update version counter to ensure unique names after reload
@@ -641,9 +351,6 @@ function DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
     
     -- Reset initialization flag
     DifficultBulletinBoardBlacklistFrame.initialized = false
-    
-    -- Clean up entry frames array
-    DifficultBulletinBoardBlacklistFrame.entryFrames = {}
     
     -- Create the scroll frame and child with versioned names
     local scrollFrame, scrollChild = createBlacklistScrollFrame()
@@ -657,9 +364,6 @@ function DifficultBulletinBoardBlacklistFrame.InitializeBlacklistFrame()
     
     -- Mark as initialized
     DifficultBulletinBoardBlacklistFrame.initialized = true
-    
-    -- Populate with initial blacklisted messages
-    DifficultBulletinBoardBlacklistFrame.RefreshBlacklist()
     
     return true
 end
@@ -676,9 +380,6 @@ function DifficultBulletinBoardBlacklistFrame.UpdateInitialSizes()
     
     -- Set the initial scrollChild width based on current frame width
     blacklistScrollChild:SetWidth(blacklistFrame:GetWidth() - TOTAL_HORIZONTAL_MARGIN)
-    
-    -- Force update entries immediately
-    updateBlacklistEntries()
     
     -- Make sure scrollFrame is properly positioned
     if blacklistScrollFrame then
@@ -714,12 +415,6 @@ function DifficultBulletinBoard_ToggleBlacklistFrame()
         
         -- Force initial size updates
         DifficultBulletinBoardBlacklistFrame.UpdateInitialSizes()
-    end
-    
-    -- Position the frame
-    if DifficultBulletinBoard.FrameLinker and 
-       DifficultBulletinBoard.FrameLinker.PositionBlacklistRelativeToOption then
-        DifficultBulletinBoard.FrameLinker.PositionBlacklistRelativeToOption()
     end
 end
 
@@ -814,9 +509,6 @@ blacklistFrame:SetScript("OnSizeChanged", function()
             end
         end
     end
-    
-    -- Update all entries immediately
-    updateBlacklistEntries()
 
     -- Force a size update to ensure proper widths
     DifficultBulletinBoardBlacklistFrame.UpdateInitialSizes()

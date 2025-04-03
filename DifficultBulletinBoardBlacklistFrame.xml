@@ -44,21 +44,6 @@
                     </Anchors>
                     <Color r="0.9" g="0.9" b="1.0" a="1.0"/>
                 </FontString>
-                
-                <FontString name="$parent_InfoLabel" inherits="GameFontNormal" justifyH="CENTER"
-                            text="Ctrl+Click on a player name in the bulletin board to blacklist a message">
-                    <Size>
-                        <AbsDimension x="400" y="0"/>
-                    </Size>
-                    <Anchors>
-                        <Anchor point="TOP" relativeTo="$parent_TitleLabel" relativePoint="BOTTOM">
-                            <Offset>
-                                <AbsDimension x="0" y="-5"/>
-                            </Offset>
-                        </Anchor>
-                    </Anchors>
-                    <Color r="0.8" g="0.8" b="0.8" a="1.0"/>
-                </FontString>
             </Layer>
         </Layers>
 
