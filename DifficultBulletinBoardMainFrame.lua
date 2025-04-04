@@ -1245,9 +1245,6 @@ local function createKeywordFilterLine()
 			DifficultBulletinBoardSavedVariables.keywordBlacklist = text
 		end
 		
-		-- Sync with the blacklist panel's input
-		DifficultBulletinBoard_SyncKeywordBlacklist(text, this)
-		
 		-- Update placeholder visibility
 		if this:GetText() == "" and not this.hasFocus then
 			placeholderText:Show()
