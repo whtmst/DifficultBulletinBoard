@@ -1,0 +1,158 @@
+<!-- DifficultBulletinBoardBlacklistFrame.xml -->
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Blacklist Frame -->
+    <Frame name="DifficultBulletinBoardBlacklistFrame" resizable="true" parent="UIParent" hidden="true" movable="true" enableMouse="true"
+           clampedToScreen="True">
+        <ResizeBounds>
+            <minResize x="450" y="400" />
+        </ResizeBounds>
+        <Size>
+            <AbsDimension x="450" y="400"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+
+		<!-- Modern dark transparent background - updated for consistency -->
+		<Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+			<EdgeSize>
+				<AbsValue val="14"/>
+			</EdgeSize>
+			<TileSize>
+				<AbsValue val="16"/>
+			</TileSize>
+			<BackgroundInsets>
+				<AbsInset left="4" right="4" top="4" bottom="4"/>
+			</BackgroundInsets>
+			<Color r="0.1" g="0.1" b="0.1" a="0.9"/>
+			<BorderColor r="0.3" g="0.3" b="0.3" a="1"/>
+		</Backdrop>
+
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parent_TitleLabel" inherits="GameFontHighlight" justifyH="CENTER"
+                            text="Message Blacklist">
+                    <Size>
+                        <AbsDimension x="0" y="0"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOP" relativeTo="$parent">
+                            <Offset>
+                                <AbsDimension x="0" y="-10"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <Color r="0.9" g="0.9" b="1.0" a="1.0"/>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <Frames>
+			<!-- Close Button - Adjusted position for better visual alignment -->
+			<Button name="DifficultBulletinBoard_Blacklist_CloseButton">
+				<Size>
+					<AbsDimension x="22" y="22" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="DifficultBulletinBoardBlacklistFrame" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-4" y="-4" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+					<EdgeSize><AbsValue val="8"/></EdgeSize>
+					<TileSize><AbsValue val="8"/></TileSize>
+					<BackgroundInsets><AbsInset left="2" right="2" top="2" bottom="2"/></BackgroundInsets>
+					<Color r="0.2" g="0.1" b="0.1" a="1.0"/>
+					<BorderColor r="0.4" g="0.3" b="0.3" a="1.0"/>
+				</Backdrop>
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="×">
+							<Anchors>
+								<Anchor point="CENTER">
+									<Offset>
+										<AbsDimension x="-1" y="-1" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<Color r="0.9" g="0.7" b="0.7" a="1.0"/>
+							<FontHeight>
+								<AbsValue val="24"/>
+							</FontHeight>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+						-- Try using a different approach to set font size in vanilla
+						local text = getglobal(this:GetName().."_Text")
+						text:SetFont("Fonts\\FRIZQT__.TTF", 18)
+						text:SetTextHeight(18)
+					</OnLoad>
+					<OnClick>
+						DifficultBulletinBoard_ToggleBlacklistFrame();
+					</OnClick>
+					<OnEnter>
+						this:SetBackdropColor(0.3, 0.1, 0.1, 1.0)
+						getglobal(this:GetName().."_Text"):SetTextColor(1.0, 0.8, 0.8, 1.0)
+					</OnEnter>
+					<OnLeave>
+						this:SetBackdropColor(0.2, 0.1, 0.1, 1.0)
+						getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.7, 0.7, 1.0)
+					</OnLeave>
+					<OnMouseDown>
+						local text = getglobal(this:GetName().."_Text")
+						text:SetPoint("CENTER", 0, -2)  -- Adjusted to maintain relative movement
+					</OnMouseDown>
+					<OnMouseUp>
+						local text = getglobal(this:GetName().."_Text")
+						text:SetPoint("CENTER", -1, -1)  -- Return to new default position
+					</OnMouseUp>
+				</Scripts>
+			</Button>
+
+            <!-- Resize Grip -->
+            <Button name="$DifficultBulletinBoardBlacklistFrameResizeButton">
+                <Size>
+                    <AbsDimension x="16" y="16" />
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="-2" y="2" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <NormalTexture file="Interface\AddOns\DifficultBulletinBoard\icons\UI-ChatIM-SizeGrabber-Up.tga" />
+                <PushedTexture file="Interface\AddOns\DifficultBulletinBoard\icons\UI-ChatIM-SizeGrabber-Down.tga" />
+                <HighlightTexture file="Interface\AddOns\DifficultBulletinBoard\icons\UI-ChatIM-SizeGrabber-Highlight.tga" alphaMode="ADD" />
+                <Scripts>
+                    <OnMouseDown>
+                        DifficultBulletinBoardBlacklistFrame:StartSizing("BOTTOMRIGHT");
+                    </OnMouseDown>
+                    <OnMouseUp>
+                        DifficultBulletinBoardBlacklistFrame:StopMovingOrSizing();
+                    </OnMouseUp>
+                </Scripts>
+            </Button>
+        </Frames>
+
+        <!-- Scripts for Dragging -->
+        <Scripts>
+            <OnMouseDown>
+                if not DifficultBulletinBoardBlacklistFrame.isMoving then
+                DifficultBulletinBoardBlacklistFrame:StartMoving();
+                DifficultBulletinBoardBlacklistFrame.isMoving = true;
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                if DifficultBulletinBoardBlacklistFrame.isMoving then
+                DifficultBulletinBoardBlacklistFrame:StopMovingOrSizing();
+                DifficultBulletinBoardBlacklistFrame.isMoving = false;
+                end
+            </OnMouseUp>
+        </Scripts>
+    </Frame>
+</Ui>

@@ -1,3 +1,5 @@
+-- DifficultBulletinBoardVars.lua
+-- Handles variable initialization and loading of saved variables
 
 DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
 DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
@@ -20,13 +22,14 @@ DifficultBulletinBoardVars.allProfessionTopics = {}
 DifficultBulletinBoardVars.allHardcoreTopics = {}
 
 DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
+DifficultBulletinBoardSavedVariables.keywordBlacklist = DifficultBulletinBoardSavedVariables.keywordBlacklist or ""
 
 
 local function print(string) 
     --DEFAULT_CHAT_FRAME:AddMessage(string) 
 end
 
--- Function to add a player to the database
+-- Retrieves a player's class from the saved database
 function DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
     local realmName = GetRealmName()
 
@@ -39,7 +42,7 @@ function DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
     end
 end
 
--- Function to add a player to the database
+-- Adds a player to the class database
 function DifficultBulletinBoardVars.AddPlayerToDatabase(name, class)
     local realmName = GetRealmName()
 
@@ -61,7 +64,7 @@ function DifficultBulletinBoardVars.AddPlayerToDatabase(name, class)
     --end
 end
 
-
+-- Helper function to get saved variable or default with logging
 local function setSavedVariable(savedVar, defaultVar, savedName)
     print("Checking saved variable for: " .. savedName)  -- Debug: Log when the function is called
 
@@ -75,17 +78,17 @@ local function setSavedVariable(savedVar, defaultVar, savedName)
     end
 end
 
-
--- Function to load saved variables
+-- Loads saved variables or initializes defaults
 function DifficultBulletinBoardVars.LoadSavedVariables()
     print("Start Loading DifficultBulletinBoardVars")
 
-    -- Ensure the root and playerList tables exist
+    -- Ensure the root and container tables exist
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
     DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVariables.playerList or {}
+    DifficultBulletinBoardSavedVariables.keywordBlacklist = DifficultBulletinBoardSavedVariables.keywordBlacklist or ""
+    
     local realmName = GetRealmName()
     DifficultBulletinBoardSavedVariables.playerList[realmName] = DifficultBulletinBoardSavedVariables.playerList[realmName] or {}
-
 
     if DifficultBulletinBoardSavedVariables.version then
         local savedVersion = DifficultBulletinBoardSavedVariables.version
@@ -130,6 +133,7 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     DifficultBulletinBoardVars.timeFormat = setSavedVariable(DifficultBulletinBoardSavedVariables.timeFormat, DifficultBulletinBoardDefaults.defaultTimeFormat, "timeFormat")
     DifficultBulletinBoardVars.mainFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.mainFrameSound, DifficultBulletinBoardDefaults.defaultMainFrameSound, "mainFrameSound")
     DifficultBulletinBoardVars.optionFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.optionFrameSound, DifficultBulletinBoardDefaults.defaultOptionFrameSound, "optionFrameSound")
+    DifficultBulletinBoardVars.filterMatchedMessages = setSavedVariable(DifficultBulletinBoardSavedVariables.filterMatchedMessages, DifficultBulletinBoardDefaults.defaultFilterMatchedMessages, "filterMatchedMessages")
 
     -- Set placeholders variables
     DifficultBulletinBoardVars.numberOfGroupPlaceholders = setSavedVariable(DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders, DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders, "numberOfGroupPlaceholders")
@@ -140,6 +144,13 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     DifficultBulletinBoardVars.allGroupTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeGroupTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultGroupTopics), "activeGroupTopics")
     DifficultBulletinBoardVars.allProfessionTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeProfessionTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultProfessionTopics), "activeProfessionTopics")
     DifficultBulletinBoardVars.allHardcoreTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeHardcoreTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics), "activeHardcoreTopics")
+    
+    -- Log info about the keyword blacklist
+    if DifficultBulletinBoardSavedVariables.keywordBlacklist and DifficultBulletinBoardSavedVariables.keywordBlacklist ~= "" then
+        print("Loaded keyword blacklist: " .. DifficultBulletinBoardSavedVariables.keywordBlacklist)
+    else
+        print("No keyword blacklist configured")
+    end
 
     print("Finished Loading DifficultBulletinBoardVars")
 end
