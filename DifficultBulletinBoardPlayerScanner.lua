@@ -11,8 +11,8 @@ playerScannerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 playerScannerFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 playerScannerFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 playerScannerFrame:RegisterEvent("WHO_LIST_UPDATE")
+playerScannerFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 playerScannerFrame:SetScript("OnEvent", function()
-    print(event)
 
     if event == "PLAYER_ENTERING_WORLD" then
         local playerName = UnitName("player")
@@ -43,6 +43,14 @@ playerScannerFrame:SetScript("OnEvent", function()
             local playerName = UnitName("target")
             local localizedClass, englishClass = UnitClass("target")
             
+            DifficultBulletinBoardVars.AddPlayerToDatabase(playerName, localizedClass)
+        end
+    end
+
+    -- for /who results
+    if event == "CHAT_MSG_SYSTEM" then
+        for i = 1, GetNumWhoResults() do
+            local playerName, _, _, _, localizedClass, _ = GetWhoInfo(i)
             DifficultBulletinBoardVars.AddPlayerToDatabase(playerName, localizedClass)
         end
     end
