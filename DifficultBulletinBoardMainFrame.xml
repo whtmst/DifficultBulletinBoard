@@ -4,7 +4,7 @@
     <Frame name="DifficultBulletinBoardMainFrame" resizable="true" parent="UIParent" hidden="true"
         movable="true" enableMouse="true" clampedToScreen="true">
         <ResizeBounds>
-            <minResize x="450" y="300" />
+            <minResize x="550" y="300" />
         </ResizeBounds>
         <Size>
             <AbsDimension x="450" y="700" />
@@ -134,7 +134,7 @@
             <!-- Groups Button - modernized and 30% smaller -->
             <Button name="DifficultBulletinBoardMainFrameGroupsButton" enableMouse="true">
                 <Size>
-                    <AbsDimension x="100" y="20"/>
+                    <AbsDimension x="120" y="20"/>
                 </Size>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
@@ -165,7 +165,7 @@
             <!-- Groups Logs Button - modernized and 30% smaller -->
             <Button name="DifficultBulletinBoardMainFrameGroupsLogsButton" enableMouse="true">
                 <Size>
-                    <AbsDimension x="100" y="20"/>
+                    <AbsDimension x="120" y="20"/>
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameGroupsButton" relativePoint="RIGHT">
@@ -196,7 +196,7 @@
             <!-- Professions Button - modernized and 30% smaller -->
             <Button name="DifficultBulletinBoardMainFrameProfessionsButton" enableMouse="true">
                 <Size>
-                    <AbsDimension x="100" y="20"/>
+                    <AbsDimension x="120" y="20"/>
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameGroupsLogsButton" relativePoint="RIGHT">
@@ -227,7 +227,7 @@
             <!-- HC Messages Button - modernized and 30% smaller -->
             <Button name="DifficultBulletinBoardMainFrameHCMessagesButton" enableMouse="true">
                 <Size>
-                    <AbsDimension x="100" y="20"/>
+                    <AbsDimension x="120" y="20"/>
                 </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="DifficultBulletinBoardMainFrameProfessionsButton" relativePoint="RIGHT">
