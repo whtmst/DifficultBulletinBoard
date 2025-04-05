@@ -1,6 +1,6 @@
 DifficultBulletinBoardDefaults = DifficultBulletinBoardDefaults or {}
 
-DifficultBulletinBoardDefaults.version = 1
+DifficultBulletinBoardDefaults.version = 2
 
 DifficultBulletinBoardDefaults.defaultFontSize = 11
 
@@ -17,6 +17,7 @@ DifficultBulletinBoardDefaults.defaultFilterMatchedMessages = "false"
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {
+    { name = "Upper Karazhan Halls",          selected = true, tags = { "kara40", "ukh"} },
     { name = "Naxxramas",                     selected = true, tags = { "naxxramas", "naxx" } },
     { name = "Temple of Ahn'Qiraj",           selected = true, tags = { "ahn'qiraj", "ahnqiraj", "aq40", "aq" } },
     { name = "Emerald Sanctum",               selected = true, tags = { "emerald", "sanctum", "es" } },
