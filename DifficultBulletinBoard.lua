@@ -293,19 +293,23 @@ end
 
 -- Replacement for ChatFrame_OnEvent that implements message filtering
 function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
-    -- Skip processing for irrelevant events or our own messages
-    if not arg1 or not arg2 or arg2 == "" or arg2 == UnitName("player") or not arg9 then
-        DifficultBulletinBoard.originalChatFrameOnEvent(event)
-        return
-    end
+    local name = arg2 or "empty_name"
+    local message = arg1 or "empty_message"
+
+    -- This caused the CHAT_MSG_SYSTEM eventhandler to not work. 
+    -- CHAT_MSG_SYSTEM messages do not contain a name (arg2) and therefore never pass this check.
+    --if not arg1 or not arg2 or arg2 == "" or arg2 == UnitName("player") or not arg9 then
+    --    DifficultBulletinBoard.originalChatFrameOnEvent(event)
+    --    return
+    --end
     
     -- Create a unique identifier for this message
-    local messageKey = arg2 .. ":" .. arg1
+    local messageKey = name .. ":" .. message
     
     -- Check if we've recently logged this exact filtered message
     if lastFilteredMessages[messageKey] and lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT > GetTime() then
         -- We've already logged this message recently, skip logging again
-        if previousMessages[arg2] and previousMessages[arg2][3] then
+        if previousMessages[name] and previousMessages[name][3] then
             return -- Skip this message as it was marked for filtering
         end
     end
@@ -314,7 +318,6 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     if event == "CHAT_MSG_CHANNEL" and DifficultBulletinBoardSavedVariables.keywordBlacklist and 
        DifficultBulletinBoardSavedVariables.keywordBlacklist ~= "" then
         
-        local message = arg1
         local keywordList = DifficultBulletinBoardSavedVariables.keywordBlacklist
         local hasMatchingKeyword = false
         local matchedKeyword = ""
@@ -343,12 +346,12 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
             end
             
             -- Mark message as filtered in the previous messages tracker
-            if previousMessages[arg2] then
-                previousMessages[arg2][3] = true
+            if previousMessages[name] then
+                previousMessages[name][3] = true
             else
-                previousMessages[arg2] = {arg1, GetTime(), true, arg9}
+                previousMessages[name] = {message, GetTime(), true, arg9}
             end
-            
+
             return -- Skip this message as it contains a blacklisted keyword
         end
     end
@@ -356,50 +359,54 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     -- Only process chat channel messages
     if event == "CHAT_MSG_CHANNEL" then
         -- Check if we've seen this message before
-        if not previousMessages[arg2] or previousMessages[arg2][1] ~= arg1 or 
-           previousMessages[arg2][2] + 30 < GetTime() then
+        if not previousMessages[name] or previousMessages[name][1] ~= message or 
+           previousMessages[name][2] + 30 < GetTime() then
             
             -- Store the message with: [1]=content, [2]=timestamp, [3]=shouldFilter
-            previousMessages[arg2] = {arg1, GetTime(), false, arg9}
+            previousMessages[name] = {message, GetTime(), false, arg9}
             
             -- Process with our addon's message handler
-            lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
+            lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(message, name, arg9)
             
             -- If matched and filtering enabled, mark for filtering
             if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
                 -- Only log if we haven't logged this message recently
                 if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                    debugPrint("Filtering matched message: " .. string.sub(arg1, 1, 40) .. "...")
+                    debugPrint("Filtering matched message: " .. string.sub(message, 1, 40) .. "...")
                     lastFilteredMessages[messageKey] = GetTime()
                 end
-                previousMessages[arg2][3] = true
+                previousMessages[name][3] = true
                 return -- Skip this message entirely
             end
         else
             -- This is a repeat message we've seen recently
-            if previousMessages[arg2][3] then
+            if previousMessages[name][3] then
                 -- It was marked for filtering
                 return -- Skip this message
             end
         end
-    elseif event == "CHAT_MSG_SYSTEM" then
-        lastMessageWasMatched = DifficultBulletinBoard.OnSystemMessage(arg1)
+    end
+    
+    if event == "CHAT_MSG_SYSTEM" then
+        lastMessageWasMatched = DifficultBulletinBoard.OnSystemMessage(message)
         
         if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                debugPrint("Filtering system message: " .. string.sub(arg1, 1, 40) .. "...")
+                debugPrint("Filtering system message: " .. string.sub(message, 1, 40) .. "...")
                 lastFilteredMessages[messageKey] = GetTime()
             end
             return -- Skip this message
         end
-    elseif event == "CHAT_MSG_HARDCORE" then
-        lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(arg1, arg2, "HC")
+    end
+
+    if event == "CHAT_MSG_HARDCORE" then
+        lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(message, name, "HC")
         
         if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                debugPrint("Filtering hardcore message: " .. string.sub(arg1, 1, 40) .. "...")
+                debugPrint("Filtering hardcore message: " .. string.sub(message, 1, 40) .. "...")
                 lastFilteredMessages[messageKey] = GetTime()
             end
             return -- Skip this message
