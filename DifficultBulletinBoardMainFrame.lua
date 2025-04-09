@@ -17,6 +17,27 @@ local string_gfind = string.gmatch or string.gfind
 
 local mainFrame = DifficultBulletinBoardMainFrame
 
+-- Constants for dynamic button sizing
+local BUTTON_SPACING = 10  -- Fixed spacing between buttons
+local MIN_TEXT_PADDING = 5  -- Minimum spacing between text and button edges
+local NUM_BUTTONS = 4      -- Total number of main buttons
+local SIDE_PADDING = 10    -- Padding on left and right sides of frame
+
+--[[
+    Dynamic Button Sizing Logic:
+    
+    The top button row (Groups, Groups Logs, Professions, Hardcore Logs)
+    will dynamically resize when the user changes the width of the main frame.
+    
+    Key behaviors:
+    - The spacing between buttons remains fixed at 10px
+    - The buttons grow/shrink to fill available space
+    - Button text always has at least 5px padding on each side
+    - The minimum frame width is determined dynamically based on button text
+    
+    If you add more buttons or change button text, the sizing will adjust automatically.
+]]
+
 local chatMessageWidthDelta = 220
 local systemMessageWidthDelta = 155
 
@@ -1420,6 +1441,61 @@ function DifficultBulletinBoard_ToggleKeywordFilter()
     end
 end
 
+-- Function to update button widths based on frame size
+local function updateButtonWidths()
+    local buttons = {
+        groupsButton, 
+        groupsLogsButton, 
+        professionsButton, 
+        hcMessagesButton
+    }
+    
+    -- Get button text widths to calculate minimum required widths
+    local minButtonWidths = {}
+    local totalMinWidth = 0
+    
+    for i, button in ipairs(buttons) do
+        local textObj = getglobal(button:GetName().."_Text")
+        if textObj then
+            local textWidth = textObj:GetStringWidth()
+            minButtonWidths[i] = textWidth + (2 * MIN_TEXT_PADDING)
+            totalMinWidth = totalMinWidth + minButtonWidths[i]
+        end
+    end
+    
+    -- Add spacing to total minimum width
+    totalMinWidth = totalMinWidth + ((NUM_BUTTONS - 1) * BUTTON_SPACING) + (2 * SIDE_PADDING)
+    
+    -- Get current frame width
+    local frameWidth = mainFrame:GetWidth()
+    
+    -- Calculate available width for buttons
+    local availableWidth = frameWidth - (2 * SIDE_PADDING) - ((NUM_BUTTONS - 1) * BUTTON_SPACING)
+    local buttonWidth = availableWidth / NUM_BUTTONS
+    
+    -- Apply calculated widths to each button
+    if frameWidth >= totalMinWidth then
+        -- We have enough room to resize all buttons equally
+        for _, button in ipairs(buttons) do
+            button:SetWidth(buttonWidth)
+        end
+    else
+        -- We're at or below minimum width, set each button to its minimum required width
+        for i, button in ipairs(buttons) do
+            button:SetWidth(minButtonWidths[i])
+        end
+        
+        -- Update the frame's minimum width if we need to
+        local minResizeX, minResizeY = mainFrame:GetMinResize()
+        if totalMinWidth > minResizeX then
+            -- We've found text that requires a larger minimum width
+            -- However, we can't update the ResizeBounds in code for vanilla WoW
+            -- Since it's defined in the XML, we'll just enforce the minimum size here
+            mainFrame:SetWidth(totalMinWidth)
+        end
+    end
+end
+
 function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     --call it once before OnUpdate so the time doesnt just magically appear
     DifficultBulletinBoardMainFrame.UpdateServerTime()
@@ -1449,6 +1525,9 @@ function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     
     -- Initialize filter state
     keywordFilterVisible = false
+    
+    -- Initialize button widths based on current frame size
+    updateButtonWidths()
 end
 
 -- Resize handler - Updates frame widths and keyword filter positioning when main frame is resized
@@ -1498,6 +1577,9 @@ mainFrame:SetScript("OnSizeChanged", function()
             end
         end
     end
+    
+    -- Update button widths
+    updateButtonWidths()
 end)
 
 -- Hide handler - Resets keyword filter when main frame is closed
