@@ -4,10 +4,10 @@
     <Frame name="DifficultBulletinBoardOptionFrame" resizable="true" parent="UIParent" hidden="true" movable="true" enableMouse="true"
            clampedToScreen="true">
         <ResizeBounds>
-            <minResize x="470" y="400" />
+            <minResize x="400" y="300" />
         </ResizeBounds>
         <Size>
-            <AbsDimension x="470" y="400"/>
+            <AbsDimension x="450" y="500"/>
         </Size>
         <Anchors>
             <Anchor point="CENTER"/>

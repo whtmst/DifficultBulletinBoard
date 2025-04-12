@@ -9,13 +9,39 @@ DifficultBulletinBoardMainFrame = DifficultBulletinBoardMainFrame or {}
 local debugMode = false  -- Default to false
 local function debugPrint(string)
     if debugMode then
-        DEFAULT_CHAT_FRAME:AddMessage("[DBB] " .. string, 1, 0.7, 0.2)
+        -- Use orange color for debug messages, red for errors
+        local r, g, b = 1, 0.7, 0.2
+        if string:find("Error:", 1, true) then
+            r, g, b = 1, 0.3, 0.3 -- Red color for errors
+        end
+        DEFAULT_CHAT_FRAME:AddMessage("[DBB] " .. string, r, g, b)
     end
 end
 
 local string_gfind = string.gmatch or string.gfind
 
 local mainFrame = DifficultBulletinBoardMainFrame
+
+-- Constants for dynamic button sizing
+local BUTTON_SPACING = 10  -- Fixed spacing between buttons
+local MIN_TEXT_PADDING = 5  -- Minimum spacing between text and button edges
+local NUM_BUTTONS = 4      -- Total number of main buttons
+local SIDE_PADDING = 10    -- Padding on left and right sides of frame
+
+--[[
+    Dynamic Button Sizing Logic:
+    
+    The top button row (Groups, Groups Logs, Professions, Hardcore Logs)
+    will dynamically resize when the user changes the width of the main frame.
+    
+    Key behaviors:
+    - The spacing between buttons remains fixed at 10px
+    - The buttons grow/shrink to fill available space
+    - Button text always has at least 5px padding on each side
+    - The minimum frame width is determined dynamically based on button text
+    
+    If you add more buttons or change button text, the sizing will adjust automatically.
+]]
 
 local chatMessageWidthDelta = 220
 local systemMessageWidthDelta = 155
@@ -265,27 +291,63 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOf
         -- Copy the data from the previous placeholder to the current one
         local currentFontString = topicData[i]
         local previousFontString = topicData[i - 1]
+        
+        if not currentFontString or not previousFontString then
+            debugPrint("Error: Missing font string at index " .. i)
+            break
+        end
 
-        -- Update the current placeholder with the previous placeholder's data
-        currentFontString.nameButton:SetText(previousFontString.nameButton:GetText())
-        currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
-        currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
+        -- Update the current placeholder with the previous placeholder's data safely
+        if currentFontString.nameButton and type(currentFontString.nameButton.SetText) == "function" and
+           previousFontString.nameButton and type(previousFontString.nameButton.GetText) == "function" then
+            currentFontString.nameButton:SetText(previousFontString.nameButton:GetText())
+        else
+            debugPrint("Error: Cannot update name button at index " .. i)
+        end
+        
+        if currentFontString.messageFontString and type(currentFontString.messageFontString.SetText) == "function" and
+           previousFontString.messageFontString and type(previousFontString.messageFontString.GetText) == "function" then
+            currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
+        end
+        
+        if currentFontString.timeFontString and type(currentFontString.timeFontString.SetText) == "function" and
+           previousFontString.timeFontString and type(previousFontString.timeFontString.GetText) == "function" then
+            currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
+        end
+        
         currentFontString.creationTimestamp = previousFontString.creationTimestamp
-        currentFontString.icon:SetTexture(previousFontString.icon:GetTexture())
+        
+        if currentFontString.icon and type(currentFontString.icon.SetTexture) == "function" and
+           previousFontString.icon and type(previousFontString.icon.GetTexture) == "function" then
+            currentFontString.icon:SetTexture(previousFontString.icon:GetTexture())
+        end
     end
 
-    -- Update the first placeholder with the new data
+    -- Update the first placeholder with the new data safely
     local firstFontString = topicData[1]
-    firstFontString.nameButton:SetText(name)
-    -- Add this line to update hit rect for the new name
-    firstFontString.nameButton:SetHitRectInsets(0, -45, 0, 0)
+    if firstFontString.nameButton and type(firstFontString.nameButton.SetText) == "function" then
+        firstFontString.nameButton:SetText(name)
+        -- Add this line to update hit rect for the new name
+        firstFontString.nameButton:SetHitRectInsets(0, -45, 0, 0)
+    else
+        debugPrint("Error: Cannot set name button text for first entry in " .. topic)
+    end
     
-    firstFontString.messageFontString:SetText("[" .. channelName .. "] " .. message)
-    firstFontString.timeFontString:SetText(timestamp)
+    if firstFontString.messageFontString and type(firstFontString.messageFontString.SetText) == "function" then
+        firstFontString.messageFontString:SetText("[" .. channelName .. "] " .. message)
+    end
+    
+    if firstFontString.timeFontString and type(firstFontString.timeFontString.SetText) == "function" then
+        firstFontString.timeFontString:SetText(timestamp)
+    end
+    
     firstFontString.creationTimestamp = date("%H:%M:%S")
     local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
     print(class)
-    firstFontString.icon:SetTexture(getClassIconFromClassName(class))
+    
+    if firstFontString.icon and type(firstFontString.icon.SetTexture) == "function" then
+        firstFontString.icon:SetTexture(getClassIconFromClassName(class))
+    end
 
     -- Update the GameTooltip
     for i = numberOfPlaceholders, 1, -1 do
@@ -335,38 +397,61 @@ local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, me
             -- Copy the data from the previous placeholder to the current one
             local currentFontString = topicData[i]
             local previousFontString = topicData[i - 1]
+            
+            if not currentFontString or not previousFontString then
+                debugPrint("Error: Missing font string at index " .. i)
+                break
+            end
 
-            -- Update the current placeholder with the previous placeholder's data
-            currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
-            currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
+            -- Update the current placeholder with the previous placeholder's data safely
+            if currentFontString.messageFontString and type(currentFontString.messageFontString.SetText) == "function" and
+               previousFontString.messageFontString and type(previousFontString.messageFontString.GetText) == "function" then
+                currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
+            end
+            
+            if currentFontString.timeFontString and type(currentFontString.timeFontString.SetText) == "function" and
+               previousFontString.timeFontString and type(previousFontString.timeFontString.GetText) == "function" then
+                currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
+            end
+            
             currentFontString.creationTimestamp = previousFontString.creationTimestamp
         end
 
-    -- Update the first placeholder with the new data
+    -- Update the first placeholder with the new data safely
     local firstFontString = topicData[1]
-    firstFontString.messageFontString:SetText(message)
-    firstFontString.timeFontString:SetText(timestamp)
+    if firstFontString.messageFontString and type(firstFontString.messageFontString.SetText) == "function" then
+        firstFontString.messageFontString:SetText(message)
+    else
+        debugPrint("Error: Cannot set message font string for first entry in " .. topic)
+    end
+    
+    if firstFontString.timeFontString and type(firstFontString.timeFontString.SetText) == "function" then
+        firstFontString.timeFontString:SetText(timestamp)
+    end
+    
     firstFontString.creationTimestamp = date("%H:%M:%S")
 
-    -- Update the GameTooltip
+    -- Update the GameTooltip with safer checks
     for i = index, 1, -1 do
         local fontString = topicData[i]
-        local messageFrame = fontString.messageFrame
-        local messageFontString = fontString.messageFontString
+        if fontString and fontString.messageFrame and fontString.messageFontString then
+            local messageFrame = fontString.messageFrame
+            local messageFontString = fontString.messageFontString
 
-        -- Always get the current message text when the tooltip is shown
-        messageFrame:SetScript("OnEnter", function()
-            local currentMessage = messageFontString:GetText()
-            if currentMessage ~= nil and currentMessage ~= "-" then
-                GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-                GameTooltip:Show()
-            end
-        end)
+            -- Always get the current message text when the tooltip is shown
+            messageFrame:SetScript("OnEnter", function()
+                local currentMessage = messageFontString:GetText()
+                if currentMessage ~= nil and currentMessage ~= "-" then
+                    GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+                    GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
+                    GameTooltip:Show()
+                end
+            end)
 
-        messageFrame:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+            messageFrame:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+        end
     end
 end
 
@@ -485,6 +570,10 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
         if found then
             -- Update the existing entry and move it to the top
             local entries = groupsLogsPlaceholders["Group Logs"]
+            if not entries then
+                debugPrint("Error: Group Logs entries table is nil")
+                return isGroupMessage or isProfessionMessage
+            end
             
             -- Get timestamp
             local timestamp
@@ -496,20 +585,55 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
             
             -- Shift entries down from index to top
             for i = index, 2, -1 do
-                entries[i].nameButton:SetText(entries[i-1].nameButton:GetText())
-                entries[i].messageFontString:SetText(entries[i-1].messageFontString:GetText())
-                entries[i].timeFontString:SetText(entries[i-1].timeFontString:GetText())
+                if not entries[i] or not entries[i-1] then
+                    debugPrint("Error: Entry at index " .. i .. " or " .. (i-1) .. " is nil")
+                    break
+                end
+                
+                if entries[i].nameButton and type(entries[i].nameButton.SetText) == "function" and
+                   entries[i-1].nameButton and type(entries[i-1].nameButton.GetText) == "function" then
+                    entries[i].nameButton:SetText(entries[i-1].nameButton:GetText())
+                end
+                
+                if entries[i].messageFontString and type(entries[i].messageFontString.SetText) == "function" and
+                   entries[i-1].messageFontString and type(entries[i-1].messageFontString.GetText) == "function" then
+                    entries[i].messageFontString:SetText(entries[i-1].messageFontString:GetText())
+                end
+                
+                if entries[i].timeFontString and type(entries[i].timeFontString.SetText) == "function" and
+                   entries[i-1].timeFontString and type(entries[i-1].timeFontString.GetText) == "function" then
+                    entries[i].timeFontString:SetText(entries[i-1].timeFontString:GetText())
+                end
+                
                 entries[i].creationTimestamp = entries[i-1].creationTimestamp
-                entries[i].icon:SetTexture(entries[i-1].icon:GetTexture())
+                
+                if entries[i].icon and type(entries[i].icon.SetTexture) == "function" and
+                   entries[i-1].icon and type(entries[i-1].icon.GetTexture) == "function" then
+                    entries[i].icon:SetTexture(entries[i-1].icon:GetTexture())
+                end
             end
             
             -- Update top entry
-            entries[1].nameButton:SetText(characterName)
-            entries[1].messageFontString:SetText("[" .. channelName .. "] " .. chatMessage)
-            entries[1].timeFontString:SetText(timestamp)
+            if entries[1] and entries[1].nameButton and type(entries[1].nameButton.SetText) == "function" then
+                entries[1].nameButton:SetText(characterName)
+            else
+                debugPrint("Error: Cannot set name button text for first entry")
+            end
+            
+            if entries[1] and entries[1].messageFontString and type(entries[1].messageFontString.SetText) == "function" then
+                entries[1].messageFontString:SetText("[" .. channelName .. "] " .. chatMessage)
+            end
+            
+            if entries[1] and entries[1].timeFontString and type(entries[1].timeFontString.SetText) == "function" then
+                entries[1].timeFontString:SetText(timestamp)
+            end
+            
             entries[1].creationTimestamp = date("%H:%M:%S")
+            
             local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(characterName)
-            entries[1].icon:SetTexture(getClassIconFromClassName(class))
+            if entries[1] and entries[1].icon and type(entries[1].icon.SetTexture) == "function" then
+                entries[1].icon:SetTexture(getClassIconFromClassName(class))
+            end
             
             -- Apply the current filter to the updated entries
             applyGroupsLogsFilter(currentGroupsLogsFilter)
@@ -1420,6 +1544,61 @@ function DifficultBulletinBoard_ToggleKeywordFilter()
     end
 end
 
+-- Function to update button widths based on frame size
+local function updateButtonWidths()
+    local buttons = {
+        groupsButton, 
+        groupsLogsButton, 
+        professionsButton, 
+        hcMessagesButton
+    }
+    
+    -- Get button text widths to calculate minimum required widths
+    local minButtonWidths = {}
+    local totalMinWidth = 0
+    
+    for i, button in ipairs(buttons) do
+        local textObj = getglobal(button:GetName().."_Text")
+        if textObj then
+            local textWidth = textObj:GetStringWidth()
+            minButtonWidths[i] = textWidth + (2 * MIN_TEXT_PADDING)
+            totalMinWidth = totalMinWidth + minButtonWidths[i]
+        end
+    end
+    
+    -- Add spacing to total minimum width
+    totalMinWidth = totalMinWidth + ((NUM_BUTTONS - 1) * BUTTON_SPACING) + (2 * SIDE_PADDING)
+    
+    -- Get current frame width
+    local frameWidth = mainFrame:GetWidth()
+    
+    -- Calculate available width for buttons
+    local availableWidth = frameWidth - (2 * SIDE_PADDING) - ((NUM_BUTTONS - 1) * BUTTON_SPACING)
+    local buttonWidth = availableWidth / NUM_BUTTONS
+    
+    -- Apply calculated widths to each button
+    if frameWidth >= totalMinWidth then
+        -- We have enough room to resize all buttons equally
+        for _, button in ipairs(buttons) do
+            button:SetWidth(buttonWidth)
+        end
+    else
+        -- We're at or below minimum width, set each button to its minimum required width
+        for i, button in ipairs(buttons) do
+            button:SetWidth(minButtonWidths[i])
+        end
+        
+        -- Update the frame's minimum width if we need to
+        local minResizeX, minResizeY = mainFrame:GetMinResize()
+        if totalMinWidth > minResizeX then
+            -- We've found text that requires a larger minimum width
+            -- However, we can't update the ResizeBounds in code for vanilla WoW
+            -- Since it's defined in the XML, we'll just enforce the minimum size here
+            mainFrame:SetWidth(totalMinWidth)
+        end
+    end
+end
+
 function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     --call it once before OnUpdate so the time doesnt just magically appear
     DifficultBulletinBoardMainFrame.UpdateServerTime()
@@ -1449,6 +1628,9 @@ function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     
     -- Initialize filter state
     keywordFilterVisible = false
+    
+    -- Initialize button widths based on current frame size
+    updateButtonWidths()
 end
 
 -- Resize handler - Updates frame widths and keyword filter positioning when main frame is resized
@@ -1498,6 +1680,9 @@ mainFrame:SetScript("OnSizeChanged", function()
             end
         end
     end
+    
+    -- Update button widths
+    updateButtonWidths()
 end)
 
 -- Hide handler - Resets keyword filter when main frame is closed
@@ -1607,6 +1792,9 @@ end
 
 -- Initialize with the current server time
 local lastUpdateTime = GetTime() 
+local lastCleanupTime = GetTime()
+
+-- OnUpdate handler for regular tasks
 local function OnUpdate()
     local currentTime = GetTime()
     local deltaTime = currentTime - lastUpdateTime
@@ -1629,3 +1817,14 @@ mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
 mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
 mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 mainFrame:SetScript("OnUpdate", OnUpdate)
+
+-- Debug mode slash command
+SLASH_DBBDEBUG1 = "/dbbdebug"
+SlashCmdList["DBBDEBUG"] = function(msg)
+    debugMode = not debugMode
+    if debugMode then
+        DEFAULT_CHAT_FRAME:AddMessage("[DBB] Debug mode enabled", 0.2, 1.0, 0.2)
+    else
+        DEFAULT_CHAT_FRAME:AddMessage("[DBB] Debug mode disabled", 1.0, 0.5, 0.5)
+    end
+end
