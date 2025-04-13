@@ -164,10 +164,18 @@ local function initializeAddon(event, arg1)
         DifficultBulletinBoardVars.LoadSavedVariables()
 
         -- Create option frame first
-        DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
+        if DifficultBulletinBoardOptionFrame and DifficultBulletinBoardOptionFrame.InitializeOptionFrame then
+            DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB Error]|r Failed to initialize option frame - module not loaded properly.")
+        end
 
         -- Create main frame afterwards
-        DifficultBulletinBoardMainFrame.InitializeMainFrame()
+        if DifficultBulletinBoardMainFrame and DifficultBulletinBoardMainFrame.InitializeMainFrame then
+            DifficultBulletinBoardMainFrame.InitializeMainFrame()
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB Error]|r Failed to initialize main frame - module not loaded properly.")
+        end
         
         -- Install ChatFrame_OnEvent hook (complete replacement)
         if not DifficultBulletinBoard.hookInstalled then
