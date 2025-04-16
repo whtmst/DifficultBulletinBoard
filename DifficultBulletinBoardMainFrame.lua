@@ -1616,7 +1616,11 @@ local function updateButtonWidths()
     -- Get current frame width
     local frameWidth = mainFrame:GetWidth()
     
-    -- If frame is smaller than minimum required, force a resize
+    -- Set the minimum resizable width of the frame directly
+    -- This prevents the user from dragging it smaller than the minimum width
+    mainFrame:SetMinResize(totalMinFrameWidth, 100)  -- 100 is arbitrary minimum height
+    
+    -- If frame is somehow smaller than minimum (should not happen), force a resize
     if frameWidth < totalMinFrameWidth then
         mainFrame:SetWidth(totalMinFrameWidth)
         frameWidth = totalMinFrameWidth
