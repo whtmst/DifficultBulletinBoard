@@ -6,15 +6,15 @@ DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
 DifficultBulletinBoardMainFrame = DifficultBulletinBoardMainFrame or {}
 
-local debugMode = false  -- Default to false
-local function debugPrint(string)
+local debugMode = false  -- Disable debug mode by default
+local function debugPrint(message)
     if debugMode then
         -- Use orange color for debug messages, red for errors
         local r, g, b = 1, 0.7, 0.2
-        if string:find("Error:", 1, true) then
+        if string.find(message, "Error:", 1, true) then
             r, g, b = 1, 0.3, 0.3 -- Red color for errors
         end
-        DEFAULT_CHAT_FRAME:AddMessage("[DBB] " .. string, r, g, b)
+        DEFAULT_CHAT_FRAME:AddMessage("[DBB] " .. message, r, g, b)
     end
 end
 
@@ -24,7 +24,7 @@ local mainFrame = DifficultBulletinBoardMainFrame
 
 -- Constants for dynamic button sizing
 local BUTTON_SPACING = 10  -- Fixed spacing between buttons
-local MIN_TEXT_PADDING = 5  -- Minimum spacing between text and button edges
+local MIN_TEXT_PADDING = 10  -- Minimum spacing between text and button edges
 local NUM_BUTTONS = 4      -- Total number of main buttons
 local SIDE_PADDING = 10    -- Padding on left and right sides of frame
 
@@ -910,6 +910,7 @@ local function createTopicListWithNameMessageDateColumns(
        local currentMessage = messageColumn:GetText()
        if currentMessage ~= nil and currentMessage ~= "-" then
          GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+         GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
          GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
          
          -- Try Arial Narrow which appears smaller than default
@@ -1006,6 +1007,7 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                     local currentMessage = messageColumn:GetText()
                     if currentMessage ~= nil and currentMessage ~= "-" then
                       GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
+                      GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
                       GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
                       
                       if GameTooltipTextLeft1 then
@@ -1462,7 +1464,7 @@ local function createKeywordFilterLine()
     return line
 end
 
--- Toggle the keyword filter visibility by expanding/collapsing the main frame
+-- Function to toggle the keyword filter visibility by expanding/collapsing the main frame
 function DifficultBulletinBoard_ToggleKeywordFilter()
     if not keywordFilterInput then
         return
@@ -1546,6 +1548,12 @@ end
 
 -- Function to update button widths based on frame size
 local function updateButtonWidths()
+    -- Safety check for buttons
+    if not groupsButton or not groupsLogsButton or not professionsButton or not hcMessagesButton then
+        debugPrint("Error: Some buttons are not initialized yet")
+        return
+    end
+    
     local buttons = {
         groupsButton, 
         groupsLogsButton, 
@@ -1554,47 +1562,88 @@ local function updateButtonWidths()
     }
     
     -- Get button text widths to calculate minimum required widths
-    local minButtonWidths = {}
-    local totalMinWidth = 0
+    local textWidths = {}
+    local totalTextWidth = 0
+    local buttonCount = NUM_BUTTONS
     
-    for i, button in ipairs(buttons) do
-        local textObj = getglobal(button:GetName().."_Text")
-        if textObj then
-            local textWidth = textObj:GetStringWidth()
-            minButtonWidths[i] = textWidth + (2 * MIN_TEXT_PADDING)
-            totalMinWidth = totalMinWidth + minButtonWidths[i]
+    -- Check all buttons have text elements and get their widths
+    for i = 1, buttonCount do
+        local button = buttons[i]
+        if not button:GetName() then
+            debugPrint("Error: Button " .. i .. " has no name")
+            return
+        end
+        
+        local textObjName = button:GetName() .. "_Text"
+        local textObj = getglobal(textObjName)
+        
+        if not textObj then
+            debugPrint("Error: Text object not found for " .. button:GetName())
+            return
+        end
+        
+        local textWidth = textObj:GetStringWidth()
+        if not textWidth then
+            debugPrint("Error: Could not get text width for " .. textObjName)
+            return
+        end
+        
+        textWidths[i] = textWidth
+        totalTextWidth = totalTextWidth + textWidth
+    end
+    
+    -- Calculate minimum padded widths for each button (text + minimum padding)
+    local minButtonWidths = {}
+    for i = 1, buttonCount do
+        minButtonWidths[i] = textWidths[i] + (2 * MIN_TEXT_PADDING)
+    end
+    
+    -- Find the button that needs the most minimum width
+    local maxMinWidth = 0
+    for i = 1, buttonCount do
+        if minButtonWidths[i] > maxMinWidth then
+            maxMinWidth = minButtonWidths[i]
         end
     end
     
+    -- Calculate total content width if all buttons had the same width (maxMinWidth)
+    -- This ensures all buttons have at least minimum padding
+    local totalEqualContentWidth = maxMinWidth * buttonCount
+    
     -- Add spacing to total minimum width
-    totalMinWidth = totalMinWidth + ((NUM_BUTTONS - 1) * BUTTON_SPACING) + (2 * SIDE_PADDING)
+    local totalMinFrameWidth = totalEqualContentWidth + ((NUM_BUTTONS - 1) * BUTTON_SPACING) + (2 * SIDE_PADDING)
     
     -- Get current frame width
     local frameWidth = mainFrame:GetWidth()
     
+    -- Set the minimum resizable width of the frame directly
+    -- This prevents the user from dragging it smaller than the minimum width
+    mainFrame:SetMinResize(totalMinFrameWidth, 100)  -- 100 is arbitrary minimum height
+    
+    -- If frame is somehow smaller than minimum (should not happen), force a resize
+    if frameWidth < totalMinFrameWidth then
+        mainFrame:SetWidth(totalMinFrameWidth)
+        frameWidth = totalMinFrameWidth
+    end
+    
     -- Calculate available width for buttons
     local availableWidth = frameWidth - (2 * SIDE_PADDING) - ((NUM_BUTTONS - 1) * BUTTON_SPACING)
-    local buttonWidth = availableWidth / NUM_BUTTONS
     
-    -- Apply calculated widths to each button
-    if frameWidth >= totalMinWidth then
-        -- We have enough room to resize all buttons equally
-        for _, button in ipairs(buttons) do
-            button:SetWidth(buttonWidth)
+    -- Calculate equal width distribution
+    local equalWidth = availableWidth / NUM_BUTTONS
+    
+    -- Always try to use equal widths first
+    if equalWidth >= maxMinWidth then
+        -- We can use equal widths for all buttons
+        for i = 1, buttonCount do
+            buttons[i]:SetWidth(equalWidth)
         end
     else
-        -- We're at or below minimum width, set each button to its minimum required width
-        for i, button in ipairs(buttons) do
-            button:SetWidth(minButtonWidths[i])
-        end
-        
-        -- Update the frame's minimum width if we need to
-        local minResizeX, minResizeY = mainFrame:GetMinResize()
-        if totalMinWidth > minResizeX then
-            -- We've found text that requires a larger minimum width
-            -- However, we can't update the ResizeBounds in code for vanilla WoW
-            -- Since it's defined in the XML, we'll just enforce the minimum size here
-            mainFrame:SetWidth(totalMinWidth)
+        -- We can't use equal widths because some text would have less than minimum padding
+        -- Set all buttons to the maximum minimum width to ensure all have same width
+        -- unless that would mean having less than minimum padding
+        for i = 1, buttonCount do
+            buttons[i]:SetWidth(maxMinWidth)
         end
     end
 end
@@ -1637,22 +1686,44 @@ end
 mainFrame:SetScript("OnSizeChanged", function()
     -- Update chat message frames and columns width
     local chatMessageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
-    for _, msgFrame in ipairs(tempChatMessageFrames) do
-        msgFrame:SetWidth(chatMessageWidth)
+    
+    -- Add type checking for tempChatMessageFrames
+    if tempChatMessageFrames and type(tempChatMessageFrames) == "table" then
+        for _, msgFrame in ipairs(tempChatMessageFrames) do
+            if msgFrame and type(msgFrame.SetWidth) == "function" then
+                msgFrame:SetWidth(chatMessageWidth)
+            end
+        end
     end
 
-    for _, msgColumn in ipairs(tempChatMessageColumns) do
-        msgColumn:SetWidth(chatMessageWidth)
+    -- Add type checking for tempChatMessageColumns
+    if tempChatMessageColumns and type(tempChatMessageColumns) == "table" then
+        for _, msgColumn in ipairs(tempChatMessageColumns) do
+            if msgColumn and type(msgColumn.SetWidth) == "function" then
+                msgColumn:SetWidth(chatMessageWidth)
+            end
+        end
     end
 
     -- Update system message frames and columns width
     local systemMessageWidth = mainFrame:GetWidth() - systemMessageWidthDelta
-    for _, msgFrame in ipairs(tempSystemMessageFrames) do
-        msgFrame:SetWidth(systemMessageWidth)
+    
+    -- Add type checking for tempSystemMessageFrames
+    if tempSystemMessageFrames and type(tempSystemMessageFrames) == "table" then
+        for _, msgFrame in ipairs(tempSystemMessageFrames) do
+            if msgFrame and type(msgFrame.SetWidth) == "function" then
+                msgFrame:SetWidth(systemMessageWidth)
+            end
+        end
     end
 
-    for _, msgColumn in ipairs(tempSystemMessageColumns) do
-        msgColumn:SetWidth(systemMessageWidth)
+    -- Add type checking for tempSystemMessageColumns
+    if tempSystemMessageColumns and type(tempSystemMessageColumns) == "table" then
+        for _, msgColumn in ipairs(tempSystemMessageColumns) do
+            if msgColumn and type(msgColumn.SetWidth) == "function" then
+                msgColumn:SetWidth(systemMessageWidth)
+            end
+        end
     end
     
     -- Update keyword filter components
@@ -1681,7 +1752,7 @@ mainFrame:SetScript("OnSizeChanged", function()
         end
     end
     
-    -- Update button widths
+    -- Update button widths - now handled intelligently based on available space
     updateButtonWidths()
 end)
 
