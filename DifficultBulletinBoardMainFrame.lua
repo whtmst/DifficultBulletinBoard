@@ -551,6 +551,10 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
     local chatMessage = arg1
     local characterName = arg2
     local channelName = arg9
+
+    if characterName == "" or characterName == nil then
+        return
+    end
     
     local stringWithoutNoise = replaceSymbolsWithSpace(chatMessage)
 
@@ -1618,7 +1622,7 @@ local function updateButtonWidths()
     
     -- Set the minimum resizable width of the frame directly
     -- This prevents the user from dragging it smaller than the minimum width
-    mainFrame:SetMinResize(totalMinFrameWidth, 100)  -- 100 is arbitrary minimum height
+    mainFrame:SetMinResize(totalMinFrameWidth, 300)
     
     -- If frame is somehow smaller than minimum (should not happen), force a resize
     if frameWidth < totalMinFrameWidth then
