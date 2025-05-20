@@ -8,6 +8,7 @@
 - **Groups Logs**: Track and filter all group-related messages in one consolidated view.
 - **Profession Search**: Quickly find players offering or seeking crafting services.
 - **Hardcore Messages**: Stay updated with hardcore-related events, such as deaths or level-ups.
+- **Hardcore-Only Chat Filter**: Show only messages aimed at hardcore characters.
 
 ### Group Finder
 
