@@ -13,22 +13,27 @@
 
 ### Group Finder
 
-<img src="https://github.com/user-attachments/assets/cd601b25-fab7-40e3-9198-299cf3e07761" alt="groups" width="740" height="479">
+![groups](https://github.com/user-attachments/assets/325837c4-466d-46ac-aacc-00002199cb67)
 
 
 ### Group Logs
 
-<img src="https://github.com/user-attachments/assets/44a826e2-52f4-4b95-ad47-11eb5f2d082b" alt="grouplogs" width="740" height="479">
+![groups logs](https://github.com/user-attachments/assets/9901b5fc-d7c7-402f-9d86-8599590859ac)
 
 
 ### Profession Search
 
-<img src="https://github.com/user-attachments/assets/e322bb70-cf30-4b24-b6d4-f7bfe6bf0bf5" alt="professions" width="740" height="479">
+![professions](https://github.com/user-attachments/assets/265c3f34-c1e7-4c76-83ce-5f260883cf29)
 
 
 ### Hardcore Messages
 
-<img src="https://github.com/user-attachments/assets/e721e7ea-f31d-43c7-9d9f-61796fa3c167" alt="hardcore" width="740" height="479">
+![hardcore](https://github.com/user-attachments/assets/1559d54b-f3d4-4d00-9223-57739589c0db)
+
+
+## Settings
+![settings](https://github.com/user-attachments/assets/646d92ee-39e9-49ab-ba4b-33ef55bd757b)
+
 
 
 ## Installation
