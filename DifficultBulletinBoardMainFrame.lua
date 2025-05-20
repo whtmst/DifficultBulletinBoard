@@ -562,6 +562,21 @@ function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
 
     local words = DifficultBulletinBoard.SplitIntoLowerWords(stringWithoutNoise)
 
+    if DifficultBulletinBoardVars.hardcoreOnly == "true" and channelName ~= "HC" then
+        local found = false
+        for _, w in ipairs(words) do
+            if w == "hc" or w == "hardcore" or w == "inferno" then
+                found = true
+                break
+            end
+        end
+
+       -- bail out if nothing matched
+        if not found then
+            return
+        end
+    end
+
     -- Process group topics and check if it's a group-related message
     local isGroupMessage = analyzeChatMessage(channelName, characterName, chatMessage, words, 
                          DifficultBulletinBoardVars.allGroupTopics, 

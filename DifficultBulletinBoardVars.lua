@@ -134,6 +134,7 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     DifficultBulletinBoardVars.mainFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.mainFrameSound, DifficultBulletinBoardDefaults.defaultMainFrameSound, "mainFrameSound")
     DifficultBulletinBoardVars.optionFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.optionFrameSound, DifficultBulletinBoardDefaults.defaultOptionFrameSound, "optionFrameSound")
     DifficultBulletinBoardVars.filterMatchedMessages = setSavedVariable(DifficultBulletinBoardSavedVariables.filterMatchedMessages, DifficultBulletinBoardDefaults.defaultFilterMatchedMessages, "filterMatchedMessages")
+    DifficultBulletinBoardVars.hardcoreOnly = setSavedVariable(DifficultBulletinBoardSavedVariables.hardcoreOnly, DifficultBulletinBoardDefaults.defaultHardcoreOnly, "hardcoreOnly")
 
     -- Set placeholders variables
     DifficultBulletinBoardVars.numberOfGroupPlaceholders = setSavedVariable(DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders, DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders, "numberOfGroupPlaceholders")

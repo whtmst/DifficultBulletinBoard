@@ -14,6 +14,8 @@ DifficultBulletinBoardDefaults.defaultOptionFrameSound = "true"
 
 DifficultBulletinBoardDefaults.defaultFilterMatchedMessages = "false"
 
+DifficultBulletinBoardDefaults.defaultHardcoreOnly = "false"
+
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {

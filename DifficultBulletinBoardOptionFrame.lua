@@ -77,6 +77,17 @@ local timeFormatDropDownOptionObject = {
     }
 }
 
+-- Option Data for hardcore only messages
+local hardcoreOnlyDropDownOptionObject = {
+    frameName    = "DifficultBulletinBoardOptionFrame_HardcoreOnly_Dropdown",
+    labelText    = "Show Hardcore Messages Only:",
+    labelToolTip = "When enabled, only messages pertaining to hardcore characters (e.g. containing “HC” or “Hardcore”) will appear.",
+    items = {
+        { text = "Enable Hardcore Filter",  value = "true"  },
+        { text = "Disable Hardcore Filter", value = "false" }
+    }
+}
+
 -- Option Data for filtering matched messages
 local filterMatchedMessagesDropDownOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_FilterMatched_Dropdown",
@@ -131,14 +142,15 @@ local timeFormatDropDown
 local mainFrameSoundDropDown
 local optionFrameSoundDropDown
 local filterMatchedMessagesDropDown
+local hardcoreOnlyDropDown
 local groupOptionInputBox
 local professionOptionInputBox
 local hardcoreOptionInputBox
 
 local optionControlsToResize = {}
 
-local function print(string) 
-    --DEFAULT_CHAT_FRAME:AddMessage(string) 
+local function print(string)
+    --DEFAULT_CHAT_FRAME:AddMessage(string)
 end
 
 -- Create a global registry to manage all dropdown menus
@@ -157,21 +169,21 @@ local INPUT_BOX_TEXT_INSETS = { 5, 3, 2, 2 }  -- Left, right, top, bottom
 -- Function to show a dropdown menu and ensure it's on top
 local function showDropdownMenu(dropdown)
     local menuFrame = dropdown.menuFrame
-    
+
     -- Hide all other menus first
     for _, otherDropdown in ipairs(dropdownMenuRegistry) do
         if otherDropdown ~= dropdown and otherDropdown.menuFrame:IsShown() then
             otherDropdown.menuFrame:Hide()
         end
     end
-    
+
     -- Set this as the current top menu
     currentTopMenu = dropdown
-    
+
     -- Ensure this menu is at the highest strata and level
     menuFrame:SetFrameStrata("FULLSCREEN_DIALOG")
     menuFrame:SetFrameLevel(MENU_BASE_LEVEL)
-    
+
     -- Show the menu
     menuFrame:Show()
 end
@@ -199,11 +211,11 @@ local function addScrollFrameToOptionFrame()
 
     -- Get the scroll bar reference
     local scrollBar = getglobal(optionScrollFrame:GetName().."ScrollBar")
-    
+
     -- Get references to the scroll buttons
     local upButton = getglobal(scrollBar:GetName().."ScrollUpButton")
     local downButton = getglobal(scrollBar:GetName().."ScrollDownButton")
-    
+
     -- Completely remove the scroll buttons from the layout
     upButton:SetHeight(0.001)
     upButton:SetWidth(0.001)
@@ -211,7 +223,7 @@ local function addScrollFrameToOptionFrame()
     upButton:EnableMouse(false)
     upButton:ClearAllPoints()
     upButton:SetPoint("TOP", scrollBar, "TOP", 0, 1000)
-    
+
     -- Same for down button
     downButton:SetHeight(0.001)
     downButton:SetWidth(0.001)
@@ -219,15 +231,15 @@ local function addScrollFrameToOptionFrame()
     downButton:EnableMouse(false)
     downButton:ClearAllPoints()
     downButton:SetPoint("BOTTOM", scrollBar, "BOTTOM", 0, -1000)
-    
+
     -- Adjust scroll bar position - changed from 2 to 8 pixels for consistency
     scrollBar:ClearAllPoints()
     scrollBar:SetPoint("TOPLEFT", optionScrollFrame, "TOPRIGHT", 8, 0)
     scrollBar:SetPoint("BOTTOMLEFT", optionScrollFrame, "BOTTOMRIGHT", 8, 0)
-    
+
     -- Style the scroll bar to be slimmer
     scrollBar:SetWidth(8)
-    
+
     -- Set up the thumb texture with 10% darker colors
     local thumbTexture = scrollBar:GetThumbTexture()
     thumbTexture:SetWidth(8)
@@ -235,7 +247,7 @@ local function addScrollFrameToOptionFrame()
     thumbTexture:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
     -- 10% darker gradient (multiplied color values by 0.9)
     thumbTexture:SetGradientAlpha("VERTICAL", 0.504, 0.504, 0.576, 0.7, 0.648, 0.648, 0.72, 0.9)
-    
+
     -- Style the scroll bar track with 10% darker background
     scrollBar:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -244,34 +256,34 @@ local function addScrollFrameToOptionFrame()
         insets = { left = 0, right = 0, top = 0, bottom = 0 }
     })
     scrollBar:SetBackdropColor(0.072, 0.072, 0.108, 0.3)
-    
+
     -- FIXED: Set ScrollFrame anchors to match other panels
     optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 15, -55)
     optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 50)
-    
+
     -- Create the ScrollChild with proper styling
     optionScrollChild = CreateFrame("Frame", nil, optionScrollFrame)
     optionScrollChild:SetWidth(optionScrollFrame:GetWidth() - 10) -- Adjusted width calculation
     optionScrollChild:SetHeight(1)
-    
+
     -- Set the background for better visual distinction
     local background = optionScrollChild:CreateTexture(nil, "BACKGROUND")
     background:SetAllPoints()
     background:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
     background:SetGradientAlpha("VERTICAL", 0.1, 0.1, 0.1, 0.5, 0.1, 0.1, 0.1, 0.0)
-    
+
     -- Use both mouse wheel directions for scrolling
     optionScrollFrame:SetScript("OnMouseWheel", function()
         local scrollBar = getglobal(this:GetName().."ScrollBar")
         local currentValue = scrollBar:GetValue()
-        
+
         if arg1 > 0 then
             scrollBar:SetValue(currentValue - (scrollBar:GetHeight() / 2))
         else
             scrollBar:SetValue(currentValue + (scrollBar:GetHeight() / 2))
         end
     end)
-    
+
     optionScrollFrame:SetScrollChild(optionScrollChild)
 end
 
@@ -311,10 +323,10 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     local tempFont = UIParent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     local fontPath, fontSize, fontFlags = GameFontHighlight:GetFont()
     tempFont:SetFont(fontPath, fontSize, fontFlags)
-    
+
     -- Set extra wide width to ensure accurate measurements
     tempFont:SetWidth(500)
-    
+
     local maxTextWidth = 0
     local itemsWithLongText = {}
 
@@ -322,10 +334,10 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     for i, item in ipairs(options.items) do
         tempFont:SetText(item.text)
         local width = tempFont:GetStringWidth()
-        
+
         -- Store the actual width for each item
         itemsWithLongText[i] = width
-        
+
         if width > maxTextWidth then
             maxTextWidth = width
         end
@@ -338,22 +350,22 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     local ARROW_PADDING = 8 -- Space to the right of text before arrow
     local BORDER_PADDING = 4 -- Extra space for border elements
     local DROPDOWN_EXTRA_PADDING = 10  -- Extra padding to prevent text cutoff at larger font sizes
-    
+
     -- Calculate required dropdown width with proper padding and font size adjustment
     local fontSizeAdjustment = (tonumber(DifficultBulletinBoardVars.fontSize) - 11) * 1.5  -- Additional width per font size point above default
     local dropdownWidth = maxTextWidth + TEXT_PADDING + ARROW_WIDTH + ARROW_PADDING + BORDER_PADDING + DROPDOWN_EXTRA_PADDING
-    
+
     -- Add extra width for larger font sizes
     if tonumber(DifficultBulletinBoardVars.fontSize) > 11 then
         dropdownWidth = dropdownWidth + fontSizeAdjustment
     end
-    
+
     -- Minimum width with proper padding
     local MIN_WIDTH = 120 -- Base minimum without text
     if dropdownWidth < MIN_WIDTH then
         dropdownWidth = MIN_WIDTH
     end
-    
+
     -- Round up to nearest even number for better visual appearance
     dropdownWidth = math.ceil(dropdownWidth / 2) * 2
 
@@ -368,12 +380,12 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     dropdownContainer:SetPoint("LEFT", labelFrame, "LEFT", 0, -20)
     dropdownContainer:SetWidth(dropdownWidth)
     dropdownContainer:SetHeight(22)
-    
+
     -- Create the dropdown button with modern styling
     local dropdown = CreateFrame("Button", options.frameName, dropdownContainer)
     dropdown:SetPoint("TOPLEFT", dropdownContainer, "TOPLEFT", 0, 0)
     dropdown:SetPoint("BOTTOMRIGHT", dropdownContainer, "BOTTOMRIGHT", 0, 0)
-    
+
     -- Add modern backdrop
     dropdown:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -383,14 +395,14 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     })
     dropdown:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
     dropdown:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
-    
+
     -- Create the selected text display with proper padding for arrow
     local selectedText = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     selectedText:SetPoint("LEFT", dropdown, "LEFT", 8, 0)
     selectedText:SetPoint("RIGHT", dropdown, "RIGHT", -(ARROW_WIDTH + ARROW_PADDING), 0)
     selectedText:SetJustifyH("LEFT")
     selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0)
-    
+
     -- Create dropdown arrow texture using down.tga as default
     local arrow = dropdown:CreateTexture(nil, "OVERLAY")
     arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
@@ -398,13 +410,13 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     arrow:SetHeight(16)
     arrow:SetPoint("RIGHT", dropdown, "RIGHT", -4, 0)
     arrow:SetTexCoord(0, 1, 0, 1) -- Use full texture
-    
+
     -- Store references to the text object and value
     dropdown.value = defaultValue
     dropdown.text = selectedText
     dropdown.arrow = arrow
     dropdown.menuOpen = false -- Track menu state
-    
+
     -- Initialize with default value
     local matchFound = false
     for _, item in ipairs(options.items) do
@@ -414,7 +426,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             break
         end
     end
-    
+
     -- Fallback: Set to first option if no match found
     if not matchFound then
         if options.items and options.items[1] then
@@ -422,34 +434,34 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             dropdown.value = options.items[1].value
         end
     end
-    
+
     -- Create the menu frame with matching width
     local menuFrame = CreateFrame("Frame", options.frameName.."Menu", UIParent)
     menuFrame:SetFrameStrata("TOOLTIP")
     menuFrame:SetWidth(dropdownWidth)
     menuFrame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", 
-        tile = true, tileSize = 16, edgeSize = 8, 
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 8,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
     menuFrame:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
     menuFrame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1.0)
     menuFrame:Hide()
-    
+
     -- Create menu items
     local menuHeight = 0
     local itemHeight = 24
-    
+
     for i, item in ipairs(options.items) do
         local menuItem = CreateFrame("Button", options.frameName.."MenuItem"..i, menuFrame)
         menuItem:SetHeight(itemHeight)
         menuItem:SetPoint("TOPLEFT", menuFrame, "TOPLEFT", 4, -4 - (i-1)*itemHeight)
         menuItem:SetPoint("TOPRIGHT", menuFrame, "TOPRIGHT", -4, -4 - (i-1)*itemHeight)
-        
+
         menuItem.value = item.value
         menuItem.text = item.text
-        
+
         -- Normal state
         menuItem:SetBackdrop({
             bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -458,7 +470,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
         menuItem:SetBackdropColor(0.12, 0.12, 0.12, 0.0)
-        
+
         -- Item text
         local itemText = menuItem:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         itemText:SetPoint("LEFT", menuItem, "LEFT", 8, 0)
@@ -466,18 +478,18 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         itemText:SetJustifyH("LEFT")
         itemText:SetText(item.text)
         itemText:SetTextColor(0.9, 0.9, 0.9, 1.0)
-        
+
         -- Highlight state - update to match headline color
         menuItem:SetScript("OnEnter", function()
             this:SetBackdropColor(0.2, 0.2, 0.25, 1.0)
             itemText:SetTextColor(0.9, 0.9, 1.0, 1.0)
         end)
-        
+
         menuItem:SetScript("OnLeave", function()
             this:SetBackdropColor(0.12, 0.12, 0.12, 0.0)
             itemText:SetTextColor(0.9, 0.9, 0.9, 1.0)
         end)
-        
+
         -- Click handler
         menuItem:SetScript("OnClick", function()
             dropdown.value = this.value
@@ -487,13 +499,13 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             -- Reset arrow to normal state when menu closes
             dropdown.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
         end)
-        
+
         menuHeight = menuHeight + itemHeight
     end
-    
+
     -- Set menu height
     menuFrame:SetHeight(menuHeight + 8)
-    
+
     -- Position update function
     local function updateMenuPosition()
         local dropLeft, dropBottom = dropdown:GetLeft(), dropdown:GetBottom()
@@ -502,7 +514,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             menuFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", dropLeft, dropBottom - 2)
         end
     end
-    
+
     -- Toggle menu
     dropdown:SetScript("OnClick", function()
         if menuFrame:IsShown() then
@@ -521,42 +533,42 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
                     end
                 end
             end
-            
+
             -- Change arrow to gradient when menu opens
             this.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\gradient_down.tga")
             dropdown.menuOpen = true
-            
+
             updateMenuPosition()
             menuFrame:Show()
         end
     end)
-    
+
     -- Hover effect without changing arrow texture
     dropdown:SetScript("OnEnter", function()
         this:SetBackdropColor(0.15, 0.15, 0.18, 0.8)
         this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)
         selectedText:SetTextColor(0.9, 0.9, 1.0, 1.0)
     end)
-    
+
     dropdown:SetScript("OnLeave", function()
         this:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
         this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
         selectedText:SetTextColor(0.9, 0.9, 0.9, 1.0)
     end)
-    
+
     -- Store menu reference
     dropdown.menuFrame = menuFrame
-    
+
     -- Add menu hide handler to reset arrow
     menuFrame:SetScript("OnHide", function()
         dropdown.menuOpen = false
         dropdown.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
     end)
-    
+
     -- Close menu when clicking elsewhere
     if not DROPDOWN_MENUS_LIST then
         DROPDOWN_MENUS_LIST = {}
-        
+
         -- Global click handler
         local clickHandler = CreateFrame("Frame")
         clickHandler:SetScript("OnEvent", function()
@@ -570,17 +582,17 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         end)
         clickHandler:RegisterEvent("GLOBAL_MOUSE_DOWN")
     end
-    
+
     table.insert(DROPDOWN_MENUS_LIST, menuFrame)
-    
+
     -- Custom functions
     dropdown.GetSelectedValue = function(self)
         return self.value
     end
-    
+
     dropdown.SetSelectedValue = function(self, value, text)
         self.value = value
-        
+
         if text then
             self.text:SetText(text)
         else
@@ -592,17 +604,17 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
             end
         end
     end
-    
+
     dropdown.GetText = function(self)
         return self.text:GetText()
     end
-    
+
     dropdown.SetText = function(self, text)
         self.text:SetText(text)
     end
 
     table.insert(optionControlsToResize, dropdownContainer)
-    
+
     return dropdown
 end
 
@@ -663,7 +675,7 @@ local function addInputBoxOptionToOptionFrame(option, value)
     inputBox:SetTextColor(1, 1, 1, 1)
     inputBox:SetAutoFocus(false)
     inputBox:SetJustifyH("LEFT")
-    
+
     -- Add highlight effect on focus
     inputBox:SetScript("OnEditFocusGained", function()
         this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
@@ -738,66 +750,66 @@ local function addTopicListToOptionFrame(topicObject, topicList)
         checkbox:SetWidth(20)
         checkbox:SetHeight(20)
         checkbox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 10, optionYOffset)
-        
+
         -- Create empty checkbox background texture
         local emptyBoxTexture = checkbox:CreateTexture(nil, "BACKGROUND")
         emptyBoxTexture:SetTexture("Interface\\Buttons\\UI-CheckBox-Up")
         emptyBoxTexture:SetAllPoints(checkbox)
         checkbox:SetNormalTexture(emptyBoxTexture)
-        
+
         -- Create pushed state texture
         local pushedTexture = checkbox:CreateTexture(nil, "BACKGROUND")
         pushedTexture:SetTexture("Interface\\Buttons\\UI-CheckBox-Down")
         pushedTexture:SetAllPoints(checkbox)
         checkbox:SetPushedTexture(pushedTexture)
-        
+
         -- Create highlight texture
         local highlightTexture = checkbox:CreateTexture(nil, "HIGHLIGHT")
         highlightTexture:SetTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
         highlightTexture:SetAllPoints(checkbox)
         highlightTexture:SetBlendMode("ADD")
         checkbox:SetHighlightTexture(highlightTexture)
-        
+
         -- Create custom check mark frame with adjustable dimensions and position
         local checkMarkFrame = CreateFrame("Frame", nil, checkbox)
-        
+
         -- Set the desired size for the check mark
         local checkMarkWidth = 12   -- Width of check mark
         local checkMarkHeight = 12  -- Height of check mark
         local xOffset = 0           -- Horizontal positioning (negative = left, positive = right)
         local yOffset = 2           -- Vertical positioning (negative = down, positive = up)
-        
+
         checkMarkFrame:SetWidth(checkMarkWidth)
         checkMarkFrame:SetHeight(checkMarkHeight)
         checkMarkFrame:SetPoint("CENTER", checkbox, "CENTER", xOffset, yOffset)
         checkMarkFrame:SetFrameLevel(checkbox:GetFrameLevel() + 5)
-        
+
         local checkMarkTexture = checkMarkFrame:CreateTexture(nil, "OVERLAY")
         checkMarkTexture:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\check_sign.tga")
         checkMarkTexture:SetAllPoints(checkMarkFrame)
-        
+
         -- Store state and references
         checkbox.isChecked = topic.selected
         checkbox.checkMarkFrame = checkMarkFrame
         checkbox.topicRef = topic
-        
+
         -- Apply initial state
         if checkbox.isChecked then
             checkMarkFrame:Show()
         else
             checkMarkFrame:Hide()
         end
-        
+
         -- Handle clicking on the checkbox
         checkbox:SetScript("OnClick", function()
             local self = this
-            
+
             -- Toggle checked state
             self.isChecked = not self.isChecked
-            
+
             -- Update topic data
             self.topicRef.selected = self.isChecked
-            
+
             -- Update visual state
             if self.isChecked then
                 self.checkMarkFrame:Show()
@@ -814,7 +826,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
         topicLabel:SetTextColor(0.9, 0.9, 0.9, 1.0)
         topicLabel:SetJustifyH("LEFT")
         topicLabel:SetWidth(175)
-        
+
         -- Make the label clickable too
         local labelClickArea = CreateFrame("Button", nil, parentFrame)
         labelClickArea:SetPoint("LEFT", checkbox, "RIGHT", 10, 0)
@@ -847,7 +859,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 		tagsTextBox:SetAutoFocus(false)
 		tagsTextBox:SetJustifyH("LEFT")
 		tagsTextBox:SetTextInsets(unpack(INPUT_BOX_TEXT_INSETS))
-				
+
 		-- Add highlight effect on focus
 		tagsTextBox:SetScript("OnEditFocusGained", function()
 			this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
@@ -864,26 +876,33 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 
         table.insert(tempTagsTextBoxes, tagsTextBox)
     end
-    
+
     return tempTags
 end
 
 local function normalizeFrameWidths(frames)
-    local maxWidth = 0
-
     -- Find the maximum width
+    local maxWidth = 0
     for _, frame in ipairs(frames) do
-        local width = frame:GetWidth()
-        if width and width > maxWidth then
-            maxWidth = width
-            
+        local w = frame:GetWidth()
+        if w and w > maxWidth then
+            maxWidth = w
         end
     end
 
-    -- Apply the max width to all frames
+    -- Apply that width to all
     for _, frame in ipairs(frames) do
         frame:SetWidth(maxWidth)
     end
+end
+
+-- Helper: finalize layout (normalize widths, adjust scroll height)
+local function finalizeOptionFrame()
+    normalizeFrameWidths(optionControlsToResize)
+
+    -- Make sure scroll frame shows everything
+    local totalHeight = math.abs(optionYOffset) + 150  -- Add padding
+    optionScrollChild:SetHeight(totalHeight)
 end
 
 function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
@@ -891,9 +910,10 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
 
     fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
 
-    -- Create the dropdowns with modern styling
+    hardcoreOnlyDropDown = addDropDownOptionToOptionFrame(hardcoreOnlyDropDownOptionObject, DifficultBulletinBoardVars.hardcoreOnly)
+
     serverTimePositionDropDown = addDropDownOptionToOptionFrame(serverTimePositionDropDownOptionObject, DifficultBulletinBoardVars.serverTimePosition)
-    
+
     timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
 
     filterMatchedMessagesDropDown = addDropDownOptionToOptionFrame(filterMatchedMessagesDropDownOptionObject, DifficultBulletinBoardVars.filterMatchedMessages)
@@ -903,22 +923,19 @@ function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
     optionFrameSoundDropDown = addDropDownOptionToOptionFrame(optionFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.optionFrameSound)
 
     groupOptionInputBox = addInputBoxOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
-    
-    tempGroupTags = addTopicListToOptionFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
-    
-    professionOptionInputBox = addInputBoxOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
-    
-    tempProfessionTags= addTopicListToOptionFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
-    
-    hardcoreOptionInputBox = addInputBoxOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
-    
-    tempHardcoreTags = addTopicListToOptionFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
-    
-    normalizeFrameWidths(optionControlsToResize)
 
-    -- Make sure scroll frame shows everything
-    local totalHeight = math.abs(optionYOffset) + 100  -- Add padding
-    optionScrollChild:SetHeight(totalHeight)
+    tempGroupTags = addTopicListToOptionFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
+
+    professionOptionInputBox = addInputBoxOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+
+    tempProfessionTags= addTopicListToOptionFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
+
+    hardcoreOptionInputBox = addInputBoxOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+
+    tempHardcoreTags = addTopicListToOptionFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
+
+    -- had to put this into a new function because lua was throwing a "32 upvalues ..." error. dogshit language lol
+    finalizeOptionFrame()
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
@@ -931,6 +948,8 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
     DifficultBulletinBoardSavedVariables.timeFormat = DifficultBulletinBoardDefaults.defaultTimeFormat
 
     DifficultBulletinBoardSavedVariables.filterMatchedMessages = DifficultBulletinBoardDefaults.defaultFilterMatchedMessages
+
+    DifficultBulletinBoardSavedVariables.hardcoreOnly = DifficultBulletinBoardDefaults.defaultHardcoreOnly
 
     DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
     DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
@@ -955,13 +974,15 @@ function DifficultBulletinBoard_SaveVariablesAndReload()
 
     DifficultBulletinBoardSavedVariables.filterMatchedMessages = filterMatchedMessagesDropDown:GetSelectedValue()
 
+    DifficultBulletinBoardSavedVariables.hardcoreOnly = hardcoreOnlyDropDown:GetSelectedValue()
+
     DifficultBulletinBoardSavedVariables.mainFrameSound = mainFrameSoundDropDown:GetSelectedValue()
     DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrameSoundDropDown:GetSelectedValue()
 
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
     DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = hardcoreOptionInputBox:GetText()
-    
+
     overwriteTagsForAllTopics(DifficultBulletinBoardVars.allGroupTopics, tempGroupTags)
     overwriteTagsForAllTopics(DifficultBulletinBoardVars.allProfessionTopics, tempProfessionTags)
     overwriteTagsForAllTopics(DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags)
