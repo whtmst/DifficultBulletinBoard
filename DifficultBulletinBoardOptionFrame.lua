@@ -165,7 +165,7 @@ local serverTimePositionDropDownOptionObject = {
 local messageExpirationTimeOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_Expiration_Time_Input",
     labelText = "Message Expiration Time (seconds):",
-    labelToolTip = "How many seconds before messages automatically expire from the bulletin board.",
+    labelToolTip = "How many seconds before messages automatically expire from the bulletin board.\n\nSet to 0 to disable message expiration completely (messages will never be automatically removed).",
     width = 40,  -- Wider input for up to 3-digit values
 }
 

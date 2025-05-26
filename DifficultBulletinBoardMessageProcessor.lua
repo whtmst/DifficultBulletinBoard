@@ -850,7 +850,8 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 local currentTimeStr = date("%H:%M:%S")
                 local ageSeconds = timeToSeconds(currentTimeStr) - timeToSeconds(entry.creationTimestamp)
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
-                if ageSeconds >= tonumber(DifficultBulletinBoardVars.messageExpirationTime) then
+                local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
+                if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
                     entry.nameButton:SetText("-")
                     entry.messageFontString:SetText("-")
                     entry.timeFontString:SetText("-")
@@ -871,7 +872,8 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 local currentTimeStr = date("%H:%M:%S")
                 local ageSeconds = timeToSeconds(currentTimeStr) - timeToSeconds(entry.creationTimestamp)
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
-                if ageSeconds >= tonumber(DifficultBulletinBoardVars.messageExpirationTime) then
+                local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
+                if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
                     entry.nameButton:SetText("-")
                     entry.messageFontString:SetText("-")
                     entry.timeFontString:SetText("-")
@@ -891,7 +893,8 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 local currentTimeStr = date("%H:%M:%S")
                 local ageSeconds = timeToSeconds(currentTimeStr) - timeToSeconds(entry.creationTimestamp)
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
-                if ageSeconds >= tonumber(DifficultBulletinBoardVars.messageExpirationTime) then
+                local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
+                if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
                     entry.nameButton:SetText("-")
                     entry.messageFontString:SetText("-")
                     entry.timeFontString:SetText("-")
@@ -911,7 +914,8 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 local currentTimeStr = date("%H:%M:%S")
                 local ageSeconds = timeToSeconds(currentTimeStr) - timeToSeconds(entry.creationTimestamp)
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
-                if ageSeconds >= tonumber(DifficultBulletinBoardVars.messageExpirationTime) then
+                local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
+                if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
                     entry.nameButton:SetText("-")
                     entry.messageFontString:SetText("-")
                     entry.timeFontString:SetText("-")

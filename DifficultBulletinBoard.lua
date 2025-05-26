@@ -438,9 +438,9 @@ local function OnUpdate()
             DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
         end
         
-        -- Auto-expiration of messages based on user setting
+        -- Auto-expiration of messages based on user setting (0 = disabled)
         local expireSecs = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
-        if expireSecs then
+        if expireSecs and expireSecs > 0 then
             DifficultBulletinBoard.ExpireMessages(expireSecs)
         end
 
