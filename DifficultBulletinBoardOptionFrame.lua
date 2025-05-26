@@ -995,7 +995,7 @@ local function addInputBoxOptionToOptionFrame(option, value)
     inputBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
     inputBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
     inputBox:SetTextInsets(unpack(INPUT_BOX_TEXT_INSETS))
-    inputBox:SetText(value)
+    inputBox:SetText(value or "")
     inputBox:SetFontObject(GameFontHighlight)
     inputBox:SetTextColor(1, 1, 1, 1)
     inputBox:SetAutoFocus(false)
@@ -1183,7 +1183,7 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 		tagsTextBox:SetBackdrop(tagsBackdrop)
 		tagsTextBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
 		tagsTextBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
-		tagsTextBox:SetText(table.concat(topic.tags, " "))
+		tagsTextBox:SetText(topic.tags and table.concat(topic.tags, " ") or "")
 		tagsTextBox:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize + 1)
 		tagsTextBox:SetTextColor(1, 1, 1, 1)
 		tagsTextBox:SetAutoFocus(false)
@@ -1408,19 +1408,19 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
-    -- Save basic settings from optionFrame fields
-    DifficultBulletinBoardSavedVariables.fontSize = optionFrame.fontSizeOptionInputBox:GetText()
-    DifficultBulletinBoardSavedVariables.timeFormat = optionFrame.timeFormatDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.serverTimePosition = optionFrame.serverTimePositionDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.filterMatchedMessages = optionFrame.filterMatchedMessagesDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.hardcoreOnly = optionFrame.hardcoreOnlyDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.mainFrameSound = optionFrame.mainFrameSoundDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrame.optionFrameSoundDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = optionFrame.groupOptionInputBox:GetText()
-    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = optionFrame.professionOptionInputBox:GetText()
-    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = optionFrame.hardcoreOptionInputBox:GetText()
-    -- Save custom message expiration time
-    DifficultBulletinBoardSavedVariables.messageExpirationTime = optionFrame.expirationTimeOptionInputBox:GetText()
+    -- Save basic settings from optionFrame fields with safety checks
+    DifficultBulletinBoardSavedVariables.fontSize = optionFrame.fontSizeOptionInputBox and optionFrame.fontSizeOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultFontSize
+    DifficultBulletinBoardSavedVariables.timeFormat = optionFrame.timeFormatDropDown and optionFrame.timeFormatDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultTimeFormat
+    DifficultBulletinBoardSavedVariables.serverTimePosition = optionFrame.serverTimePositionDropDown and optionFrame.serverTimePositionDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultServerTimePosition
+    DifficultBulletinBoardSavedVariables.filterMatchedMessages = optionFrame.filterMatchedMessagesDropDown and optionFrame.filterMatchedMessagesDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultFilterMatchedMessages
+    DifficultBulletinBoardSavedVariables.hardcoreOnly = optionFrame.hardcoreOnlyDropDown and optionFrame.hardcoreOnlyDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultHardcoreOnly
+    DifficultBulletinBoardSavedVariables.mainFrameSound = optionFrame.mainFrameSoundDropDown and optionFrame.mainFrameSoundDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultMainFrameSound
+    DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrame.optionFrameSoundDropDown and optionFrame.optionFrameSoundDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultOptionFrameSound
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = optionFrame.groupOptionInputBox and optionFrame.groupOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = optionFrame.professionOptionInputBox and optionFrame.professionOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = optionFrame.hardcoreOptionInputBox and optionFrame.hardcoreOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders
+    -- Save custom message expiration time with safety check
+    DifficultBulletinBoardSavedVariables.messageExpirationTime = optionFrame.expirationTimeOptionInputBox and optionFrame.expirationTimeOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultMessageExpirationTime
     -- Overwrite tags saved from temp fields
     overwriteTagsForAllTopics(DifficultBulletinBoardVars.allGroupTopics, optionFrame.tempGroupTags)
     overwriteTagsForAllTopics(DifficultBulletinBoardVars.allProfessionTopics, optionFrame.tempProfessionTags)

@@ -56,8 +56,10 @@ local function setSavedVariable(savedVar, defaultVar, savedName)
     if savedVar and savedVar ~= "" then
         return savedVar
     else
-        DifficultBulletinBoardSavedVariables[savedName] = defaultVar
-        return defaultVar
+        -- Handle nil default values gracefully
+        local fallbackValue = defaultVar or ""
+        DifficultBulletinBoardSavedVariables[savedName] = fallbackValue
+        return fallbackValue
     end
 end
 
