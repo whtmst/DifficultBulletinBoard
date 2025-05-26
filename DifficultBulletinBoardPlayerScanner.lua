@@ -2,9 +2,7 @@ DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
 
 local playerScannerFrame = CreateFrame("Frame")
 
-local function print(string) 
-    --DEFAULT_CHAT_FRAME:AddMessage(string) 
-end
+
 
 
 playerScannerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")

@@ -16,6 +16,27 @@ local SCROLL_BAR_WIDTH = 16
 
 local tagsTextBoxWidthDelta = 260
 
+-- Constants for dynamic button sizing (matching main panel)
+local OPTION_BUTTON_SPACING = 10  -- Fixed spacing between buttons
+local OPTION_MIN_TEXT_PADDING = 10  -- Minimum spacing between text and button edges
+local OPTION_NUM_BUTTONS = 4      -- Total number of option tab buttons
+local OPTION_SIDE_PADDING = 10    -- Padding on left and right sides of frame
+
+-- Improved spacing constants for better layout
+local SECTION_SPACING = 30  -- Space between major sections (proper separation)
+local OPTION_SPACING = 25   -- Space between individual options
+local LABEL_SPACING = 20    -- Space between label and input
+
+-- Tab system state
+DifficultBulletinBoardOptionFrame.currentTab = "general"
+DifficultBulletinBoardOptionFrame.tabs = {
+    general = {},
+    groups = {},
+    professions = {},
+    hardcore = {}
+}
+DifficultBulletinBoardOptionFrame.allDropdowns = {}  -- Track all dropdown buttons
+
 local tempGroupTags = {}
 local tempProfessionTags = {}
 local tempHardcoreTags = {}
@@ -25,6 +46,7 @@ local baseFontSizeOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_Font_Size_Input",
     labelText = "Base Font Size:",
     labelToolTip = "Adjusts the base font size for text. Other font sizes (e.g., titles) are calculated relative to this value. For example, if the base font size is 14, titles may be set 2 points higher.",
+    width = 40,  -- match expiration-time width
 }
 
 -- Option Data for Placeholders per Group Topic
@@ -32,6 +54,7 @@ local groupPlaceholdersOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_Group_Placeholder_Input",
     labelText = "Entries per Group Topic:",
     labelToolTip = "Defines the number of entries displayed for each group topic entry.",
+    width = 40,  -- match expiration-time width
 }
 
 -- Option Data for Placeholders per Profession Topic
@@ -39,6 +62,7 @@ local professionPlaceholdersOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_Profession_Placeholder_Input",
     labelText = "Entries per Profession Topic:",
     labelToolTip = "Specifies the number of entries displayed for each profession topic entry.",
+    width = 40,  -- match expiration-time width
 }
 
 -- Option Data for Placeholders per Hardcore Topic
@@ -46,6 +70,7 @@ local hardcorePlaceholdersOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_Hardcore_Placeholder_Input",
     labelText = "Entries per Hardcore Topic:",
     labelToolTip = "Sets the number of entries displayed for each hardcore topic entry.",
+    width = 40,  -- match expiration-time width
 }
 
 local groupTopicListObject = {
@@ -81,7 +106,7 @@ local timeFormatDropDownOptionObject = {
 local hardcoreOnlyDropDownOptionObject = {
     frameName    = "DifficultBulletinBoardOptionFrame_HardcoreOnly_Dropdown",
     labelText    = "Show Hardcore Messages Only:",
-    labelToolTip = "When enabled, only messages pertaining to hardcore characters (e.g. containing “HC” or “Hardcore”) will appear.",
+    labelToolTip = "When enabled, only messages pertaining to hardcore characters (e.g. containing \"HC\" or \"Hardcore\") will appear.",
     items = {
         { text = "Enable Hardcore Filter",  value = "true"  },
         { text = "Disable Hardcore Filter", value = "false" }
@@ -131,9 +156,17 @@ local serverTimePositionDropDownOptionObject = {
     "To the Right of Tab Buttons: Displays the server time on the same level as the tab buttons, sticking to the right above where the time columns normally are.",
     items = {
         { text = "Top Left of Title", value = "top-left" },
-        { text = "To the Right of Tab Buttons", value = "right-of-tabs" },
+                    { text = "Top Right of Title", value = "right-of-tabs" },
         { text = "Disable Time Display", value = "disabled" }
     }
+}
+
+-- Option Data for message expiration time
+local messageExpirationTimeOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Expiration_Time_Input",
+    labelText = "Message Expiration Time (seconds):",
+    labelToolTip = "How many seconds before messages automatically expire from the bulletin board.",
+    width = 40,  -- Wider input for up to 3-digit values
 }
 
 local fontSizeOptionInputBox
@@ -149,8 +182,276 @@ local hardcoreOptionInputBox
 
 local optionControlsToResize = {}
 
-local function print(string)
-    --DEFAULT_CHAT_FRAME:AddMessage(string)
+-- Function to update option tab button widths based on frame size (matching main panel logic)
+local function updateOptionButtonWidths()
+    -- Get button references
+    local buttons = {
+        getglobal("DifficultBulletinBoardOptionFrame_GeneralTab"),
+        getglobal("DifficultBulletinBoardOptionFrame_GroupsTab"),
+        getglobal("DifficultBulletinBoardOptionFrame_ProfessionsTab"),
+        getglobal("DifficultBulletinBoardOptionFrame_HardcoreTab")
+    }
+    
+    -- Safety check for buttons
+    for i = 1, OPTION_NUM_BUTTONS do
+        if not buttons[i] then
+            return
+        end
+    end
+    
+    -- Get button text widths to calculate minimum required widths
+    local textWidths = {}
+    local totalTextWidth = 0
+    local buttonCount = OPTION_NUM_BUTTONS
+    
+    -- Check all buttons have text elements and get their widths
+    for i = 1, buttonCount do
+        local button = buttons[i]
+        if not button:GetName() then
+            return
+        end
+        
+        local textObjName = button:GetName() .. "_Text"
+        local textObj = getglobal(textObjName)
+        
+        if not textObj then
+            return
+        end
+        
+        local textWidth = textObj:GetStringWidth()
+        if not textWidth then
+            return
+        end
+        
+        textWidths[i] = textWidth
+        totalTextWidth = totalTextWidth + textWidth
+    end
+    
+    -- Calculate minimum padded widths for each button (text + minimum padding)
+    local minButtonWidths = {}
+    for i = 1, buttonCount do
+        minButtonWidths[i] = textWidths[i] + (2 * OPTION_MIN_TEXT_PADDING)
+    end
+    
+    -- Find the button that needs the most minimum width
+    local maxMinWidth = 0
+    for i = 1, buttonCount do
+        if minButtonWidths[i] > maxMinWidth then
+            maxMinWidth = minButtonWidths[i]
+        end
+    end
+    
+    -- Calculate total content width if all buttons had the same width (maxMinWidth)
+    -- This ensures all buttons have at least minimum padding
+    local totalEqualContentWidth = maxMinWidth * buttonCount
+    
+    -- Add spacing to total minimum width
+    local totalMinFrameWidth = totalEqualContentWidth + ((OPTION_NUM_BUTTONS - 1) * OPTION_BUTTON_SPACING) + (2 * OPTION_SIDE_PADDING)
+    
+    -- Get current frame width
+    local frameWidth = optionFrame:GetWidth()
+    
+    -- Set the minimum resizable width of the frame directly
+    -- This prevents the user from dragging it smaller than the minimum width
+    optionFrame:SetMinResize(totalMinFrameWidth, 300)
+    
+    -- If frame is somehow smaller than minimum (should not happen), force a resize
+    if frameWidth < totalMinFrameWidth then
+        optionFrame:SetWidth(totalMinFrameWidth)
+        frameWidth = totalMinFrameWidth
+    end
+    
+    -- Calculate available width for buttons
+    local availableWidth = frameWidth - (2 * OPTION_SIDE_PADDING) - ((OPTION_NUM_BUTTONS - 1) * OPTION_BUTTON_SPACING)
+    
+    -- Calculate equal width distribution
+    local equalWidth = availableWidth / OPTION_NUM_BUTTONS
+    
+    -- Always try to use equal widths first
+    if equalWidth >= maxMinWidth then
+        -- We can use equal widths for all buttons
+        for i = 1, buttonCount do
+            buttons[i]:SetWidth(equalWidth)
+        end
+    else
+        -- We can't use equal widths because some text would have less than minimum padding
+        -- Set all buttons to the maximum minimum width to ensure all have same width
+        -- unless that would mean having less than minimum padding
+        for i = 1, buttonCount do
+            buttons[i]:SetWidth(maxMinWidth)
+        end
+    end
+end
+
+-- Tab System Functions
+function DifficultBulletinBoardOptionFrame.ShowTab(tabName)
+    -- Force close all dropdowns first
+    DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
+    
+    -- Update current tab
+    DifficultBulletinBoardOptionFrame.currentTab = tabName
+    
+    -- Update tab button appearances
+    DifficultBulletinBoardOptionFrame.UpdateTabButtons()
+    
+    -- Hide all content
+    DifficultBulletinBoardOptionFrame.HideAllTabContent()
+    
+    -- Show content for selected tab
+    DifficultBulletinBoardOptionFrame.ShowTabContent(tabName)
+    
+    -- Force close dropdowns again after showing content
+    DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
+end
+
+function DifficultBulletinBoardOptionFrame.UpdateTabButtons()
+    local currentTab = DifficultBulletinBoardOptionFrame.currentTab
+    local tabs = {"General", "Groups", "Professions", "Hardcore"}
+    
+    for _, tabName in ipairs(tabs) do
+        local tabButton = getglobal("DifficultBulletinBoardOptionFrame_" .. tabName .. "Tab")
+        local tabText = getglobal("DifficultBulletinBoardOptionFrame_" .. tabName .. "Tab_Text")
+        
+        if tabButton and tabText then
+            local isActive = (string.lower(tabName) == currentTab)
+            
+            if isActive then
+                -- Active tab styling - matching main panel exactly
+                tabButton:SetBackdropColor(0.25, 0.25, 0.3, 1.0)  -- Darker color for active tab
+                tabButton:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Same border as main panel
+                tabText:SetTextColor(1.0, 1.0, 1.0, 1.0)  -- Brighter text for active tab
+            else
+                -- Inactive tab styling - matching main panel exactly
+                tabButton:SetBackdropColor(0.15, 0.15, 0.15, 1.0)  -- Normal color
+                tabButton:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)  -- Same border as main panel
+                tabText:SetTextColor(0.9, 0.9, 0.9, 1.0)  -- Normal text color
+            end
+        end
+    end
+end
+
+function DifficultBulletinBoardOptionFrame.HideAllTabContent()
+    -- Close all open dropdown menus first
+    DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
+    
+    -- Hide all option elements
+    for _, tab in pairs(DifficultBulletinBoardOptionFrame.tabs) do
+        for _, element in pairs(tab) do
+            if element and element.Hide then
+                element:Hide()
+            end
+        end
+    end
+end
+
+function DifficultBulletinBoardOptionFrame.ShowTabContent(tabName)
+    local tab = DifficultBulletinBoardOptionFrame.tabs[tabName]
+    if tab then
+        for _, element in pairs(tab) do
+            if element and element.Show then
+                element:Show()
+            end
+        end
+        
+        -- Update scroll height for this specific tab and reset scroll position
+        local tabHeight = DifficultBulletinBoardOptionFrame.tabHeights[tabName]
+        if tabHeight and optionScrollChild then
+            -- Get the scroll frame to calculate if we need to ensure scrollable content
+            local scrollFrame = getglobal("DifficultBulletinBoardOptionFrame_ScrollFrame")
+            if scrollFrame then
+                local scrollFrameHeight = scrollFrame:GetHeight()
+                local actualMaxScroll = math.max(0, tabHeight - scrollFrameHeight)
+                
+                -- If there's no natural scrolling, add enough height to make scrolling possible
+                -- This ensures the thumb always has a reason to exist
+                local finalHeight = tabHeight
+                if actualMaxScroll < 25 then
+                    finalHeight = scrollFrameHeight + 25  -- Always ensure at least 25px of scrollable content
+                end
+                
+                optionScrollChild:SetHeight(finalHeight)
+                
+                -- Reset scroll position first
+                scrollFrame:SetVerticalScroll(0)
+                
+                -- Calculate final scroll range with the adjusted height
+                local maxScroll = math.max(0, finalHeight - scrollFrameHeight)
+                
+                -- Update the scrollbar range and position
+                local scrollBar = getglobal(scrollFrame:GetName().."ScrollBar")
+                if scrollBar then
+                    scrollBar:SetMinMaxValues(0, maxScroll)
+                    scrollBar:SetValue(0)
+                    scrollBar:Show()
+                    
+                    -- Configure thumb texture
+                    local thumbTexture = scrollBar:GetThumbTexture()
+                    if thumbTexture then
+                        thumbTexture:SetWidth(8)
+                        thumbTexture:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+                        thumbTexture:SetGradientAlpha("VERTICAL", 0.504, 0.504, 0.576, 0.7, 0.648, 0.648, 0.72, 0.9)
+                        thumbTexture:Show()
+                    end
+                end
+                
+                -- Force update the scroll frame's child rect
+                scrollFrame:UpdateScrollChildRect()
+            end
+        end
+    end
+end
+
+-- Helper function to show consistent styled tooltips matching the main panel
+local function showStyledTooltip(frame, text)
+    if not text or text == "" then
+        return
+    end
+    
+    -- Check if GameTooltip exists
+    if not GameTooltip then
+        return
+    end
+    
+    -- Ensure GameTooltip is properly reset before use
+    GameTooltip:Hide()
+    GameTooltip:ClearLines()
+    
+    -- Set owner and anchor with error checking
+    if GameTooltip.SetOwner then
+        GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+    else
+        return -- GameTooltip not available
+    end
+    
+    -- Set the text with word wrapping enabled (white text)
+    GameTooltip:SetText(text, 1, 1, 1, 1, true)
+    
+    -- Ensure proper font and sizing for better readability using user's font size setting + 2
+    if GameTooltipTextLeft1 and GameTooltipTextLeft1.SetFont then
+        local tooltipFontSize = (DifficultBulletinBoardVars.fontSize or 12) + 2
+        GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", tooltipFontSize, "")
+    end
+    
+    -- Set tooltip border color to match header color (light blue-white)
+    if GameTooltip.SetBackdropBorderColor then
+        GameTooltip:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+    end
+    
+    -- Force the tooltip to appear on top of other UI elements
+    GameTooltip:SetFrameStrata("TOOLTIP")
+    
+    -- Show the tooltip
+    GameTooltip:Show()
+end
+
+-- Helper function to hide tooltips safely
+local function hideStyledTooltip(frame)
+    if GameTooltip and GameTooltip.IsOwned and GameTooltip:IsOwned(frame) then
+        GameTooltip:Hide()
+    elseif GameTooltip and GameTooltip.Hide then
+        -- Fallback for cases where IsOwned might not work
+        GameTooltip:Hide()
+    end
 end
 
 -- Create a global registry to manage all dropdown menus
@@ -193,10 +494,6 @@ local function overwriteTagsForAllTopics(allTopics, tempTags)
         if tempTags[topic.name] then
             local newTags = tempTags[topic.name]
             topic.tags = newTags
-            print("Tags for topic '" .. topic.name .. "' have been updated:")
-            for _, tag in ipairs(newTags) do print("- " .. tag) end
-        else
-            print("No tags found for topic '" .. topic.name .. "' in tempTags.")
         end
     end
 end
@@ -240,15 +537,15 @@ local function addScrollFrameToOptionFrame()
     -- Style the scroll bar to be slimmer
     scrollBar:SetWidth(8)
 
-    -- Set up the thumb texture with 10% darker colors
+    -- Set up the thumb texture with blue-tinted colors to match main panel
     local thumbTexture = scrollBar:GetThumbTexture()
     thumbTexture:SetWidth(8)
     thumbTexture:SetHeight(50)
     thumbTexture:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-    -- 10% darker gradient (multiplied color values by 0.9)
+    -- Blue-tinted gradient to match main panel
     thumbTexture:SetGradientAlpha("VERTICAL", 0.504, 0.504, 0.576, 0.7, 0.648, 0.648, 0.72, 0.9)
 
-    -- Style the scroll bar track with 10% darker background
+    -- Style the scroll bar track with darker background to match main panel
     scrollBar:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = nil,
@@ -256,9 +553,18 @@ local function addScrollFrameToOptionFrame()
         insets = { left = 0, right = 0, top = 0, bottom = 0 }
     })
     scrollBar:SetBackdropColor(0.072, 0.072, 0.108, 0.3)
+    
+    -- Close dropdowns when scroll bar is used (while preserving scroll functionality)
+    scrollBar:SetScript("OnValueChanged", function()
+        -- Preserve the original scroll functionality
+        optionScrollFrame:SetVerticalScroll(this:GetValue())
+        
+        -- Close dropdowns to prevent positioning issues
+        DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
+    end)
 
-    -- FIXED: Set ScrollFrame anchors to match other panels
-    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 15, -55)
+    -- FIXED: Set ScrollFrame anchors to match main panel positioning exactly
+    optionScrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 15, -55)  -- Match main panel: -55px from top
     optionScrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -26, 50)
 
     -- Create the ScrollChild with proper styling
@@ -282,6 +588,9 @@ local function addScrollFrameToOptionFrame()
         else
             scrollBar:SetValue(currentValue + (scrollBar:GetHeight() / 2))
         end
+        
+        -- Close all open dropdown menus when scrolling to prevent positioning issues
+        DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
     end)
 
     optionScrollFrame:SetScrollChild(optionScrollChild)
@@ -289,8 +598,8 @@ end
 
 -- Dropdown option function with proper z-ordering and dynamic width
 local function addDropDownOptionToOptionFrame(options, defaultValue)
-    -- Adjust vertical offset for the dropdown
-    optionYOffset = optionYOffset - 30
+    -- Adjust vertical offset for the dropdown with improved spacing
+    optionYOffset = optionYOffset - OPTION_SPACING
 
     -- Create a frame to hold the label and enable mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
@@ -311,12 +620,10 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     -- Add a GameTooltip to the labelFrame
     labelFrame:EnableMouse(true)
     labelFrame:SetScript("OnEnter", function()
-        GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
-        GameTooltip:SetText(options.labelToolTip, nil, nil, nil, nil, true)
-        GameTooltip:Show()
+        showStyledTooltip(labelFrame, options.labelToolTip)
     end)
     labelFrame:SetScript("OnLeave", function()
-        GameTooltip:Hide()
+        hideStyledTooltip(labelFrame)
     end)
 
     -- Create temporary exact clone of the GameFontHighlight to measure text properly
@@ -373,7 +680,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
     tempFont:Hide()
 
     -- adjust the optionYOffset for the dropdown box
-    optionYOffset = optionYOffset - 20
+    optionYOffset = optionYOffset - LABEL_SPACING
 
     -- Create a container frame for our custom dropdown
     local dropdownContainer = CreateFrame("Frame", options.frameName.."Container", optionScrollChild)
@@ -543,7 +850,7 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         end
     end)
 
-    -- Hover effect without changing arrow texture
+    -- Hover effect with blue-tinted colors to match main panel
     dropdown:SetScript("OnEnter", function()
         this:SetBackdropColor(0.15, 0.15, 0.18, 0.8)
         this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)
@@ -613,15 +920,34 @@ local function addDropDownOptionToOptionFrame(options, defaultValue)
         self.text:SetText(text)
     end
 
+    -- Add a reset function to force close the dropdown
+    dropdown.ForceClose = function(self)
+        if self.menuFrame and self.menuFrame:IsShown() then
+            self.menuFrame:Hide()
+        end
+        self.menuOpen = false
+        if self.arrow then
+            self.arrow:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\down.tga")
+        end
+    end
+
     table.insert(optionControlsToResize, dropdownContainer)
+
+    -- Track elements for tab assignment
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, labelFrame)
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, dropdownContainer)
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, menuFrame)
+
+    -- Register this dropdown for state management
+    table.insert(DifficultBulletinBoardOptionFrame.allDropdowns, dropdown)
 
     return dropdown
 end
 
 -- Creates an input box option with label and tooltip
 local function addInputBoxOptionToOptionFrame(option, value)
-    -- Adjust Y offset for the new option
-    optionYOffset = optionYOffset - 30
+    -- Adjust Y offset for the new option with improved spacing
+    optionYOffset = optionYOffset - OPTION_SPACING
 
     -- Create a frame to hold the label and allow for mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
@@ -642,12 +968,10 @@ local function addInputBoxOptionToOptionFrame(option, value)
     -- Add a GameTooltip to the labelFrame
     labelFrame:EnableMouse(true) -- Enable mouse interactions for the frame
     labelFrame:SetScript("OnEnter", function()
-        GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
-        GameTooltip:SetText(option.labelToolTip, nil, nil, nil, nil, true)
-        GameTooltip:Show()
+        showStyledTooltip(labelFrame, option.labelToolTip)
     end)
     labelFrame:SetScript("OnLeave", function()
-        GameTooltip:Hide()
+        hideStyledTooltip(labelFrame)
     end)
 
     -- Create a backdrop for the input box for a modern look
@@ -659,12 +983,13 @@ local function addInputBoxOptionToOptionFrame(option, value)
     }
 
     -- adjust the optionYOffset for the inputBox
-    optionYOffset = optionYOffset - 20
+    optionYOffset = optionYOffset - LABEL_SPACING
 
     -- Create the input field (EditBox) with modern styling
     local inputBox = CreateFrame("EditBox", option.frameName, optionScrollChild)
     inputBox:SetPoint("LEFT", labelFrame, "LEFT", 0, -20)
-    inputBox:SetWidth(33)
+    -- Use custom width if provided, else default
+    inputBox:SetWidth(option.width or 33)
     inputBox:SetHeight(20)
     inputBox:SetBackdrop(inputBackdrop)
     inputBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
@@ -676,13 +1001,17 @@ local function addInputBoxOptionToOptionFrame(option, value)
     inputBox:SetAutoFocus(false)
     inputBox:SetJustifyH("LEFT")
 
-    -- Add highlight effect on focus
+    -- Add highlight effect on focus with blue-tinted colors to match main panel
     inputBox:SetScript("OnEditFocusGained", function()
-        this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+        this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)  -- Subtle blue-tinted highlight
     end)
     inputBox:SetScript("OnEditFocusLost", function()
         this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
     end)
+
+    -- Track elements for tab assignment
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, labelFrame)
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, inputBox)
 
     return inputBox
 end
@@ -706,19 +1035,19 @@ local function addTopicListToOptionFrame(topicObject, topicList)
     local parentFrame = optionScrollChild
     local tempTags = {}
 
-    optionYOffset = optionYOffset - 30
+    optionYOffset = optionYOffset - SECTION_SPACING
 
     -- Create a frame to hold the label and allow for mouse interactions
     local labelFrame = CreateFrame("Frame", nil, optionScrollChild)
     labelFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", OPTION_LABEL_LEFT_MARGIN, optionYOffset)
     labelFrame:SetHeight(20)
 
-    -- Create the label (FontString) inside the frame
+    -- Create the label (FontString) inside the frame with blue-tinted color to match main panel
     local scrollLabel = labelFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     scrollLabel:SetAllPoints(labelFrame) -- Make the label take up the full frame
     scrollLabel:SetText(topicObject.labelText)
     scrollLabel:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
-    scrollLabel:SetTextColor(0.9, 0.9, 1.0, 1.0)
+    scrollLabel:SetTextColor(0.9, 0.9, 1.0, 1.0)  -- Blue-tinted header color to match main panel
     scrollLabel:SetJustifyH("LEFT") -- Explicitly set left alignment for consistent text starting position
 
     -- Set width based on actual text width plus padding
@@ -727,23 +1056,24 @@ local function addTopicListToOptionFrame(topicObject, topicList)
     -- Add a GameTooltip to the labelFrame
     labelFrame:EnableMouse(true) -- Enable mouse interactions for the frame
     labelFrame:SetScript("OnEnter", function()
-        GameTooltip:SetOwner(labelFrame, "ANCHOR_RIGHT")
-        GameTooltip:SetText(topicObject.labelToolTip, nil, nil, nil, nil, true)
-        GameTooltip:Show()
+        showStyledTooltip(labelFrame, topicObject.labelToolTip)
     end)
     labelFrame:SetScript("OnLeave", function()
-        GameTooltip:Hide()
+        hideStyledTooltip(labelFrame)
     end)
 
     -- Create a separator line
     local separator = parentFrame:CreateTexture(nil, "BACKGROUND")
     separator:SetHeight(1)
-    separator:SetWidth(450)
+    separator:SetWidth(1000)
     separator:SetPoint("TOPLEFT", labelFrame, "BOTTOMLEFT", -5, -5)
     separator:SetTexture(1, 1, 1, 0.2)
 
+    -- Add extra spacing after the separator line to prevent overlap
+    optionYOffset = optionYOffset - 15
+
     for _, topic in ipairs(topicList) do
-        optionYOffset = optionYOffset - 30 -- Adjust the vertical offset for the next row
+        optionYOffset = optionYOffset - OPTION_SPACING -- Adjust the vertical offset for the next row
 
         -- Create a custom checkbox button (without using the template)
         local checkbox = CreateFrame("Button", nil, parentFrame)
@@ -854,15 +1184,15 @@ local function addTopicListToOptionFrame(topicObject, topicList)
 		tagsTextBox:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
 		tagsTextBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
 		tagsTextBox:SetText(table.concat(topic.tags, " "))
-		tagsTextBox:SetFontObject(GameFontHighlight)
+		tagsTextBox:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize + 1)
 		tagsTextBox:SetTextColor(1, 1, 1, 1)
 		tagsTextBox:SetAutoFocus(false)
 		tagsTextBox:SetJustifyH("LEFT")
 		tagsTextBox:SetTextInsets(unpack(INPUT_BOX_TEXT_INSETS))
 
-		-- Add highlight effect on focus
+		-- Add highlight effect on focus with blue-tinted colors to match main panel
 		tagsTextBox:SetScript("OnEditFocusGained", function()
-			this:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+			this:SetBackdropBorderColor(0.4, 0.4, 0.5, 1.0)  -- Subtle blue-tinted highlight
 		end)
 		tagsTextBox:SetScript("OnEditFocusLost", function()
 			this:SetBackdropBorderColor(0.3, 0.3, 0.3, 1.0)
@@ -875,7 +1205,17 @@ local function addTopicListToOptionFrame(topicObject, topicList)
         end)
 
         table.insert(tempTagsTextBoxes, tagsTextBox)
+        
+        -- Track elements for tab assignment
+        table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, checkbox)
+        table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, topicLabel)
+        table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, labelClickArea)
+        table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, tagsTextBox)
     end
+
+    -- Track the main elements for tab assignment
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, labelFrame)
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, separator)
 
     return tempTags
 end
@@ -900,42 +1240,142 @@ end
 local function finalizeOptionFrame()
     normalizeFrameWidths(optionControlsToResize)
 
-    -- Make sure scroll frame shows everything
-    local totalHeight = math.abs(optionYOffset) + 150  -- Add padding
-    optionScrollChild:SetHeight(totalHeight)
+    -- Set initial scroll height for the general tab (will be updated when switching tabs)
+    optionScrollChild:SetHeight(DifficultBulletinBoardOptionFrame.tabHeights.general)
+end
+
+-- Add section headers for better organization (matching topic list style)
+local function addSectionHeader(text)
+    optionYOffset = optionYOffset - SECTION_SPACING
+    
+    -- Create a frame to hold the header and allow for mouse interactions
+    local headerFrame = CreateFrame("Frame", nil, optionScrollChild)
+    headerFrame:SetPoint("TOPLEFT", optionScrollChild, "TOPLEFT", OPTION_LABEL_LEFT_MARGIN, optionYOffset)
+    headerFrame:SetHeight(20)
+    
+    -- Create the header text (matching topic list style)
+    local header = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    header:SetAllPoints(headerFrame)
+    header:SetText(text)
+    header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize)
+    header:SetTextColor(0.9, 0.9, 1.0, 1.0)  -- Blue-tinted header color to match topic lists
+    header:SetJustifyH("LEFT")
+    
+    -- Set width based on actual text width plus padding
+    headerFrame:SetWidth(header:GetStringWidth() + 40)
+    
+    -- Create a separator line (matching topic list style)
+    local separator = optionScrollChild:CreateTexture(nil, "BACKGROUND")
+    separator:SetHeight(1)
+    separator:SetWidth(1000)
+    separator:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", -5, -5)
+    separator:SetTexture(1, 1, 1, 0.2)
+    
+    -- Add to tracking
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, headerFrame)
+    table.insert(DifficultBulletinBoardOptionFrame.lastCreatedElements, separator)
+    
+    optionYOffset = optionYOffset - LABEL_SPACING
+end
+
+-- Track individual content height for each tab
+DifficultBulletinBoardOptionFrame.tabHeights = {
+    general = 0,
+    groups = 0,
+    professions = 0,
+    hardcore = 0
+}
+
+-- Initialize tab content with proper organization
+function DifficultBulletinBoardOptionFrame.InitializeTabContent()
+    -- Initialize scroll frame first
+    addScrollFrameToOptionFrame()
+    
+    -- GENERAL TAB - Display, Filter, and Audio Settings
+    optionYOffset = 30  -- Start higher to compensate for larger section spacing
+    
+    -- General Settings Section
+    addSectionHeader("General Settings")
+    optionFrame.fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
+    optionFrame.expirationTimeOptionInputBox = addInputBoxOptionToOptionFrame(messageExpirationTimeOptionObject, DifficultBulletinBoardVars.messageExpirationTime)
+    optionFrame.serverTimePositionDropDown = addDropDownOptionToOptionFrame(serverTimePositionDropDownOptionObject, DifficultBulletinBoardVars.serverTimePosition)
+    optionFrame.timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
+    
+    -- Filter Settings Section
+    addSectionHeader("Filter Settings")
+    optionFrame.hardcoreOnlyDropDown = addDropDownOptionToOptionFrame(hardcoreOnlyDropDownOptionObject, DifficultBulletinBoardVars.hardcoreOnly)
+    optionFrame.filterMatchedMessagesDropDown = addDropDownOptionToOptionFrame(filterMatchedMessagesDropDownOptionObject, DifficultBulletinBoardVars.filterMatchedMessages)
+    
+    -- Audio Settings Section
+    addSectionHeader("Audio Settings")
+    optionFrame.mainFrameSoundDropDown = addDropDownOptionToOptionFrame(mainFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.mainFrameSound)
+    optionFrame.optionFrameSoundDropDown = addDropDownOptionToOptionFrame(optionFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.optionFrameSound)
+    
+    -- Store height for this tab
+    DifficultBulletinBoardOptionFrame.tabHeights.general = math.abs(optionYOffset) + 35
+    
+    -- Store general tab elements
+    DifficultBulletinBoardOptionFrame.tabs.general = DifficultBulletinBoardOptionFrame.GetLastCreatedElements()
+    
+    -- GROUPS TAB
+    optionYOffset = 30  -- Start higher to compensate for larger section spacing
+    addSectionHeader("Group Settings")
+    optionFrame.groupOptionInputBox = addInputBoxOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
+    optionFrame.tempGroupTags = addTopicListToOptionFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
+    
+    -- Store height for this tab
+    DifficultBulletinBoardOptionFrame.tabHeights.groups = math.abs(optionYOffset) + 35
+    
+    DifficultBulletinBoardOptionFrame.tabs.groups = DifficultBulletinBoardOptionFrame.GetLastCreatedElements()
+    
+    -- PROFESSIONS TAB
+    optionYOffset = 30  -- Start higher to compensate for larger section spacing
+    addSectionHeader("Profession Settings")
+    optionFrame.professionOptionInputBox = addInputBoxOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+    optionFrame.tempProfessionTags = addTopicListToOptionFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
+    
+    -- Store height for this tab
+    DifficultBulletinBoardOptionFrame.tabHeights.professions = math.abs(optionYOffset) + 35
+    
+    DifficultBulletinBoardOptionFrame.tabs.professions = DifficultBulletinBoardOptionFrame.GetLastCreatedElements()
+    
+    -- HARDCORE TAB
+    optionYOffset = 30  -- Start higher to compensate for larger section spacing
+    addSectionHeader("Hardcore Settings")
+    optionFrame.hardcoreOptionInputBox = addInputBoxOptionToOptionFrame(hardcorePlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+    optionFrame.tempHardcoreTags = addTopicListToOptionFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
+    
+    -- Store height for this tab
+    DifficultBulletinBoardOptionFrame.tabHeights.hardcore = math.abs(optionYOffset) + 35
+    
+    DifficultBulletinBoardOptionFrame.tabs.hardcore = DifficultBulletinBoardOptionFrame.GetLastCreatedElements()
+    
+    finalizeOptionFrame()
+    
+    -- Initialize with general tab
+    DifficultBulletinBoardOptionFrame.ShowTab("general")
+end
+
+-- Helper functions for tab management
+function DifficultBulletinBoardOptionFrame.ResetYOffset()
+    optionYOffset = 30  -- Start higher to compensate for larger section spacing
+end
+
+-- Track created elements for tab assignment
+DifficultBulletinBoardOptionFrame.lastCreatedElements = {}
+
+function DifficultBulletinBoardOptionFrame.GetLastCreatedElements()
+    local elements = DifficultBulletinBoardOptionFrame.lastCreatedElements
+    DifficultBulletinBoardOptionFrame.lastCreatedElements = {}
+    return elements
 end
 
 function DifficultBulletinBoardOptionFrame.InitializeOptionFrame()
-    addScrollFrameToOptionFrame()
-
-    fontSizeOptionInputBox = addInputBoxOptionToOptionFrame(baseFontSizeOptionObject, DifficultBulletinBoardVars.fontSize)
-
-    hardcoreOnlyDropDown = addDropDownOptionToOptionFrame(hardcoreOnlyDropDownOptionObject, DifficultBulletinBoardVars.hardcoreOnly)
-
-    serverTimePositionDropDown = addDropDownOptionToOptionFrame(serverTimePositionDropDownOptionObject, DifficultBulletinBoardVars.serverTimePosition)
-
-    timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
-
-    filterMatchedMessagesDropDown = addDropDownOptionToOptionFrame(filterMatchedMessagesDropDownOptionObject, DifficultBulletinBoardVars.filterMatchedMessages)
-
-    mainFrameSoundDropDown = addDropDownOptionToOptionFrame(mainFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.mainFrameSound)
-
-    optionFrameSoundDropDown = addDropDownOptionToOptionFrame(optionFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.optionFrameSound)
-
-    groupOptionInputBox = addInputBoxOptionToOptionFrame(groupPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
-
-    tempGroupTags = addTopicListToOptionFrame(groupTopicListObject, DifficultBulletinBoardVars.allGroupTopics)
-
-    professionOptionInputBox = addInputBoxOptionToOptionFrame(professionPlaceholdersOptionObject, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
-
-    tempProfessionTags= addTopicListToOptionFrame(professionTopicListObject, DifficultBulletinBoardVars.allProfessionTopics)
-
-    hardcoreOptionInputBox = addInputBoxOptionToOptionFrame(hardcorePlaceholdersOptionObject,DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
-
-    tempHardcoreTags = addTopicListToOptionFrame(hardcoreTopicListObject, DifficultBulletinBoardVars.allHardcoreTopics)
-
-    -- had to put this into a new function because lua was throwing a "32 upvalues ..." error. dogshit language lol
-    finalizeOptionFrame()
+    DifficultBulletinBoardOptionFrame.InitializeTabContent()
+    DifficultBulletinBoardOptionFrame.UpdateTabButtons()
+    
+    -- Initialize button widths based on current frame size
+    updateOptionButtonWidths()
 end
 
 function DifficultBulletinBoard_ResetVariablesAndReload()
@@ -953,6 +1393,8 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 
     DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
     DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
+    -- Default message expiration time
+    DifficultBulletinBoardSavedVariables.messageExpirationTime = DifficultBulletinBoardDefaults.defaultMessageExpirationTime
 
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
@@ -966,31 +1408,128 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 end
 
 function DifficultBulletinBoard_SaveVariablesAndReload()
-    DifficultBulletinBoardSavedVariables.fontSize = fontSizeOptionInputBox:GetText()
-
-    DifficultBulletinBoardSavedVariables.timeFormat = timeFormatDropDown:GetSelectedValue()
-
-    DifficultBulletinBoardSavedVariables.serverTimePosition = serverTimePositionDropDown:GetSelectedValue()
-
-    DifficultBulletinBoardSavedVariables.filterMatchedMessages = filterMatchedMessagesDropDown:GetSelectedValue()
-
-    DifficultBulletinBoardSavedVariables.hardcoreOnly = hardcoreOnlyDropDown:GetSelectedValue()
-
-    DifficultBulletinBoardSavedVariables.mainFrameSound = mainFrameSoundDropDown:GetSelectedValue()
-    DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrameSoundDropDown:GetSelectedValue()
-
-    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = groupOptionInputBox:GetText()
-    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = professionOptionInputBox:GetText()
-    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = hardcoreOptionInputBox:GetText()
-
-    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allGroupTopics, tempGroupTags)
-    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allProfessionTopics, tempProfessionTags)
-    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allHardcoreTopics, tempHardcoreTags)
-
+    -- Save basic settings from optionFrame fields
+    DifficultBulletinBoardSavedVariables.fontSize = optionFrame.fontSizeOptionInputBox:GetText()
+    DifficultBulletinBoardSavedVariables.timeFormat = optionFrame.timeFormatDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.serverTimePosition = optionFrame.serverTimePositionDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.filterMatchedMessages = optionFrame.filterMatchedMessagesDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.hardcoreOnly = optionFrame.hardcoreOnlyDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.mainFrameSound = optionFrame.mainFrameSoundDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrame.optionFrameSoundDropDown:GetSelectedValue()
+    DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = optionFrame.groupOptionInputBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = optionFrame.professionOptionInputBox:GetText()
+    DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = optionFrame.hardcoreOptionInputBox:GetText()
+    -- Save custom message expiration time
+    DifficultBulletinBoardSavedVariables.messageExpirationTime = optionFrame.expirationTimeOptionInputBox:GetText()
+    -- Overwrite tags saved from temp fields
+    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allGroupTopics, optionFrame.tempGroupTags)
+    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allProfessionTopics, optionFrame.tempProfessionTags)
+    overwriteTagsForAllTopics(DifficultBulletinBoardVars.allHardcoreTopics, optionFrame.tempHardcoreTags)
     ReloadUI()
 end
 
--- Function to hide all dropdown menus
+-- Function to update option tab button widths based on frame size (matching main panel logic)
+local function updateOptionButtonWidths()
+    -- Get button references
+    local buttons = {
+        getglobal("DifficultBulletinBoardOptionFrame_GeneralTab"),
+        getglobal("DifficultBulletinBoardOptionFrame_GroupsTab"),
+        getglobal("DifficultBulletinBoardOptionFrame_ProfessionsTab"),
+        getglobal("DifficultBulletinBoardOptionFrame_HardcoreTab")
+    }
+    
+    -- Safety check for buttons
+    for i = 1, OPTION_NUM_BUTTONS do
+        if not buttons[i] then
+            return
+        end
+    end
+    
+    -- Get button text widths to calculate minimum required widths
+    local textWidths = {}
+    local totalTextWidth = 0
+    local buttonCount = OPTION_NUM_BUTTONS
+    
+    -- Check all buttons have text elements and get their widths
+    for i = 1, buttonCount do
+        local button = buttons[i]
+        if not button:GetName() then
+            return
+        end
+        
+        local textObjName = button:GetName() .. "_Text"
+        local textObj = getglobal(textObjName)
+        
+        if not textObj then
+            return
+        end
+        
+        local textWidth = textObj:GetStringWidth()
+        if not textWidth then
+            return
+        end
+        
+        textWidths[i] = textWidth
+        totalTextWidth = totalTextWidth + textWidth
+    end
+    
+    -- Calculate minimum padded widths for each button (text + minimum padding)
+    local minButtonWidths = {}
+    for i = 1, buttonCount do
+        minButtonWidths[i] = textWidths[i] + (2 * OPTION_MIN_TEXT_PADDING)
+    end
+    
+    -- Find the button that needs the most minimum width
+    local maxMinWidth = 0
+    for i = 1, buttonCount do
+        if minButtonWidths[i] > maxMinWidth then
+            maxMinWidth = minButtonWidths[i]
+        end
+    end
+    
+    -- Calculate total content width if all buttons had the same width (maxMinWidth)
+    -- This ensures all buttons have at least minimum padding
+    local totalEqualContentWidth = maxMinWidth * buttonCount
+    
+    -- Add spacing to total minimum width
+    local totalMinFrameWidth = totalEqualContentWidth + ((OPTION_NUM_BUTTONS - 1) * OPTION_BUTTON_SPACING) + (2 * OPTION_SIDE_PADDING)
+    
+    -- Get current frame width
+    local frameWidth = optionFrame:GetWidth()
+    
+    -- Set the minimum resizable width of the frame directly
+    -- This prevents the user from dragging it smaller than the minimum width
+    optionFrame:SetMinResize(totalMinFrameWidth, 300)
+    
+    -- If frame is somehow smaller than minimum (should not happen), force a resize
+    if frameWidth < totalMinFrameWidth then
+        optionFrame:SetWidth(totalMinFrameWidth)
+        frameWidth = totalMinFrameWidth
+    end
+    
+    -- Calculate available width for buttons
+    local availableWidth = frameWidth - (2 * OPTION_SIDE_PADDING) - ((OPTION_NUM_BUTTONS - 1) * OPTION_BUTTON_SPACING)
+    
+    -- Calculate equal width distribution
+    local equalWidth = availableWidth / OPTION_NUM_BUTTONS
+    
+    -- Always try to use equal widths first
+    if equalWidth >= maxMinWidth then
+        -- We can use equal widths for all buttons
+        for i = 1, buttonCount do
+            buttons[i]:SetWidth(equalWidth)
+        end
+    else
+        -- We can't use equal widths because some text would have less than minimum padding
+        -- Set all buttons to the maximum minimum width to ensure all have same width
+        -- unless that would mean having less than minimum padding
+        for i = 1, buttonCount do
+            buttons[i]:SetWidth(maxMinWidth)
+        end
+    end
+end
+
+-- Function to hide all dropdown menus and reset their states
 function DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
     -- Hide menus in the global list
     if DROPDOWN_MENUS_LIST then
@@ -1000,9 +1539,19 @@ function DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
             end
         end
     end
+    
+    -- Reset all tracked dropdown button states
+    for _, dropdown in ipairs(DifficultBulletinBoardOptionFrame.allDropdowns) do
+        if dropdown and dropdown.ForceClose then
+            dropdown:ForceClose()
+        end
+    end
 end
 
 optionFrame:SetScript("OnSizeChanged", function()
+    -- Update tab button widths based on new frame size (matching main panel behavior)
+    updateOptionButtonWidths()
+    
     -- Adjust the width calculation to account for scrollbar and padding
     local tagsTextBoxWidth = optionFrame:GetWidth() - tagsTextBoxWidthDelta - SCROLL_BAR_WIDTH
     for _, msgFrame in ipairs(tempTagsTextBoxes) do

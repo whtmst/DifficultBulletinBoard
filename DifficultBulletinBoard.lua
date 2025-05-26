@@ -12,6 +12,14 @@ local FILTER_LOG_TIMEOUT = 5 -- seconds
 
 local string_gfind = string.gmatch or string.gfind
 
+-- Fallback for string.match in Lua 5.0 (WoW Vanilla)
+if not string.match then
+    function string.match(s, pattern)
+        local _, _, c1, c2 = string.find(s, pattern)
+        return c1, c2
+    end
+end
+
 local mainFrame = DifficultBulletinBoardMainFrame
 local optionFrame = DifficultBulletinBoardOptionFrame
 local blacklistFrame = DifficultBulletinBoardBlacklistFrame
@@ -22,19 +30,7 @@ local lastMessageWasMatched = false
 -- Track previous messages to handle filtering
 local previousMessages = {}
 
--- Global debug flag - off by default
-local debugMode = false
 
-local function print(string) 
-    --DEFAULT_CHAT_FRAME:AddMessage(string) 
-end
-
--- Debug function that prints to chat only when debug mode is enabled
-local function debugPrint(string)
-    if debugMode then
-        DEFAULT_CHAT_FRAME:AddMessage("[DBB] " .. string, 1, 0.7, 0.2)
-    end
-end
 
 -- Split input string into lowercase words for tag matching
 function DifficultBulletinBoard.SplitIntoLowerWords(input)
@@ -70,12 +66,10 @@ function DifficultBulletinBoard_ToggleOptionFrame()
             optionFrame:Show()
             mainFrame:Hide()
         end
-    else
-        print("Option frame not found")
-    end
+            end
 end
 
--- Toggle the main bulletin board frame visibility
+-- Toggle the main bulletin board frame
 -- Modify the DifficultBulletinBoard_ToggleMainFrame function to close the blacklist frame
 function DifficultBulletinBoard_ToggleMainFrame()
     if mainFrame then
@@ -92,6 +86,10 @@ function DifficultBulletinBoard_ToggleMainFrame()
             if DifficultBulletinBoardOptionFrame.HideAllDropdownMenus then
                 DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
             end
+            -- Recalculate scroll ranges before showing frame to avoid flicker
+            if DifficultBulletinBoardMainFrame.RefreshAllScrollRanges then
+                DifficultBulletinBoardMainFrame.RefreshAllScrollRanges()
+            end
             mainFrame:Show()
             optionFrame:Hide()
             -- Also hide the blacklist frame when opening the main frame
@@ -99,9 +97,7 @@ function DifficultBulletinBoard_ToggleMainFrame()
                 blacklistFrame:Hide()
             end
         end
-    else
-        print("Main frame not found")
-    end
+            end
 end
 
 -- Start minimap button dragging when shift+click
@@ -129,34 +125,27 @@ end
 
 -- Register slash commands
 SLASH_DIFFICULTBB1 = "/dbb"
-SlashCmdList["DIFFICULTBB"] = function() DifficultBulletinBoard_ToggleMainFrame() end
-
--- Debug slash command to toggle filter debug messages on/off
-SLASH_DBBFILTERDEBUG1 = "/dbbfilterdebug"
-SlashCmdList["DBBFILTERDEBUG"] = function(msg)
-    debugMode = not debugMode
-    
-    -- This message always shows regardless of debug mode
-    DEFAULT_CHAT_FRAME:AddMessage("[DBB] Filter debug mode " .. (debugMode and "ENABLED" or "DISABLED"), 1, 0.7, 0.2)
-    
-    -- Show additional information when debug is enabled
-    if debugMode then
-        debugPrint("Filtering is: " .. DifficultBulletinBoardVars.filterMatchedMessages)
-        
-        -- Show how many messages we're tracking
-        local count = 0
-        for _ in pairs(previousMessages) do count = count + 1 end
-        debugPrint("Currently tracking " .. count .. " messages")
-        
-        -- Show keyword blacklist information if it exists
-        if DifficultBulletinBoardSavedVariables.keywordBlacklist and 
-           DifficultBulletinBoardSavedVariables.keywordBlacklist ~= "" then
-            debugPrint("Keyword blacklist: " .. DifficultBulletinBoardSavedVariables.keywordBlacklist)
+SlashCmdList["DIFFICULTBB"] = function(msg)
+    -- Parse the first word as command and the rest as argument
+    local command, arg = string.match(msg, "^(%S*)%s*(.*)$")
+    if command == "expire" then
+        local secs = tonumber(arg)
+        if secs then
+            -- Call expiration function on main frame
+            DifficultBulletinBoard.ExpireMessages(secs)
+            -- Remember manual expiration setting to reapply on new messages
+            DifficultBulletinBoardVars.manualExpireSeconds = secs
+            DEFAULT_CHAT_FRAME:AddMessage("[DBB] Expired messages older than " .. secs .. " seconds.")
         else
-            debugPrint("No keyword blacklist configured")
+            DEFAULT_CHAT_FRAME:AddMessage("[DBB] Usage: /dbb expire <seconds>")
         end
+    else
+        -- Toggle main bulletin board frame
+        DifficultBulletinBoard_ToggleMainFrame()
     end
 end
+
+
 
 -- Initialize addon when loaded
 local function initializeAddon(event, arg1)
@@ -182,7 +171,6 @@ local function initializeAddon(event, arg1)
             DifficultBulletinBoard.originalChatFrameOnEvent = ChatFrame_OnEvent
             ChatFrame_OnEvent = DifficultBulletinBoard.hookedChatFrameOnEvent
             DifficultBulletinBoard.hookInstalled = true
-            debugPrint("Chat filter installed. Filtering: " .. DifficultBulletinBoardVars.filterMatchedMessages)
         end
     end
 end
@@ -348,8 +336,6 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
         if hasMatchingKeyword then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                debugPrint("Filtering message containing keyword '" .. matchedKeyword .. "': " .. 
-                          string.sub(message, 1, 40) .. "...")
                 lastFilteredMessages[messageKey] = GetTime()
             end
             
@@ -380,7 +366,6 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
             if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
                 -- Only log if we haven't logged this message recently
                 if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                    debugPrint("Filtering matched message: " .. string.sub(message, 1, 40) .. "...")
                     lastFilteredMessages[messageKey] = GetTime()
                 end
                 previousMessages[name][3] = true
@@ -401,7 +386,6 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
         if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                debugPrint("Filtering system message: " .. string.sub(message, 1, 40) .. "...")
                 lastFilteredMessages[messageKey] = GetTime()
             end
             return -- Skip this message
@@ -414,7 +398,6 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
         if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
-                debugPrint("Filtering hardcore message: " .. string.sub(message, 1, 40) .. "...")
                 lastFilteredMessages[messageKey] = GetTime()
             end
             return -- Skip this message
@@ -455,6 +438,12 @@ local function OnUpdate()
             DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
         end
         
+        -- Auto-expiration of messages based on user setting
+        local expireSecs = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
+        if expireSecs then
+            DifficultBulletinBoard.ExpireMessages(expireSecs)
+        end
+
         -- Clean up old message entries every 5 minutes
         if currentTime - lastCleanupTime > 300 then
             lastCleanupTime = currentTime

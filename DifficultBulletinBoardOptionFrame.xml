@@ -49,6 +49,198 @@
 
         <!-- Frames including buttons, close button, etc. -->
         <Frames>
+            <!-- Tab System for Options (matching main panel structure) -->
+            <!-- General Tab -->
+            <Button name="$parent_GeneralTab" text="General" enableMouse="true">
+                <Size>
+                    <AbsDimension x="120" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="-25"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+                    <EdgeSize><AbsValue val="8"/></EdgeSize>
+                    <TileSize><AbsValue val="8"/></TileSize>
+                    <BackgroundInsets><AbsInset left="2" right="2" top="2" bottom="2"/></BackgroundInsets>
+                    <Color r="0.15" g="0.15" b="0.15" a="1.0"/>
+                    <BorderColor r="0.3" g="0.3" b="0.3" a="1.0"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="General">
+                            <Anchors>
+                                <Anchor point="CENTER" />
+                            </Anchors>
+                            <Color r="0.9" g="0.9" b="0.9" a="1.0"/>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoardOptionFrame.ShowTab("general")
+                    </OnClick>
+                    <OnEnter>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "general" then
+                            this:SetBackdropColor(0.18, 0.18, 0.2, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 1.0, 1.0)
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "general" then
+                            this:SetBackdropColor(0.15, 0.15, 0.15, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 0.9, 1.0)
+                        end
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- Groups Tab -->
+            <Button name="$parent_GroupsTab" text="Groups" enableMouse="true">
+                <Size>
+                    <AbsDimension x="120" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parent_GeneralTab" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+                    <EdgeSize><AbsValue val="8"/></EdgeSize>
+                    <TileSize><AbsValue val="8"/></TileSize>
+                    <BackgroundInsets><AbsInset left="2" right="2" top="2" bottom="2"/></BackgroundInsets>
+                    <Color r="0.15" g="0.15" b="0.15" a="1.0"/>
+                    <BorderColor r="0.3" g="0.3" b="0.3" a="1.0"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Groups">
+                            <Anchors>
+                                <Anchor point="CENTER" />
+                            </Anchors>
+                            <Color r="0.9" g="0.9" b="0.9" a="1.0"/>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoardOptionFrame.ShowTab("groups")
+                    </OnClick>
+                    <OnEnter>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "groups" then
+                            this:SetBackdropColor(0.18, 0.18, 0.2, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 1.0, 1.0)
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "groups" then
+                            this:SetBackdropColor(0.15, 0.15, 0.15, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 0.9, 1.0)
+                        end
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- Professions Tab -->
+            <Button name="$parent_ProfessionsTab" text="Professions" enableMouse="true">
+                <Size>
+                    <AbsDimension x="120" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parent_GroupsTab" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+                    <EdgeSize><AbsValue val="8"/></EdgeSize>
+                    <TileSize><AbsValue val="8"/></TileSize>
+                    <BackgroundInsets><AbsInset left="2" right="2" top="2" bottom="2"/></BackgroundInsets>
+                    <Color r="0.15" g="0.15" b="0.15" a="1.0"/>
+                    <BorderColor r="0.3" g="0.3" b="0.3" a="1.0"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Professions">
+                            <Anchors>
+                                <Anchor point="CENTER" />
+                            </Anchors>
+                            <Color r="0.9" g="0.9" b="0.9" a="1.0"/>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoardOptionFrame.ShowTab("professions")
+                    </OnClick>
+                    <OnEnter>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "professions" then
+                            this:SetBackdropColor(0.18, 0.18, 0.2, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 1.0, 1.0)
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "professions" then
+                            this:SetBackdropColor(0.15, 0.15, 0.15, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 0.9, 1.0)
+                        end
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- Hardcore Tab -->
+            <Button name="$parent_HardcoreTab" text="Hardcore" enableMouse="true">
+                <Size>
+                    <AbsDimension x="120" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parent_ProfessionsTab" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+                    <EdgeSize><AbsValue val="8"/></EdgeSize>
+                    <TileSize><AbsValue val="8"/></TileSize>
+                    <BackgroundInsets><AbsInset left="2" right="2" top="2" bottom="2"/></BackgroundInsets>
+                    <Color r="0.15" g="0.15" b="0.15" a="1.0"/>
+                    <BorderColor r="0.3" g="0.3" b="0.3" a="1.0"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" justifyH="CENTER" text="Hardcore">
+                            <Anchors>
+                                <Anchor point="CENTER" />
+                            </Anchors>
+                            <Color r="0.9" g="0.9" b="0.9" a="1.0"/>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        DifficultBulletinBoardOptionFrame.ShowTab("hardcore")
+                    </OnClick>
+                    <OnEnter>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "hardcore" then
+                            this:SetBackdropColor(0.18, 0.18, 0.2, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 1.0, 1.0)
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        if DifficultBulletinBoardOptionFrame.currentTab ~= "hardcore" then
+                            this:SetBackdropColor(0.15, 0.15, 0.15, 1.0)
+                            getglobal(this:GetName().."_Text"):SetTextColor(0.9, 0.9, 0.9, 1.0)
+                        end
+                    </OnLeave>
+                </Scripts>
+            </Button>
 			<!-- Close Button - Adjusted position for better visual alignment -->
 			<Button name="DifficultBulletinBoard_Option_CloseButton">
 				<Size>
