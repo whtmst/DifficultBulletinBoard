@@ -25,16 +25,13 @@ DifficultBulletinBoardSavedVariables.playerList = DifficultBulletinBoardSavedVar
 DifficultBulletinBoardSavedVariables.keywordBlacklist = DifficultBulletinBoardSavedVariables.keywordBlacklist or ""
 
 
-local function print(string) 
-    --DEFAULT_CHAT_FRAME:AddMessage(string) 
-end
+
 
 -- Retrieves a player's class from the saved database
 function DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
     local realmName = GetRealmName()
 
     -- Add or update the player entry
-    print("Getting Class for: " .. name)
     if DifficultBulletinBoardSavedVariables.playerList[realmName][name] then
         return DifficultBulletinBoardSavedVariables.playerList[realmName][name].class
     else
@@ -47,40 +44,27 @@ function DifficultBulletinBoardVars.AddPlayerToDatabase(name, class)
     local realmName = GetRealmName()
 
     -- Add or update the player entry
-    print("Adding: " .. name .. " " .. class)
     DifficultBulletinBoardSavedVariables.playerList[realmName][name] = {
         class = class
     }
 
-    -- Debugging: Print the players table to verify
-    --print("Players data:")
-    --local index = 0
-    --for realm, realmPlayers in pairs(DifficultBulletinBoardSavedVariables.playerList) do
-    --    print("Realm:", realm)
-    --    for name, data in pairs(realmPlayers) do
-    --       print(index .. ": " .. name .. " Class:" .. data.class)
-    --       index = index + 1
-    --    end
-    --end
+
 end
 
--- Helper function to get saved variable or default with logging
+-- Helper function to get saved variable or default
 local function setSavedVariable(savedVar, defaultVar, savedName)
-    print("Checking saved variable for: " .. savedName)  -- Debug: Log when the function is called
-
     if savedVar and savedVar ~= "" then
-        print("Found saved variable for " .. savedName .. ": " .. tostring(savedVar))  -- Debug: Log when saved variable is found
         return savedVar
     else
-        print("Saved variable for " .. savedName .. " is missing or empty. Using default: " .. tostring(defaultVar))  -- Debug: Log when the default is used
-        DifficultBulletinBoardSavedVariables[savedName] = defaultVar
-        return defaultVar
+        -- Handle nil default values gracefully
+        local fallbackValue = defaultVar or ""
+        DifficultBulletinBoardSavedVariables[savedName] = fallbackValue
+        return fallbackValue
     end
 end
 
 -- Loads saved variables or initializes defaults
 function DifficultBulletinBoardVars.LoadSavedVariables()
-    print("Start Loading DifficultBulletinBoardVars")
 
     -- Ensure the root and container tables exist
     DifficultBulletinBoardSavedVariables = DifficultBulletinBoardSavedVariables or {}
@@ -92,12 +76,9 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
 
     if DifficultBulletinBoardSavedVariables.version then
         local savedVersion = DifficultBulletinBoardSavedVariables.version
-        
-        print("version did exist " .. savedVersion)
 
         -- update the saved activeTopics if a new version of the topic list was released
         if savedVersion < DifficultBulletinBoardVars.version then
-            print("version is older than the current version. overwriting activeTopics")
 
             DifficultBulletinBoardVars.allGroupTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultGroupTopics)
             DifficultBulletinBoardSavedVariables.activeGroupTopics = DifficultBulletinBoardVars.allGroupTopics
@@ -109,14 +90,9 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
             DifficultBulletinBoardSavedVariables.activeHardcoreTopics = DifficultBulletinBoardVars.allHardcoreTopics
 
             DifficultBulletinBoardSavedVariables.version = DifficultBulletinBoardVars.version
-
-            print("version is now " .. DifficultBulletinBoardVars.version)
         end
     else
-        print("version did not exist. overwriting version")
         DifficultBulletinBoardSavedVariables.version = DifficultBulletinBoardVars.version
-
-        print("overwriting activeTopics")
         DifficultBulletinBoardVars.allGroupTopics = DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultGroupTopics)
         DifficultBulletinBoardSavedVariables.activeGroupTopics = DifficultBulletinBoardVars.allGroupTopics
 
@@ -135,6 +111,7 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     DifficultBulletinBoardVars.optionFrameSound = setSavedVariable(DifficultBulletinBoardSavedVariables.optionFrameSound, DifficultBulletinBoardDefaults.defaultOptionFrameSound, "optionFrameSound")
     DifficultBulletinBoardVars.filterMatchedMessages = setSavedVariable(DifficultBulletinBoardSavedVariables.filterMatchedMessages, DifficultBulletinBoardDefaults.defaultFilterMatchedMessages, "filterMatchedMessages")
     DifficultBulletinBoardVars.hardcoreOnly = setSavedVariable(DifficultBulletinBoardSavedVariables.hardcoreOnly, DifficultBulletinBoardDefaults.defaultHardcoreOnly, "hardcoreOnly")
+    DifficultBulletinBoardVars.messageExpirationTime = setSavedVariable(DifficultBulletinBoardSavedVariables.messageExpirationTime, DifficultBulletinBoardDefaults.defaultMessageExpirationTime, "messageExpirationTime")
 
     -- Set placeholders variables
     DifficultBulletinBoardVars.numberOfGroupPlaceholders = setSavedVariable(DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders, DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders, "numberOfGroupPlaceholders")
@@ -146,12 +123,5 @@ function DifficultBulletinBoardVars.LoadSavedVariables()
     DifficultBulletinBoardVars.allProfessionTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeProfessionTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultProfessionTopics), "activeProfessionTopics")
     DifficultBulletinBoardVars.allHardcoreTopics = setSavedVariable(DifficultBulletinBoardSavedVariables.activeHardcoreTopics, DifficultBulletinBoardDefaults.deepCopy(DifficultBulletinBoardDefaults.defaultHardcoreTopics), "activeHardcoreTopics")
     
-    -- Log info about the keyword blacklist
-    if DifficultBulletinBoardSavedVariables.keywordBlacklist and DifficultBulletinBoardSavedVariables.keywordBlacklist ~= "" then
-        print("Loaded keyword blacklist: " .. DifficultBulletinBoardSavedVariables.keywordBlacklist)
-    else
-        print("No keyword blacklist configured")
-    end
 
-    print("Finished Loading DifficultBulletinBoardVars")
 end

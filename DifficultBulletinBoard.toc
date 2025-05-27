@@ -13,6 +13,7 @@ DifficultBulletinBoardMinimapButton.xml
 DifficultBulletinBoardOptionFrame.xml
 DifficultBulletinBoardMainFrame.xml
 DifficultBulletinBoardOptionFrame.lua
+DifficultBulletinBoardMessageProcessor.lua
 DifficultBulletinBoardMainFrame.lua
 DifficultBulletinBoardPlayerScanner.lua
 DifficultBulletinBoard.lua

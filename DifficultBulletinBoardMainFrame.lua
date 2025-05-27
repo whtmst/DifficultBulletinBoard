@@ -6,17 +6,7 @@ DifficultBulletinBoard = DifficultBulletinBoard or {}
 DifficultBulletinBoardVars = DifficultBulletinBoardVars or {}
 DifficultBulletinBoardMainFrame = DifficultBulletinBoardMainFrame or {}
 
-local debugMode = false  -- Disable debug mode by default
-local function debugPrint(message)
-    if debugMode then
-        -- Use orange color for debug messages, red for errors
-        local r, g, b = 1, 0.7, 0.2
-        if string.find(message, "Error:", 1, true) then
-            r, g, b = 1, 0.3, 0.3 -- Red color for errors
-        end
-        DEFAULT_CHAT_FRAME:AddMessage("[DBB] " .. message, r, g, b)
-    end
-end
+
 
 local string_gfind = string.gmatch or string.gfind
 
@@ -61,15 +51,37 @@ local professionsButton = DifficultBulletinBoardMainFrameProfessionsButton
 local hcMessagesButton = DifficultBulletinBoardMainFrameHCMessagesButton
 
 local groupTopicPlaceholders = {}
+local groupTopicHeaders = {}  -- registry for group topic headers for dynamic reflow
+local groupTopicCollapsed = {} -- track collapse state for each topic
 local groupsLogsPlaceholders = {} -- New container for Groups Logs entries
 local professionTopicPlaceholders = {}
+local professionTopicHeaders = {}  -- registry for profession topic headers for dynamic reflow
+local professionTopicCollapsed = {} -- track collapse state for each profession topic
 local hardcoreTopicPlaceholders = {}
+local hardcoreTopicHeaders = {}  -- registry for hardcore topic headers for dynamic reflow
+local hardcoreTopicCollapsed = {} -- track collapse state for each hardcore topic
 
 -- Store current filter text globally
 local currentGroupsLogsFilter = ""
 
 -- Add global reference to the search frame
 local groupsLogsSearchFrame = nil
+
+-- Apply filter to Groups Logs entries - delegates to message processor
+local function applyGroupsLogsFilter(searchText)
+    if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.ApplyGroupsLogsFilter then
+        DifficultBulletinBoardMessageProcessor.ApplyGroupsLogsFilter(searchText)
+    end
+end
+
+-- Function to get current filter text for message processor
+function DifficultBulletinBoardMainFrame.GetCurrentGroupsLogsFilter()
+    return currentGroupsLogsFilter
+end
+
+-- Note: OnChatMessage and OnSystemMessage are now implemented in DifficultBulletinBoardMessageProcessor.lua
+-- They are defined as DifficultBulletinBoard.OnChatMessage and DifficultBulletinBoard.OnSystemMessage
+-- No delegation needed here since they're already in the correct namespace
 
 -- Number of entries to show in the Groups Logs tab
 local MAX_GROUPS_LOGS_ENTRIES = 50
@@ -82,607 +94,15 @@ local keywordFilterVisible = false
 local keywordFilterLine = nil
 local keywordFilterInput = nil
 
-local function print(string) 
-    --DEFAULT_CHAT_FRAME:AddMessage(string) 
-end
 
--- Apply filter to Groups Logs entries
-local function applyGroupsLogsFilter(searchText)
-    -- Only filter if we have entries to filter
-    if groupsLogsPlaceholders and groupsLogsPlaceholders["Group Logs"] then
-        -- Process each entry
-        for _, entry in ipairs(groupsLogsPlaceholders["Group Logs"]) do
-            -- Check if this is a valid entry with name and message
-            if entry and entry.nameButton and entry.messageFontString then
-                local name = entry.nameButton:GetText() or ""
-                local message = entry.messageFontString:GetText() or ""
-                
-                -- Skip placeholders
-                if name == "-" or message == "-" then
-                    -- Do nothing for placeholder entries
-                else
-                    -- If no search text, show everything
-                    if searchText == "" then
-                        entry.nameButton:SetAlpha(1.0)
-                        entry.messageFontString:SetAlpha(1.0)
-                        entry.timeFontString:SetAlpha(1.0)
-                        if entry.icon then entry.icon:SetAlpha(1.0) end
-                    else
-                        -- Prepare terms for comma-separated search
-                        local terms = {}
-                        for term in string_gfind(searchText, "[^,]+") do
-                            term = string.gsub(term, "^%s*(.-)%s*$", "%1") -- Trim whitespace
-                            table.insert(terms, term)
-                        end
-                        
-                        -- Convert entry text to lowercase
-                        local lowerName = string.lower(name)
-                        local lowerMessage = string.lower(message)
-                        
-                        -- Check all search terms
-                        local matches = false
-                        for _, term in ipairs(terms) do
-                            if term ~= "" and 
-                              (string.find(lowerName, term, 1, true) or 
-                               string.find(lowerMessage, term, 1, true)) then
-                                matches = true
-                                break
-                            end
-                        end
-                        
-                        -- Set visibility based on match result
-                        if matches then
-                            entry.nameButton:SetAlpha(1.0)
-                            entry.messageFontString:SetAlpha(1.0)
-                            entry.timeFontString:SetAlpha(1.0)
-                            if entry.icon then entry.icon:SetAlpha(1.0) end
-                        else
-                            entry.nameButton:SetAlpha(0.25)
-                            entry.messageFontString:SetAlpha(0.25)
-                            entry.timeFontString:SetAlpha(0.25)
-                            if entry.icon then entry.icon:SetAlpha(0.25) end
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
 
--- Function to reduce noise in messages and making matching easier
-local function replaceSymbolsWithSpace(inputString)
-    return string.gsub(inputString, "[,/!%?.]", " ")
-end
 
-local function topicPlaceholdersContainsCharacterName(topicPlaceholders, topicName, characterName)
-    local topicData = topicPlaceholders[topicName]
-    if not topicData then
-        print("Nothing in here yet")
-        return false, nil
-    end
 
-    for index, row in ipairs(topicData) do
-        local nameColumn = row.nameButton
 
-        if nameColumn:GetText() == characterName then
-            print("Already in there!")
-            return true, index
-        end
-    end
 
-    return false, nil
-end
 
-local function getClassIconFromClassName(class) 
-    if class == "Druid" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\druid_class_icon"
-    elseif class == "Hunter" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\hunter_class_icon"
-    elseif class == "Mage" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\mage_class_icon"
-    elseif class == "Paladin" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\paladin_class_icon"
-    elseif class == "Priest" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\priest_class_icon"
-    elseif class == "Rogue" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\rogue_class_icon"
-    elseif class == "Shaman" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\shaman_class_icon"
-    elseif class == "Warlock" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\warlock_class_icon"
-    elseif class == "Warrior" then
-        return "Interface\\AddOns\\DifficultBulletinBoard\\icons\\warrior_class_icon"
-    else
-        return nil
-    end
-end
 
--- Updates the specified placeholder for a topic with new name, message, and timestamp,
--- then moves the updated entry to the top of the list, shifting other entries down.
-local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message, index)
-    local topicData = topicPlaceholders[topic]
 
-    local timestamp
-    if DifficultBulletinBoardVars.timeFormat == "elapsed" then
-        timestamp = "00:00"
-    else 
-        timestamp = date("%H:%M:%S")
-    end
-
-    -- Shift all entries down from index 1 to the updated entry's position
-    for i = index, 2, -1 do
-        topicData[i].nameButton:SetText(topicData[i - 1].nameButton:GetText())
-        topicData[i].messageFontString:SetText(topicData[i - 1].messageFontString:GetText())
-        topicData[i].timeFontString:SetText(topicData[i - 1].timeFontString:GetText())
-        topicData[i].creationTimestamp = topicData[i - 1].creationTimestamp
-        topicData[i].icon:SetTexture(topicData[i - 1].icon:GetTexture())
-    end
-
-    -- Place the updated entry's data at the top
-    topicData[1].nameButton:SetText(name)
-    -- Add this line to update hit rect for updated name
-    topicData[1].nameButton:SetHitRectInsets(0, -45, 0, 0)
-    
-    topicData[1].messageFontString:SetText("[" .. channelName .. "] " .. message or "No Message")
-    topicData[1].timeFontString:SetText(timestamp)
-    topicData[1].creationTimestamp = date("%H:%M:%S")
-    local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
-    print(class)
-    topicData[1].icon:SetTexture(getClassIconFromClassName(class))
-
-    -- Update the GameTooltip
-    for i = numberOfPlaceholders, 1, -1 do
-        local currentFontString = topicData[i]
-        local messageFrame = currentFontString.messageFrame
-        local messageFontString = currentFontString.messageFontString
-
-        -- Always get the current message text when the tooltip is shown
-        messageFrame:SetScript("OnEnter", function()
-            local currentMessage = messageFontString:GetText()
-            if currentMessage ~= nil and currentMessage ~= "-" then
-                GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-                GameTooltip:Show()
-            end
-        end)
-
-        messageFrame:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
-    end
-    
-    -- Apply filter if this is a Groups Logs entry
-    if topic == "Group Logs" and topicPlaceholders == groupsLogsPlaceholders then
-        applyGroupsLogsFilter(currentGroupsLogsFilter)
-    end
-end
-
--- Calculate delta in MM:SS format
-local function calculateDelta(creationTimestamp, currentTime)
-    local creationInSeconds = timeToSeconds(creationTimestamp)
-    local currentInSeconds = timeToSeconds(currentTime)
-    local deltaSeconds = currentInSeconds - creationInSeconds
-
-    -- Handle negative delta (e.g., crossing midnight)
-    if deltaSeconds < 0 then
-        -- Add a day's worth of seconds
-        deltaSeconds = deltaSeconds + 86400 
-    end
-
-    return secondsToMMSS(deltaSeconds)
-end
-
--- Function to add a new entry to the given topic with and shift other entries down
-local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOfPlaceholders, channelName, name, message)
-    local topicData = topicPlaceholders[topic]
-    if not topicData or not topicData[1] then
-        print("No placeholders found for topic: " .. topic)
-        return
-    end
-
-    local timestamp
-    if DifficultBulletinBoardVars.timeFormat == "elapsed" then
-        timestamp = "00:00"
-    else 
-        timestamp = date("%H:%M:%S")
-    end
-
-    for i = numberOfPlaceholders, 2, -1 do
-        -- Copy the data from the previous placeholder to the current one
-        local currentFontString = topicData[i]
-        local previousFontString = topicData[i - 1]
-        
-        if not currentFontString or not previousFontString then
-            debugPrint("Error: Missing font string at index " .. i)
-            break
-        end
-
-        -- Update the current placeholder with the previous placeholder's data safely
-        if currentFontString.nameButton and type(currentFontString.nameButton.SetText) == "function" and
-           previousFontString.nameButton and type(previousFontString.nameButton.GetText) == "function" then
-            currentFontString.nameButton:SetText(previousFontString.nameButton:GetText())
-        else
-            debugPrint("Error: Cannot update name button at index " .. i)
-        end
-        
-        if currentFontString.messageFontString and type(currentFontString.messageFontString.SetText) == "function" and
-           previousFontString.messageFontString and type(previousFontString.messageFontString.GetText) == "function" then
-            currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
-        end
-        
-        if currentFontString.timeFontString and type(currentFontString.timeFontString.SetText) == "function" and
-           previousFontString.timeFontString and type(previousFontString.timeFontString.GetText) == "function" then
-            currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
-        end
-        
-        currentFontString.creationTimestamp = previousFontString.creationTimestamp
-        
-        if currentFontString.icon and type(currentFontString.icon.SetTexture) == "function" and
-           previousFontString.icon and type(previousFontString.icon.GetTexture) == "function" then
-            currentFontString.icon:SetTexture(previousFontString.icon:GetTexture())
-        end
-    end
-
-    -- Update the first placeholder with the new data safely
-    local firstFontString = topicData[1]
-    if firstFontString.nameButton and type(firstFontString.nameButton.SetText) == "function" then
-        firstFontString.nameButton:SetText(name)
-        -- Add this line to update hit rect for the new name
-        firstFontString.nameButton:SetHitRectInsets(0, -45, 0, 0)
-    else
-        debugPrint("Error: Cannot set name button text for first entry in " .. topic)
-    end
-    
-    if firstFontString.messageFontString and type(firstFontString.messageFontString.SetText) == "function" then
-        firstFontString.messageFontString:SetText("[" .. channelName .. "] " .. message)
-    end
-    
-    if firstFontString.timeFontString and type(firstFontString.timeFontString.SetText) == "function" then
-        firstFontString.timeFontString:SetText(timestamp)
-    end
-    
-    firstFontString.creationTimestamp = date("%H:%M:%S")
-    local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
-    print(class)
-    
-    if firstFontString.icon and type(firstFontString.icon.SetTexture) == "function" then
-        firstFontString.icon:SetTexture(getClassIconFromClassName(class))
-    end
-
-    -- Update the GameTooltip
-    for i = numberOfPlaceholders, 1, -1 do
-        local currentFontString = topicData[i]
-        local messageFrame = currentFontString.messageFrame
-        local messageFontString = currentFontString.messageFontString
-
-        -- Always get the current message text when the tooltip is shown
-        messageFrame:SetScript("OnEnter", function()
-            local currentMessage = messageFontString:GetText()
-            if currentMessage ~= nil and currentMessage ~= "-" then
-                GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-                GameTooltip:Show()
-            end
-        end)
-
-        messageFrame:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
-    end
-    
-    -- Apply filter if this is a Groups Logs entry
-    if topic == "Group Logs" and topicPlaceholders == groupsLogsPlaceholders then
-        applyGroupsLogsFilter(currentGroupsLogsFilter)
-    end
-end
-
--- Function to update the first placeholder for a given topic with new message, and time and shift other placeholders down
-local function AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic, message)
-    local topicData = topicPlaceholders[topic]
-    if not topicData or not topicData[1] then
-        print("No placeholders found for topic: " .. topic)
-        return
-    end
-
-    local timestamp
-    if DifficultBulletinBoardVars.timeFormat == "elapsed" then
-        timestamp = "00:00"
-    else 
-        timestamp = date("%H:%M:%S")
-    end
-
-    local index = 0
-    for i, _ in ipairs(topicData) do index = i end
-        for i = index, 2, -1 do
-            -- Copy the data from the previous placeholder to the current one
-            local currentFontString = topicData[i]
-            local previousFontString = topicData[i - 1]
-            
-            if not currentFontString or not previousFontString then
-                debugPrint("Error: Missing font string at index " .. i)
-                break
-            end
-
-            -- Update the current placeholder with the previous placeholder's data safely
-            if currentFontString.messageFontString and type(currentFontString.messageFontString.SetText) == "function" and
-               previousFontString.messageFontString and type(previousFontString.messageFontString.GetText) == "function" then
-                currentFontString.messageFontString:SetText(previousFontString.messageFontString:GetText())
-            end
-            
-            if currentFontString.timeFontString and type(currentFontString.timeFontString.SetText) == "function" and
-               previousFontString.timeFontString and type(previousFontString.timeFontString.GetText) == "function" then
-                currentFontString.timeFontString:SetText(previousFontString.timeFontString:GetText())
-            end
-            
-            currentFontString.creationTimestamp = previousFontString.creationTimestamp
-        end
-
-    -- Update the first placeholder with the new data safely
-    local firstFontString = topicData[1]
-    if firstFontString.messageFontString and type(firstFontString.messageFontString.SetText) == "function" then
-        firstFontString.messageFontString:SetText(message)
-    else
-        debugPrint("Error: Cannot set message font string for first entry in " .. topic)
-    end
-    
-    if firstFontString.timeFontString and type(firstFontString.timeFontString.SetText) == "function" then
-        firstFontString.timeFontString:SetText(timestamp)
-    end
-    
-    firstFontString.creationTimestamp = date("%H:%M:%S")
-
-    -- Update the GameTooltip with safer checks
-    for i = index, 1, -1 do
-        local fontString = topicData[i]
-        if fontString and fontString.messageFrame and fontString.messageFontString then
-            local messageFrame = fontString.messageFrame
-            local messageFontString = fontString.messageFontString
-
-            -- Always get the current message text when the tooltip is shown
-            messageFrame:SetScript("OnEnter", function()
-                local currentMessage = messageFontString:GetText()
-                if currentMessage ~= nil and currentMessage ~= "-" then
-                    GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                    GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-                    GameTooltip:Show()
-                end
-            end)
-
-            messageFrame:SetScript("OnLeave", function()
-                GameTooltip:Hide()
-            end)
-        end
-    end
-end
-
--- Function to check if a character name already exists in the Groups Logs
-local function groupsLogsContainsCharacterName(characterName)
-    if not groupsLogsPlaceholders["Group Logs"] then
-        return false, nil
-    end
-    
-    local entries = groupsLogsPlaceholders["Group Logs"]
-    for index, entry in ipairs(entries) do
-        if entry.nameButton and entry.nameButton:GetText() == characterName then
-            return true, index
-        end
-    end
-    
-    return false, nil
-end
-
--- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
-local function analyzeChatMessage(channelName, characterName, chatMessage, words, topicList, topicPlaceholders, numberOfPlaceholders)
-    local isAnyMatch = false
-    local isGroupMatch = false
-    
-    for _, topic in ipairs(topicList) do
-        if topic.selected then
-            local matchFound = false -- Flag to control breaking out of nested loops
-
-            for _, tag in ipairs(topic.tags) do
-                for _, word in ipairs(words) do
-                    if word == string.lower(tag) then
-                        print("Tag '" .. tag .. "' matches Topic: " .. topic.name)
-                        local found, index = topicPlaceholdersContainsCharacterName(topicPlaceholders, topic.name, characterName)
-                        if found then
-                            print("An entry for that character already exists at " .. index)
-                            UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage, index)
-                        else
-                            print("No entry for that character exists. Creating one...")
-                            AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage)
-                        end
-
-                        matchFound = true -- Set the flag to true to break out of loops
-                        isAnyMatch = true -- Set the outer function result
-                        
-                        -- If this is a group topic, mark it
-                        if topicList == DifficultBulletinBoardVars.allGroupTopics then
-                            isGroupMatch = true
-                        end
-                        
-                        break
-                    end
-                end
-
-                if matchFound then break end
-            end
-            
-            if matchFound then break end
-        end
-    end
-    
-    return isGroupMatch == true and isGroupMatch or isAnyMatch
-end
-
--- Searches the passed topicList for the passed words. If a match is found the topicPlaceholders will be updated
-local function analyzeSystemMessage(chatMessage, words, topicList, topicPlaceholders)
-    local isAnyMatch = false
-    
-    for _, topic in ipairs(topicList) do
-        if topic.selected then
-            local matchFound = false -- Flag to control breaking out of nested loops
-
-            for _, tag in ipairs(topic.tags) do
-                for _, word in ipairs(words) do
-                    if word == string.lower(tag) then
-                        print("Tag '" .. tag .. "' matches Topic: " .. topic.name)
-                        print("Creating one...")
-                        AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic.name, chatMessage)
-
-                        matchFound = true -- Set the flag to true to break out of loops
-                        isAnyMatch = true -- Set the outer function result
-                        break
-                    end
-                end
-
-                if matchFound then break end
-            end
-            
-            if matchFound then break end
-        end
-    end
-    
-    return isAnyMatch
-end
-
--- Process chat messages and add matched content to the appropriate sections
-function DifficultBulletinBoard.OnChatMessage(arg1, arg2, arg9)
-    local chatMessage = arg1
-    local characterName = arg2
-    local channelName = arg9
-
-    if characterName == "" or characterName == nil then
-        return
-    end
-    
-    local stringWithoutNoise = replaceSymbolsWithSpace(chatMessage)
-
-    print(characterName .. ": " .. stringWithoutNoise)
-
-    local words = DifficultBulletinBoard.SplitIntoLowerWords(stringWithoutNoise)
-
-    if DifficultBulletinBoardVars.hardcoreOnly == "true" and channelName ~= "HC" then
-        local found = false
-        for _, w in ipairs(words) do
-            if w == "hc" or w == "hardcore" or w == "inferno" then
-                found = true
-                break
-            end
-        end
-
-       -- bail out if nothing matched
-        if not found then
-            return
-        end
-    end
-
-    -- Process group topics and check if it's a group-related message
-    local isGroupMessage = analyzeChatMessage(channelName, characterName, chatMessage, words, 
-                         DifficultBulletinBoardVars.allGroupTopics, 
-                         groupTopicPlaceholders, 
-                         DifficultBulletinBoardVars.numberOfGroupPlaceholders)
-    
-    -- If it's a group message, add it to the Groups Logs with duplicate checking
-    if isGroupMessage then
-        local found, index = groupsLogsContainsCharacterName(characterName)
-        if found then
-            -- Update the existing entry and move it to the top
-            local entries = groupsLogsPlaceholders["Group Logs"]
-            if not entries then
-                debugPrint("Error: Group Logs entries table is nil")
-                return isGroupMessage or isProfessionMessage
-            end
-            
-            -- Get timestamp
-            local timestamp
-            if DifficultBulletinBoardVars.timeFormat == "elapsed" then
-                timestamp = "00:00"
-            else 
-                timestamp = date("%H:%M:%S")
-            end
-            
-            -- Shift entries down from index to top
-            for i = index, 2, -1 do
-                if not entries[i] or not entries[i-1] then
-                    debugPrint("Error: Entry at index " .. i .. " or " .. (i-1) .. " is nil")
-                    break
-                end
-                
-                if entries[i].nameButton and type(entries[i].nameButton.SetText) == "function" and
-                   entries[i-1].nameButton and type(entries[i-1].nameButton.GetText) == "function" then
-                    entries[i].nameButton:SetText(entries[i-1].nameButton:GetText())
-                end
-                
-                if entries[i].messageFontString and type(entries[i].messageFontString.SetText) == "function" and
-                   entries[i-1].messageFontString and type(entries[i-1].messageFontString.GetText) == "function" then
-                    entries[i].messageFontString:SetText(entries[i-1].messageFontString:GetText())
-                end
-                
-                if entries[i].timeFontString and type(entries[i].timeFontString.SetText) == "function" and
-                   entries[i-1].timeFontString and type(entries[i-1].timeFontString.GetText) == "function" then
-                    entries[i].timeFontString:SetText(entries[i-1].timeFontString:GetText())
-                end
-                
-                entries[i].creationTimestamp = entries[i-1].creationTimestamp
-                
-                if entries[i].icon and type(entries[i].icon.SetTexture) == "function" and
-                   entries[i-1].icon and type(entries[i-1].icon.GetTexture) == "function" then
-                    entries[i].icon:SetTexture(entries[i-1].icon:GetTexture())
-                end
-            end
-            
-            -- Update top entry
-            if entries[1] and entries[1].nameButton and type(entries[1].nameButton.SetText) == "function" then
-                entries[1].nameButton:SetText(characterName)
-            else
-                debugPrint("Error: Cannot set name button text for first entry")
-            end
-            
-            if entries[1] and entries[1].messageFontString and type(entries[1].messageFontString.SetText) == "function" then
-                entries[1].messageFontString:SetText("[" .. channelName .. "] " .. chatMessage)
-            end
-            
-            if entries[1] and entries[1].timeFontString and type(entries[1].timeFontString.SetText) == "function" then
-                entries[1].timeFontString:SetText(timestamp)
-            end
-            
-            entries[1].creationTimestamp = date("%H:%M:%S")
-            
-            local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(characterName)
-            if entries[1] and entries[1].icon and type(entries[1].icon.SetTexture) == "function" then
-                entries[1].icon:SetTexture(getClassIconFromClassName(class))
-            end
-            
-            -- Apply the current filter to the updated entries
-            applyGroupsLogsFilter(currentGroupsLogsFilter)
-        else
-            -- Add as new entry
-            AddNewTopicEntryAndShiftOthers(groupsLogsPlaceholders, "Group Logs", MAX_GROUPS_LOGS_ENTRIES, channelName, characterName, chatMessage)
-        end
-    end
-
-    -- Process profession topics as usual
-    local isProfessionMessage = analyzeChatMessage(channelName, characterName, chatMessage, words, 
-                      DifficultBulletinBoardVars.allProfessionTopics, 
-                      professionTopicPlaceholders, 
-                      DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
-    
-    -- Return true if any match was found
-    return isGroupMessage or isProfessionMessage
-end
-
-function DifficultBulletinBoard.OnSystemMessage(arg1)
-    local systemMessage = arg1
-
-    local stringWithoutNoise = replaceSymbolsWithSpace(systemMessage)
-
-    local words = DifficultBulletinBoard.SplitIntoLowerWords(stringWithoutNoise)
-
-    local isMatched = analyzeSystemMessage(systemMessage, words, DifficultBulletinBoardVars.allHardcoreTopics, hardcoreTopicPlaceholders)
-    
-    return isMatched
-end
 
 -- This function configures the tab switching behavior for the main frame
 local function configureTabSwitching()
@@ -753,6 +173,372 @@ end
 local tempChatMessageFrames = {}
 local tempChatMessageColumns = {}
 
+-- Dynamic tooltip system that finds the correct message based on visual position
+-- This solves the issue where repositioned entries show wrong tooltips
+function DifficultBulletinBoardMainFrame.ShowDynamicTooltip(frame)
+    if not frame then
+        return
+    end
+    
+    -- Get frame position for position-based matching
+    local frameX, frameY = frame:GetLeft(), frame:GetTop()
+    
+    -- Find message by matching VISIBLE position instead of frame object
+    -- This works because reflow functions reposition frames but don't change the frame objects
+    local message = nil
+    local bestMatch = nil
+    local POSITION_TOLERANCE = 2.0  -- Allow 2 pixel tolerance for position matching
+    
+    -- Search all placeholder tables for frames at the same visual position
+    local allPlaceholderTables = {
+        {name = "Groups", table = groupTopicPlaceholders},
+        {name = "GroupsLogs", table = groupsLogsPlaceholders},
+        {name = "Professions", table = professionTopicPlaceholders},
+        {name = "Hardcore", table = hardcoreTopicPlaceholders}
+    }
+    
+    for _, placeholderInfo in ipairs(allPlaceholderTables) do
+        local placeholderTable = placeholderInfo.table
+        for topicName, entries in pairs(placeholderTable) do
+            for entryIndex, entry in ipairs(entries) do
+                -- Check if this entry has a visible message frame
+                if entry.messageFrame and entry.messageFrame:IsVisible() then
+                    local entryX, entryY = entry.messageFrame:GetLeft(), entry.messageFrame:GetTop()
+                    
+                    -- Check if positions match within tolerance
+                    if entryX and entryY and frameX and frameY then
+                        local deltaX = math.abs(entryX - frameX)
+                        local deltaY = math.abs(entryY - frameY)
+                        
+                        if deltaX <= POSITION_TOLERANCE and deltaY <= POSITION_TOLERANCE then
+                            local msg = entry.messageFontString and entry.messageFontString:GetText() or ""
+                            
+                            -- Prefer entries with actual content over placeholders
+                            if msg and msg ~= "-" and msg ~= "" then
+                                message = msg
+                                bestMatch = entry
+                                break
+                            elseif not bestMatch then
+                                -- Keep this as a fallback if no better match is found
+                                bestMatch = entry
+                            end
+                        end
+                    end
+                end
+            end
+            if message and message ~= "-" and message ~= "" then break end
+        end
+        if message and message ~= "-" and message ~= "" then break end
+    end
+    
+    -- Show tooltip if we found a valid message
+    if message and message ~= "-" and message ~= "" then
+        DifficultBulletinBoardMainFrame.ShowMessageTooltip(frame, message)
+    end
+end
+
+-- Robust tooltip helper function to handle common tooltip issues in Vanilla WoW
+function DifficultBulletinBoardMainFrame.ShowMessageTooltip(frame, message)
+    if not frame then
+        return
+    end
+    
+    if not message or message == "-" or message == "" then
+        return
+    end
+    
+    -- Check if GameTooltip exists
+    if not GameTooltip then
+        return
+    end
+    
+    -- Ensure GameTooltip is properly reset before use
+    GameTooltip:Hide()
+    GameTooltip:ClearLines()
+    
+    -- Set owner and anchor with error checking
+    if GameTooltip.SetOwner then
+        GameTooltip:SetOwner(frame, "ANCHOR_CURSOR")
+    else
+        return -- GameTooltip not available
+    end
+    
+    -- Set the text with word wrapping enabled
+    GameTooltip:SetText(message, 1, 1, 1, 1, true)
+    
+    -- Ensure proper font and sizing for better readability using user's font size setting + 2
+    if GameTooltipTextLeft1 and GameTooltipTextLeft1.SetFont then
+        local tooltipFontSize = (DifficultBulletinBoardVars.fontSize or 12) + 2
+        GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", tooltipFontSize, "")
+    end
+    
+    -- Set tooltip border color to match header color (light blue-white)
+    if GameTooltip.SetBackdropBorderColor then
+        GameTooltip:SetBackdropBorderColor(0.9, 0.9, 1.0, 1.0)
+    end
+    
+    -- Force the tooltip to appear on top of other UI elements
+    GameTooltip:SetFrameStrata("TOOLTIP")
+    
+    -- Show the tooltip
+    GameTooltip:Show()
+end
+
+-- Safe tooltip hide function
+function DifficultBulletinBoardMainFrame.HideMessageTooltip(frame)
+    if GameTooltip and GameTooltip.IsOwned and GameTooltip:IsOwned(frame) then
+        GameTooltip:Hide()
+    elseif GameTooltip and GameTooltip.Hide then
+        -- Fallback for cases where IsOwned might not work
+        GameTooltip:Hide()
+    end
+end
+
+-- Helper to reflow the Groups tab based on actual entries
+function DifficultBulletinBoardMainFrame.ReflowGroupsTab()
+  if not groupScrollChild then return end
+  local cf = groupScrollChild
+  local y = -3
+  for _, topic in ipairs(DifficultBulletinBoardVars.allGroupTopics) do
+    if topic.selected then
+      -- Reposition header
+      local header = groupTopicHeaders[topic.name]
+      if header then
+        header:ClearAllPoints()
+        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 5, y)
+      end
+      y = y - 20  -- space after header
+      local placeholders = groupTopicPlaceholders[topic.name] or {}
+      if groupTopicCollapsed[topic.name] then
+        -- Hide all entries when collapsed
+        for _, entry in ipairs(placeholders) do
+          if entry.nameButton then entry.nameButton:Hide() end
+          if entry.messageFontString then entry.messageFontString:Hide() end
+          if entry.timeFontString then entry.timeFontString:Hide() end
+          if entry.icon then entry.icon:Hide() end
+        end
+        y = y - 10  -- gap between topics
+      else
+        -- Count visible entries
+        local count = 0
+        for _, entry in ipairs(placeholders) do
+          if entry.creationTimestamp then count = count + 1 end
+        end
+        -- First pass: Reposition entries
+        for i = 1, table.getn(placeholders) do
+          local entry = placeholders[i]
+          
+          if i <= count and entry.creationTimestamp then
+            -- This is a visible entry with content
+            -- Reposition name button
+            entry.nameButton:ClearAllPoints()
+            entry.nameButton:SetPoint("TOPLEFT", cf, "TOPLEFT", entry.baseX, y)
+            -- Ensure text and time are visible on expand
+            if entry.nameButton then entry.nameButton:Show() end
+            if entry.messageFontString then entry.messageFontString:Show() end
+            if entry.timeFontString then entry.timeFontString:Show() end
+            if entry.icon then
+              entry.icon:ClearAllPoints()
+              entry.icon:SetPoint("RIGHT", entry.nameButton, "LEFT", 3, 0)
+              entry.icon:Show()
+            end
+            y = y - 18
+          else
+            -- This is an empty placeholder - hide it completely
+            if entry.nameButton then entry.nameButton:Hide() end
+            if entry.messageFontString then entry.messageFontString:Hide() end
+            if entry.timeFontString then entry.timeFontString:Hide() end
+            if entry.icon then entry.icon:Hide() end
+          end
+        end
+        
+        -- Tooltip handlers are now dynamic and don't need updating after repositioning
+        y = y - 10  -- gap between topics
+      end
+    end
+  end
+  -- Resize scroll child and update scroll frame
+  cf:SetHeight(math.abs(y))
+  if groupScrollFrame then
+      local scrollBar = getglobal(groupScrollFrame:GetName().."ScrollBar")
+      local scrollFrameHeight = groupScrollFrame:GetHeight()
+      local contentHeight = cf:GetHeight()
+      local actualMaxScroll = contentHeight - scrollFrameHeight
+      
+      -- Ensure minimum 25px scrollable content to prevent snap behavior
+      local finalHeight = contentHeight
+      if actualMaxScroll < 25 then
+          finalHeight = scrollFrameHeight + 25
+          cf:SetHeight(finalHeight)
+      end
+      
+      local maxScroll = finalHeight - scrollFrameHeight
+      if maxScroll < 0 then maxScroll = 0 end
+      scrollBar:SetMinMaxValues(0, maxScroll)
+      if scrollBar:GetValue() > maxScroll then scrollBar:SetValue(maxScroll) end
+  end
+end
+
+-- Helper to reflow the Professions tab based on actual entries
+function DifficultBulletinBoardMainFrame.ReflowProfessionsTab()
+  if not professionScrollChild then return end
+  local cf = professionScrollChild
+  local y = -3
+  for _, topic in ipairs(DifficultBulletinBoardVars.allProfessionTopics) do
+    if topic.selected then
+      -- Reposition header
+      local header = professionTopicHeaders[topic.name]
+      if header then
+        header:ClearAllPoints()
+        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 5, y)
+      end
+      y = y - 20  -- space after header
+      local placeholders = professionTopicPlaceholders[topic.name] or {}
+      if professionTopicCollapsed[topic.name] then
+        -- Hide all entries when collapsed
+        for _, entry in ipairs(placeholders) do
+          if entry.nameButton then entry.nameButton:Hide() end
+          if entry.messageFontString then entry.messageFontString:Hide() end
+          if entry.timeFontString then entry.timeFontString:Hide() end
+          if entry.icon then entry.icon:Hide() end
+        end
+        y = y - 10  -- gap between topics
+      else
+        -- Count visible entries
+        local count = 0
+        for _, entry in ipairs(placeholders) do
+          if entry.creationTimestamp then count = count + 1 end
+        end
+        -- First pass: Reposition entries
+        for i = 1, table.getn(placeholders) do
+          local entry = placeholders[i]
+          
+          if i <= count and entry.creationTimestamp then
+            -- This is a visible entry with content
+            -- Reposition name button
+            entry.nameButton:ClearAllPoints()
+            entry.nameButton:SetPoint("TOPLEFT", cf, "TOPLEFT", entry.baseX, y)
+            -- Ensure text and time are visible on expand
+            if entry.nameButton then entry.nameButton:Show() end
+            if entry.messageFontString then entry.messageFontString:Show() end
+            if entry.timeFontString then entry.timeFontString:Show() end
+            if entry.icon then
+              entry.icon:ClearAllPoints()
+              entry.icon:SetPoint("RIGHT", entry.nameButton, "LEFT", 3, 0)
+              entry.icon:Show()
+            end
+            y = y - 18
+          else
+            -- This is an empty placeholder - hide it completely
+            if entry.nameButton then entry.nameButton:Hide() end
+            if entry.messageFontString then entry.messageFontString:Hide() end
+            if entry.timeFontString then entry.timeFontString:Hide() end
+            if entry.icon then entry.icon:Hide() end
+          end
+        end
+        
+        -- Tooltip handlers are now dynamic and don't need updating after repositioning
+        y = y - 10  -- gap between topics
+      end
+    end
+  end
+  -- Resize scroll child and update scroll frame
+  cf:SetHeight(math.abs(y))
+  if professionScrollFrame then
+      local scrollBar = getglobal(professionScrollFrame:GetName().."ScrollBar")
+      local scrollFrameHeight = professionScrollFrame:GetHeight()
+      local contentHeight = cf:GetHeight()
+      local actualMaxScroll = contentHeight - scrollFrameHeight
+      
+      -- Ensure minimum 25px scrollable content to prevent snap behavior
+      local finalHeight = contentHeight
+      if actualMaxScroll < 25 then
+          finalHeight = scrollFrameHeight + 25
+          cf:SetHeight(finalHeight)
+      end
+      
+      local maxScroll = finalHeight - scrollFrameHeight
+      if maxScroll < 0 then maxScroll = 0 end
+      scrollBar:SetMinMaxValues(0, maxScroll)
+      if scrollBar:GetValue() > maxScroll then scrollBar:SetValue(maxScroll) end
+  end
+end
+
+-- Helper to reflow the Hardcore tab based on actual entries
+function DifficultBulletinBoardMainFrame.ReflowHardcoreTab()
+  if not hardcoreScrollChild then return end
+  local cf = hardcoreScrollChild
+  local y = -3
+  for _, topic in ipairs(DifficultBulletinBoardVars.allHardcoreTopics) do
+    if topic.selected then
+      -- Reposition header
+      local header = hardcoreTopicHeaders[topic.name]
+      if header then
+        header:ClearAllPoints()
+        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 5, y)
+      end
+      y = y - 20  -- space after header
+      local placeholders = hardcoreTopicPlaceholders[topic.name] or {}
+      if hardcoreTopicCollapsed[topic.name] then
+        -- Hide all entries when collapsed
+        for _, entry in ipairs(placeholders) do
+          if entry.messageFontString then entry.messageFontString:Hide() end
+          if entry.timeFontString then entry.timeFontString:Hide() end
+        end
+        y = y - 10  -- gap between topics
+      else
+        -- Count visible entries
+        local count = 0
+        for _, entry in ipairs(placeholders) do
+          if entry.creationTimestamp then count = count + 1 end
+        end
+        -- First pass: Reposition entries
+        for i = 1, table.getn(placeholders) do
+          local entry = placeholders[i]
+          
+          if i <= count and entry.creationTimestamp then
+            -- This is a visible entry with content
+            -- Reposition message frame
+            entry.messageFrame:ClearAllPoints()
+            entry.messageFrame:SetPoint("TOPLEFT", cf, "TOPLEFT", entry.baseX, y)
+            -- Ensure text and time are visible on expand
+            if entry.messageFontString then entry.messageFontString:Show() end
+            if entry.timeFontString then entry.timeFontString:Show() end
+            y = y - 18
+          else
+            -- This is an empty placeholder - hide it completely
+            if entry.messageFontString then entry.messageFontString:Hide() end
+            if entry.timeFontString then entry.timeFontString:Hide() end
+          end
+        end
+        
+        -- Tooltip handlers are now dynamic and don't need updating after repositioning
+        y = y - 10  -- gap between topics
+      end
+    end
+  end
+  -- Resize scroll child and update scroll frame
+  cf:SetHeight(math.abs(y))
+  if hardcoreScrollFrame then
+      local scrollBar = getglobal(hardcoreScrollFrame:GetName().."ScrollBar")
+      local scrollFrameHeight = hardcoreScrollFrame:GetHeight()
+      local contentHeight = cf:GetHeight()
+      local actualMaxScroll = contentHeight - scrollFrameHeight
+      
+      -- Ensure minimum 25px scrollable content to prevent snap behavior
+      local finalHeight = contentHeight
+      if actualMaxScroll < 25 then
+          finalHeight = scrollFrameHeight + 25
+          cf:SetHeight(finalHeight)
+      end
+      
+      local maxScroll = finalHeight - scrollFrameHeight
+      if maxScroll < 0 then maxScroll = 0 end
+      scrollBar:SetMinMaxValues(0, maxScroll)
+      if scrollBar:GetValue() > maxScroll then scrollBar:SetValue(maxScroll) end
+  end
+end
+
 -- Create topic list with name, message, and date columns
 -- Used for Groups, Groups Logs, and Professions tabs
 local function createTopicListWithNameMessageDateColumns(
@@ -762,6 +548,8 @@ local function createTopicListWithNameMessageDateColumns(
   numberOfPlaceholders
 )
   local yOffset = -3
+  -- Store initial top offset to calculate dynamic height
+  local initialYOffset = yOffset
 
   local chatMessageWidth = mainFrame:GetWidth() - chatMessageWidthDelta
 
@@ -779,6 +567,98 @@ local function createTopicListWithNameMessageDateColumns(
     header:SetJustifyH("LEFT")
     header:SetTextColor(0.9, 0.9, 1.0, 1.0)
     header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
+    -- Determine which header registry and collapse state to use based on topicPlaceholders
+    local topicHeaders, topicCollapsed, reflowFunction
+    if topicPlaceholders == groupTopicPlaceholders then
+        topicHeaders = groupTopicHeaders
+        topicCollapsed = groupTopicCollapsed
+        reflowFunction = DifficultBulletinBoardMainFrame.ReflowGroupsTab
+    elseif topicPlaceholders == professionTopicPlaceholders then
+        topicHeaders = professionTopicHeaders
+        topicCollapsed = professionTopicCollapsed
+        reflowFunction = DifficultBulletinBoardMainFrame.ReflowProfessionsTab
+    else
+        -- For other tabs (like Groups Logs), use group headers as fallback
+        topicHeaders = groupTopicHeaders
+        topicCollapsed = groupTopicCollapsed
+        reflowFunction = DifficultBulletinBoardMainFrame.ReflowGroupsTab
+    end
+    
+    -- Register the header for dynamic reflow later
+    topicHeaders[topic.name] = header
+    -- Initialize collapse state for this topic - load from saved variables or default to false
+    local collapseTopicName = topic.name
+    local savedState = false
+    if DifficultBulletinBoardSavedVariables and DifficultBulletinBoardSavedVariables.collapsedHeaders then
+        if topicPlaceholders == groupTopicPlaceholders then
+            savedState = DifficultBulletinBoardSavedVariables.collapsedHeaders.groups and 
+                        DifficultBulletinBoardSavedVariables.collapsedHeaders.groups[collapseTopicName] or false
+        elseif topicPlaceholders == professionTopicPlaceholders then
+            savedState = DifficultBulletinBoardSavedVariables.collapsedHeaders.professions and 
+                        DifficultBulletinBoardSavedVariables.collapsedHeaders.professions[collapseTopicName] or false
+        end
+    end
+    topicCollapsed[collapseTopicName] = savedState
+    -- Set initial header text with collapse indicator based on saved state
+    if savedState then
+        header:SetText("[+] " .. collapseTopicName)
+        header:SetTextColor(0.6, 0.6, 0.7, 1.0)  -- dimmed color when collapsed
+    else
+        header:SetText("[-] " .. collapseTopicName)
+        header:SetTextColor(0.9, 0.9, 1.0, 1.0)  -- default bright color when expanded
+    end
+    -- Create clickable header area to toggle collapse
+    local headerButton = CreateFrame("Button", "$parent_"..collapseTopicName.."HeaderButton", contentFrame)
+    headerButton:SetAllPoints(header)
+    headerButton:RegisterForClicks("LeftButtonUp")
+    headerButton:SetScript("OnClick", function()
+        -- Toggle collapse state using captured name
+        topicCollapsed[collapseTopicName] = not topicCollapsed[collapseTopicName]
+        
+        -- Save the new state to saved variables
+        if not DifficultBulletinBoardSavedVariables then
+            DifficultBulletinBoardSavedVariables = {}
+        end
+        if not DifficultBulletinBoardSavedVariables.collapsedHeaders then
+            DifficultBulletinBoardSavedVariables.collapsedHeaders = {groups = {}, professions = {}, hardcore = {}}
+        end
+        
+        -- Determine which category to save to
+        if topicPlaceholders == groupTopicPlaceholders then
+            if not DifficultBulletinBoardSavedVariables.collapsedHeaders.groups then
+                DifficultBulletinBoardSavedVariables.collapsedHeaders.groups = {}
+            end
+            DifficultBulletinBoardSavedVariables.collapsedHeaders.groups[collapseTopicName] = topicCollapsed[collapseTopicName]
+        elseif topicPlaceholders == professionTopicPlaceholders then
+            if not DifficultBulletinBoardSavedVariables.collapsedHeaders.professions then
+                DifficultBulletinBoardSavedVariables.collapsedHeaders.professions = {}
+            end
+            DifficultBulletinBoardSavedVariables.collapsedHeaders.professions[collapseTopicName] = topicCollapsed[collapseTopicName]
+        end
+        
+        -- Update header text and color to reflect new collapse state
+        if topicCollapsed[collapseTopicName] then
+            header:SetText("[+] " .. collapseTopicName)
+            header:SetTextColor(0.6, 0.6, 0.7, 1.0)  -- dimmed color when collapsed
+        else
+            header:SetText("[-] " .. collapseTopicName)
+            header:SetTextColor(0.9, 0.9, 1.0, 1.0)  -- default bright color when expanded
+        end
+        reflowFunction()
+    end)
+    -- Hover effect to indicate clickability
+    headerButton:SetScript("OnEnter", function()
+        -- Highlight header text on hover with pure white
+        header:SetTextColor(1.0, 1.0, 1.0, 1.0)
+    end)
+    headerButton:SetScript("OnLeave", function()
+        -- Revert header color based on collapse state
+        if topicCollapsed[collapseTopicName] then
+            header:SetTextColor(0.6, 0.6, 0.7, 1.0)
+        else
+            header:SetTextColor(0.9, 0.9, 1.0, 1.0)
+        end
+    end)
     
     -- Calculate vertical offset for entries - add extra space for Group Logs tab
     local topicYOffset = yOffset - 20
@@ -788,17 +668,25 @@ local function createTopicListWithNameMessageDateColumns(
       topicYOffset = topicYOffset - 5  -- Add 5px extra spacing for filter box
     end
     
-    yOffset = topicYOffset - 110
+    -- Dynamic height: rowHeight * max placeholders
+    local rowHeight = 18  -- height of each entry row
+    local placeholderHeight = numberOfPlaceholders * rowHeight
+    yOffset = topicYOffset - placeholderHeight
 
     topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {
      FontStrings = {},
     }
 
     for i = 1, numberOfPlaceholders do
-     local icon = contentFrame:CreateTexture("$parent_Icon", "ARTWORK")
+     -- Create a unique Icon texture for this placeholder
+     local icon = contentFrame:CreateTexture(
+       "$parent_" .. topic.name .. "Placeholder" .. i .. "_Icon",
+       "ARTWORK"
+     )
      icon:SetHeight(14)
      icon:SetWidth(14)
-     icon:SetPoint("LEFT", contentFrame, "LEFT", -2, topicYOffset - 4.5)
+     -- Removed initial icon anchor; will anchor to nameButton after creation
+     icon:SetPoint("RIGHT", contentFrame, "RIGHT", -2, topicYOffset - 2)
 
      local nameButton =
       CreateFrame(
@@ -810,6 +698,9 @@ local function createTopicListWithNameMessageDateColumns(
      nameButton:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 10, topicYOffset)
      nameButton:SetWidth(40)
      nameButton:SetHeight(10)
+     -- Anchor icon to the left of the name button with 1px gap
+     icon:ClearAllPoints()
+     icon:SetPoint("RIGHT", nameButton, "LEFT", 3, 0)
      
      -- Add this line to extend clickable area to the right
      nameButton:SetHitRectInsets(0, -45, 0, 0)
@@ -873,7 +764,6 @@ local function createTopicListWithNameMessageDateColumns(
      nameButton.messageFontString = messageColumn
 
 	nameButton:SetScript("OnClick", function()
-	  print("Clicked on: " .. nameButton:GetText())
 	  local pressedButton = arg1
 	  local targetName = nameButton:GetText()
 
@@ -884,10 +774,8 @@ local function createTopicListWithNameMessageDateColumns(
 
 	  if pressedButton == "LeftButton" then
 	   if IsShiftKeyDown() then
-		print("who")
 		SendWho(targetName)
 	   else
-		print("whisp")
 		ChatFrame_OpenChat("/w " .. targetName)
 	   end
 	  end
@@ -918,31 +806,22 @@ local function createTopicListWithNameMessageDateColumns(
        timeFontString = timeColumn,
        messageFrame = messageFrame,
        creationTimestamp = nil,
+       contentFrame = contentFrame,
+       baseX = 10,
+       baseY = topicYOffset,
       }
      )
 
      table.insert(tempChatMessageFrames, messageFrame)
      table.insert(tempChatMessageColumns, messageColumn)
 
-     -- Update the GameTooltip with smaller Arial Narrow font
+     -- Set up dynamic tooltip system that always finds the correct message
      messageFrame:SetScript("OnEnter", function()
-       local currentMessage = messageColumn:GetText()
-       if currentMessage ~= nil and currentMessage ~= "-" then
-         GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-         GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
-         GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-         
-         -- Try Arial Narrow which appears smaller than default
-         if GameTooltipTextLeft1 then
-           GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
-         end
-         
-         GameTooltip:Show()
-       end
+       DifficultBulletinBoardMainFrame.ShowDynamicTooltip(this)
      end)
 
      messageFrame:SetScript("OnLeave", function()
-       GameTooltip:Hide()
+       DifficultBulletinBoardMainFrame.HideMessageTooltip(this)
      end)
 
      topicYOffset = topicYOffset - 18
@@ -950,6 +829,30 @@ local function createTopicListWithNameMessageDateColumns(
 
     yOffset = topicYOffset - 10
    end
+  end
+
+  -- Adjust content frame height to fit all entries dynamically
+  local contentHeight = initialYOffset - yOffset
+  contentFrame:SetHeight(contentHeight)
+  -- Update scroll frame for new content height
+  local scrollFrame = contentFrame:GetParent()
+  if scrollFrame then
+    scrollFrame:SetScrollChild(contentFrame)
+    local scrollBar = getglobal(scrollFrame:GetName().."ScrollBar")
+    local scrollFrameHeight = scrollFrame:GetHeight()
+    local actualMaxScroll = contentHeight - scrollFrameHeight
+    
+    -- Ensure minimum 25px scrollable content to prevent snap behavior
+    local finalHeight = contentHeight
+    if actualMaxScroll < 25 then
+        finalHeight = scrollFrameHeight + 25
+        contentFrame:SetHeight(finalHeight)
+    end
+    
+    local maxScroll = finalHeight - scrollFrameHeight
+    if maxScroll < 0 then maxScroll = 0 end
+    scrollBar:SetMinMaxValues(0, maxScroll)
+    if scrollBar:GetValue() > maxScroll then scrollBar:SetValue(maxScroll) end
   end
 end
 
@@ -961,6 +864,8 @@ local tempSystemMessageColumns = {}
 local function createTopicListWithMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
     -- initial Y-offset for the first header and placeholder
     local yOffset = -3
+    -- Store initial top offset for dynamic height calculation
+    local initialYOffset = yOffset
 
     local systemMessageWidth = mainFrame:GetWidth() - systemMessageWidthDelta
 
@@ -973,10 +878,75 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
             header:SetJustifyH("LEFT")
             header:SetTextColor(0.9, 0.9, 1.0, 1.0)
             header:SetFont("Fonts\\FRIZQT__.TTF", DifficultBulletinBoardVars.fontSize - 1)
+            
+            -- Register the header for dynamic reflow later
+            hardcoreTopicHeaders[topic.name] = header
+            -- Initialize collapse state for this topic - load from saved variables or default to false
+            local collapseTopicName = topic.name
+            local savedState = false
+            if DifficultBulletinBoardSavedVariables and DifficultBulletinBoardSavedVariables.collapsedHeaders and
+               DifficultBulletinBoardSavedVariables.collapsedHeaders.hardcore then
+                savedState = DifficultBulletinBoardSavedVariables.collapsedHeaders.hardcore[collapseTopicName] or false
+            end
+            hardcoreTopicCollapsed[collapseTopicName] = savedState
+            -- Set initial header text with collapse indicator based on saved state
+            if savedState then
+                header:SetText("[+] " .. collapseTopicName)
+                header:SetTextColor(0.6, 0.6, 0.7, 1.0)  -- dimmed color when collapsed
+            else
+                header:SetText("[-] " .. collapseTopicName)
+                header:SetTextColor(0.9, 0.9, 1.0, 1.0)  -- default bright color when expanded
+            end
+            -- Create clickable header area to toggle collapse
+            local headerButton = CreateFrame("Button", "$parent_"..collapseTopicName.."HeaderButton", contentFrame)
+            headerButton:SetAllPoints(header)
+            headerButton:RegisterForClicks("LeftButtonUp")
+            headerButton:SetScript("OnClick", function()
+                -- Toggle collapse state using captured name
+                hardcoreTopicCollapsed[collapseTopicName] = not hardcoreTopicCollapsed[collapseTopicName]
+                
+                -- Save the new state to saved variables
+                if not DifficultBulletinBoardSavedVariables then
+                    DifficultBulletinBoardSavedVariables = {}
+                end
+                if not DifficultBulletinBoardSavedVariables.collapsedHeaders then
+                    DifficultBulletinBoardSavedVariables.collapsedHeaders = {groups = {}, professions = {}, hardcore = {}}
+                end
+                if not DifficultBulletinBoardSavedVariables.collapsedHeaders.hardcore then
+                    DifficultBulletinBoardSavedVariables.collapsedHeaders.hardcore = {}
+                end
+                DifficultBulletinBoardSavedVariables.collapsedHeaders.hardcore[collapseTopicName] = hardcoreTopicCollapsed[collapseTopicName]
+                
+                -- Update header text and color to reflect new collapse state
+                if hardcoreTopicCollapsed[collapseTopicName] then
+                    header:SetText("[+] " .. collapseTopicName)
+                    header:SetTextColor(0.6, 0.6, 0.7, 1.0)  -- dimmed color when collapsed
+                else
+                    header:SetText("[-] " .. collapseTopicName)
+                    header:SetTextColor(0.9, 0.9, 1.0, 1.0)  -- default bright color when expanded
+                end
+                DifficultBulletinBoardMainFrame.ReflowHardcoreTab()
+            end)
+            -- Hover effect to indicate clickability
+            headerButton:SetScript("OnEnter", function()
+                -- Highlight header text on hover with pure white
+                header:SetTextColor(1.0, 1.0, 1.0, 1.0)
+            end)
+            headerButton:SetScript("OnLeave", function()
+                -- Revert header color based on collapse state
+                if hardcoreTopicCollapsed[collapseTopicName] then
+                    header:SetTextColor(0.6, 0.6, 0.7, 1.0)
+                else
+                    header:SetTextColor(0.9, 0.9, 1.0, 1.0)
+                end
+            end)
 
-            -- Store the header Y offset for the current topic
-            local topicYOffset = yOffset - 20 -- space between header and first placeholder
-            yOffset = topicYOffset - 110 -- space between headers
+            -- Calculate vertical offset for entries - dynamic height based on actual entries
+            local topicYOffset = yOffset - 20
+            -- Dynamic height: rowHeight * max placeholders
+            local rowHeight = 18  -- height of each entry row
+            local placeholderHeight = numberOfPlaceholders * rowHeight
+            yOffset = topicYOffset - placeholderHeight
 
             topicPlaceholders[topic.name] = topicPlaceholders[topic.name] or {FontStrings = {}}
 
@@ -1015,30 +985,22 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
                     messageFontString = messageColumn, 
                     timeFontString = timeColumn, 
                     messageFrame = messageFrame, 
-                    creationTimestamp = nil
+                    creationTimestamp = nil,
+                    contentFrame = contentFrame,
+                    baseX = 10,
+                    baseY = topicYOffset,
                 })
 
                 table.insert(tempSystemMessageFrames, messageFrame)
                 table.insert(tempSystemMessageColumns, messageColumn)
 
-                -- Update the GameTooltip
+                -- Set up dynamic tooltip system that always finds the correct message
                 messageFrame:SetScript("OnEnter", function()
-                    local currentMessage = messageColumn:GetText()
-                    if currentMessage ~= nil and currentMessage ~= "-" then
-                      GameTooltip:SetOwner(messageFrame, "ANCHOR_CURSOR")
-                      GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
-                      GameTooltip:SetText(currentMessage, 1, 1, 1, 1, true)
-                      
-                      if GameTooltipTextLeft1 then
-                        GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", 10, "")
-                      end
-                      
-                      GameTooltip:Show()
-                    end
+                    DifficultBulletinBoardMainFrame.ShowDynamicTooltip(this)
                 end)
 
                 messageFrame:SetScript("OnLeave", function()
-                    GameTooltip:Hide()
+                    DifficultBulletinBoardMainFrame.HideMessageTooltip(this)
                 end)
 
                 -- Increment the Y-offset for the next placeholder
@@ -1048,6 +1010,29 @@ local function createTopicListWithMessageDateColumns(contentFrame, topicList, to
             -- After the placeholders, adjust the main yOffset for the next topic
             yOffset = topicYOffset - 10 -- space between topics
         end
+    end
+    -- Adjust content frame height to fit all entries dynamically
+    local contentHeight = initialYOffset - yOffset
+    contentFrame:SetHeight(contentHeight)
+    -- Update scroll frame for new content height
+    local scrollFrame = contentFrame:GetParent()
+    if scrollFrame then
+        scrollFrame:SetScrollChild(contentFrame)
+        local scrollBar = getglobal(scrollFrame:GetName().."ScrollBar")
+        local scrollFrameHeight = scrollFrame:GetHeight()
+        local actualMaxScroll = contentHeight - scrollFrameHeight
+        
+        -- Ensure minimum 25px scrollable content to prevent snap behavior
+        local finalHeight = contentHeight
+        if actualMaxScroll < 25 then
+            finalHeight = scrollFrameHeight + 25
+            contentFrame:SetHeight(finalHeight)
+        end
+        
+        local maxScroll = finalHeight - scrollFrameHeight
+        if maxScroll < 0 then maxScroll = 0 end
+        scrollBar:SetMinMaxValues(0, maxScroll)
+        if scrollBar:GetValue() > maxScroll then scrollBar:SetValue(maxScroll) end
     end
 end
 
@@ -1569,7 +1554,6 @@ end
 local function updateButtonWidths()
     -- Safety check for buttons
     if not groupsButton or not groupsLogsButton or not professionsButton or not hcMessagesButton then
-        debugPrint("Error: Some buttons are not initialized yet")
         return
     end
     
@@ -1589,7 +1573,6 @@ local function updateButtonWidths()
     for i = 1, buttonCount do
         local button = buttons[i]
         if not button:GetName() then
-            debugPrint("Error: Button " .. i .. " has no name")
             return
         end
         
@@ -1597,13 +1580,11 @@ local function updateButtonWidths()
         local textObj = getglobal(textObjName)
         
         if not textObj then
-            debugPrint("Error: Text object not found for " .. button:GetName())
             return
         end
         
         local textWidth = textObj:GetStringWidth()
         if not textWidth then
-            debugPrint("Error: Could not get text width for " .. textObjName)
             return
         end
         
@@ -1671,19 +1652,77 @@ function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     --call it once before OnUpdate so the time doesnt just magically appear
     DifficultBulletinBoardMainFrame.UpdateServerTime()
 
+    -- Initialize the message processor with references to our placeholders
+    if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.Initialize then
+        DifficultBulletinBoardMessageProcessor.Initialize({
+            groupTopicPlaceholders = groupTopicPlaceholders,
+            groupsLogsPlaceholders = groupsLogsPlaceholders,
+            professionTopicPlaceholders = professionTopicPlaceholders,
+            hardcoreTopicPlaceholders = hardcoreTopicPlaceholders
+        }, currentGroupsLogsFilter, MAX_GROUPS_LOGS_ENTRIES, {
+            RepackEntries = RepackEntries,
+            ReflowTopicEntries = ReflowTopicEntries
+        })
+    end
+
+    -- Create scroll frame for Groups tab
     groupScrollFrame, groupScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Group_ScrollFrame")
     createTopicListWithNameMessageDateColumns(groupScrollChild, DifficultBulletinBoardVars.allGroupTopics, groupTopicPlaceholders, DifficultBulletinBoardVars.numberOfGroupPlaceholders)
-    
+    -- Initial dynamic reflow for Groups tab and immediate scroll range update
+    DifficultBulletinBoardMainFrame.ReflowGroupsTab()
+
     -- Create the Groups Logs scroll frame using the same function as other tabs
     groupsLogsScrollFrame, groupsLogsScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_GroupsLogs_ScrollFrame")
     -- Use the same function to create content as for group topics
     createTopicListWithNameMessageDateColumns(groupsLogsScrollChild, {{name = "Group Logs", selected = true, tags = {}}}, groupsLogsPlaceholders, MAX_GROUPS_LOGS_ENTRIES)
     
+    -- Hide all Groups Logs placeholders initially since they start empty and update scroll range
+    if groupsLogsPlaceholders["Group Logs"] then
+        for _, entry in ipairs(groupsLogsPlaceholders["Group Logs"]) do
+            if entry.nameButton then entry.nameButton:Hide() end
+            if entry.messageFontString then entry.messageFontString:Hide() end
+            if entry.timeFontString then entry.timeFontString:Hide() end
+            if entry.icon then entry.icon:Hide() end
+        end
+        -- Force immediate scroll range update after hiding placeholders
+        groupsLogsScrollChild:SetHeight(50) -- Set minimal height for Groups Logs
+        local scrollBar = getglobal(groupsLogsScrollFrame:GetName().."ScrollBar")
+        local scrollFrameHeight = groupsLogsScrollFrame:GetHeight()
+        local finalHeight = scrollFrameHeight + 25 -- Always ensure 25px scrollable
+        groupsLogsScrollChild:SetHeight(finalHeight)
+        local maxScroll = 25 -- Always 25px scrollable for Groups Logs
+        scrollBar:SetMinMaxValues(0, maxScroll)
+        scrollBar:SetValue(0)
+    end
+    
     professionScrollFrame, professionScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Profession_ScrollFrame")
     createTopicListWithNameMessageDateColumns(professionScrollChild, DifficultBulletinBoardVars.allProfessionTopics, professionTopicPlaceholders, DifficultBulletinBoardVars.numberOfProfessionPlaceholders)
+    -- Initial dynamic reflow for Professions tab and immediate scroll range update
+    DifficultBulletinBoardMainFrame.ReflowProfessionsTab()
+    -- Force immediate scroll range update for professions tab to prevent excessive scrolling on login
+    if professionScrollFrame and professionScrollChild then
+        local scrollBar = getglobal(professionScrollFrame:GetName().."ScrollBar")
+        local scrollFrameHeight = professionScrollFrame:GetHeight()
+        local contentHeight = professionScrollChild:GetHeight()
+        local actualMaxScroll = contentHeight - scrollFrameHeight
+        
+        -- Ensure minimum 25px scrollable content to prevent snap behavior
+        local finalHeight = contentHeight
+        if actualMaxScroll < 25 then
+            finalHeight = scrollFrameHeight + 25
+            professionScrollChild:SetHeight(finalHeight)
+        end
+        
+        local maxScroll = finalHeight - scrollFrameHeight
+        if maxScroll < 0 then maxScroll = 0 end
+        scrollBar:SetMinMaxValues(0, maxScroll)
+        scrollBar:SetValue(0)
+    end
     
     hardcoreScrollFrame, hardcoreScrollChild = createScrollFrameForMainFrame("DifficultBulletinBoardMainFrame_Hardcore_ScrollFrame")
     createTopicListWithMessageDateColumns(hardcoreScrollChild, DifficultBulletinBoardVars.allHardcoreTopics, hardcoreTopicPlaceholders, DifficultBulletinBoardVars.numberOfHardcorePlaceholders)
+    -- Initial dynamic reflow for Hardcore tab and immediate scroll range update
+    DifficultBulletinBoardMainFrame.ReflowHardcoreTab()
 
     -- Add topic group tab switching
     configureTabSwitching()
@@ -1699,7 +1738,7 @@ function DifficultBulletinBoardMainFrame.InitializeMainFrame()
     
     -- Initialize button widths based on current frame size
     updateButtonWidths()
-end
+ end
 
 -- Resize handler - Updates frame widths and keyword filter positioning when main frame is resized
 mainFrame:SetScript("OnSizeChanged", function()
@@ -1805,84 +1844,21 @@ function DifficultBulletinBoardMainFrame.UpdateServerTime()
     end
 end
 
--- Helper function to convert HH:MM:SS to seconds
-local function timeToSeconds(timeString)
-    --idk how else to do it :/ just loop over and return the first match
-    for hours, minutes, seconds in string_gfind(timeString, "(%d+):(%d+):(%d+)") do
-        return (tonumber(hours) * 3600) + (tonumber(minutes) * 60) + tonumber(seconds)
-    end
-end
-    
--- Helper function to format seconds into MM:SS
-local function secondsToMMSS(totalSeconds)
-    local minutes = math.floor(totalSeconds / 60)
-    local seconds = totalSeconds - math.floor(totalSeconds / 60) * 60
 
-    -- Return "99:59" if minutes exceed 99
-    if minutes > 99 then
-        return "99:59"
-    end
 
-    return string.format("%02d:%02d", minutes, seconds)
-end
-
--- Calculate delta in MM:SS format
-local function calculateDelta(creationTimestamp, currentTime)
-    local creationInSeconds = timeToSeconds(creationTimestamp)
-    local currentInSeconds = timeToSeconds(currentTime)
-    local deltaSeconds = currentInSeconds - creationInSeconds
-
-    -- Handle negative delta (e.g., crossing midnight)
-    if deltaSeconds < 0 then
-        deltaSeconds = deltaSeconds + 86400 -- Add a day's worth of seconds
-    end
-
-    return secondsToMMSS(deltaSeconds)
-end
-
--- Modified to also update times in the Groups Logs tab
+-- Modified to also update times in the Groups Logs tab - delegates to message processor
 function DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
-    for topicName, entries in pairs(groupTopicPlaceholders) do
-        for _, entry in ipairs(entries) do
-            if entry and entry.timeFontString and entry.timeFontString:GetText() ~= "-" and entry.creationTimestamp then
-                local delta = calculateDelta(entry.creationTimestamp, date("%H:%M:%S"))
-                entry.timeFontString:SetText(delta)
-            end
-        end
-    end
-    
-    -- Update Groups Logs times
-    if groupsLogsPlaceholders["Group Logs"] then
-        for _, entry in ipairs(groupsLogsPlaceholders["Group Logs"]) do
-            if entry and entry.timeFontString and entry.timeFontString:GetText() ~= "-" and entry.creationTimestamp then
-                local delta = calculateDelta(entry.creationTimestamp, date("%H:%M:%S"))
-                entry.timeFontString:SetText(delta)
-            end
-        end
-    end
-
-    for topicName, entries in pairs(professionTopicPlaceholders) do
-        for _, entry in ipairs(entries) do
-            if entry and entry.timeFontString and entry.timeFontString:GetText() ~= "-" and entry.creationTimestamp then
-                local delta = calculateDelta(entry.creationTimestamp, date("%H:%M:%S"))
-                entry.timeFontString:SetText(delta)
-            end
-        end
-    end
-
-    for topicName, entries in pairs(hardcoreTopicPlaceholders) do
-        for _, entry in ipairs(entries) do
-            if entry and entry.timeFontString and entry.timeFontString:GetText() ~= "-" and entry.creationTimestamp then
-                local delta = calculateDelta(entry.creationTimestamp, date("%H:%M:%S"))
-                entry.timeFontString:SetText(delta)
-            end
-        end
+    if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes then
+        DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
     end
 end
 
 -- Initialize with the current server time
-local lastUpdateTime = GetTime() 
-local lastCleanupTime = GetTime()
+mainFrame:RegisterEvent("ADDON_LOADED")
+mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
+mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
+mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+-- mainFrame:SetScript("OnUpdate", OnUpdate)  -- moved below after OnUpdate is defined
 
 -- OnUpdate handler for regular tasks
 local function OnUpdate()
@@ -1891,30 +1867,188 @@ local function OnUpdate()
 
     -- Update only if at least 1 second has passed
     if deltaTime >= 1 then
-        -- Update the lastUpdateTime
         lastUpdateTime = currentTime
 
+        -- Update server time display
         DifficultBulletinBoardMainFrame.UpdateServerTime()
 
+        -- Update elapsed times if that format is selected
         if DifficultBulletinBoardVars.timeFormat == "elapsed" then
             DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
+        end
+
+        -- Auto-expire messages using configured expiration time
+        local expireSec = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
+        if expireSec and expireSec > 0 then
+            
+            DifficultBulletinBoard.ExpireMessages(expireSec)
         end
     end
 end
 
-mainFrame:RegisterEvent("ADDON_LOADED")
-mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
-mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
-mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+-- Now that OnUpdate is defined, register it to run each frame
 mainFrame:SetScript("OnUpdate", OnUpdate)
 
--- Debug mode slash command
-SLASH_DBBDEBUG1 = "/dbbdebug"
-SlashCmdList["DBBDEBUG"] = function(msg)
-    debugMode = not debugMode
-    if debugMode then
-        DEFAULT_CHAT_FRAME:AddMessage("[DBB] Debug mode enabled", 0.2, 1.0, 0.2)
-    else
-        DEFAULT_CHAT_FRAME:AddMessage("[DBB] Debug mode disabled", 1.0, 0.5, 0.5)
+
+
+-- Helper to reflow entries and remove blank gaps (supports optional nameButton/icon)
+local function RepackEntries(entries)
+    -- Collect non-expired entries data
+    local validData = {}
+    for _, entry in ipairs(entries) do
+        if entry.creationTimestamp then
+            local item = {
+                message = entry.messageFontString and entry.messageFontString:GetText() or "",
+                timeText = entry.timeFontString and entry.timeFontString:GetText() or "",
+                timestamp = entry.creationTimestamp
+            }
+            if entry.nameButton then
+                item.name = entry.nameButton:GetText()
+            end
+            if entry.icon then
+                item.iconTexture = entry.icon:GetTexture()
+            end
+            table.insert(validData, item)
+        end
+    end
+    local validCount = table.getn(validData)
+    for i, entry in ipairs(entries) do
+        if i <= validCount then
+            local data = validData[i]
+            if entry.nameButton and data.name then
+                entry.nameButton:SetText(data.name)
+                entry.nameButton:Show()
+            end
+            if entry.messageFontString then
+                entry.messageFontString:SetText(data.message)
+                entry.messageFontString:Show()
+            end
+            if entry.timeFontString then
+                entry.timeFontString:SetText(data.timeText)
+                entry.timeFontString:Show()
+            end
+            entry.creationTimestamp = data.timestamp
+            if entry.icon then
+                if data.iconTexture then
+                    entry.icon:SetTexture(data.iconTexture)
+                    entry.icon:Show()
+                else
+                    entry.icon:Hide()
+                end
+            end
+        else
+            if entry.nameButton then
+                entry.nameButton:SetText("-")
+                entry.nameButton:Show()
+            end
+            if entry.messageFontString then
+                entry.messageFontString:SetText("-")
+                entry.messageFontString:Show()
+            end
+            if entry.timeFontString then
+                entry.timeFontString:SetText("-")
+                entry.timeFontString:Show()
+            end
+            entry.creationTimestamp = nil
+            if entry.icon then entry.icon:Hide() end
+        end
+        
+        -- Tooltip handlers are now dynamic and don't need updating after data movement
+    end
+end
+
+-- Helper to reflow visible placeholders top-to-bottom
+local function ReflowTopicEntries(entries)
+    local ROW_HEIGHT = 18
+    -- Determine the top Y based on first placeholder
+    local initialY = entries[1] and entries[1].baseY or 0
+    local baseX = entries[1] and entries[1].baseX or 0
+    local cf = entries[1] and entries[1].contentFrame
+    for i, entry in ipairs(entries) do
+        if entry.creationTimestamp and entry.nameButton and cf then
+            -- Reposition row using common initialY
+            entry.nameButton:ClearAllPoints()
+            entry.nameButton:SetPoint("TOPLEFT", cf, "TOPLEFT", baseX, initialY - (i-1)*ROW_HEIGHT)
+            -- Reposition icon alongside
+            if entry.icon then
+                entry.icon:ClearAllPoints()
+                -- Anchor icon to the left of the name button for consistent alignment
+                entry.icon:SetPoint("RIGHT", entry.nameButton, "LEFT", 3, 0)
+                entry.icon:Show()
+            end
+            -- Show text columns
+            if entry.messageFontString then entry.messageFontString:Show() end
+            if entry.timeFontString then entry.timeFontString:Show() end
+            entry.nameButton:Show()
+        else
+            -- Hide unused rows
+            if entry.nameButton then entry.nameButton:Hide() end
+            if entry.icon then entry.icon:Hide() end
+            if entry.messageFontString then entry.messageFontString:Hide() end
+            if entry.timeFontString then entry.timeFontString:Hide() end
+        end
+    end
+end
+
+-- Function to expire messages older than specified seconds - delegates to message processor
+function DifficultBulletinBoard.ExpireMessages(seconds)
+    if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.ExpireMessages then
+        DifficultBulletinBoardMessageProcessor.ExpireMessages(seconds)
+        
+        -- After expiring messages, reflow all tabs to collapse gaps
+        DifficultBulletinBoardMainFrame.ReflowGroupsTab()
+        DifficultBulletinBoardMainFrame.ReflowProfessionsTab()
+        DifficultBulletinBoardMainFrame.ReflowHardcoreTab()
+        
+        -- Reapply Groups Logs filter after expiration and reflow
+        if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.ApplyGroupsLogsFilter then
+            local currentFilter = ""
+            if DifficultBulletinBoardMainFrame and DifficultBulletinBoardMainFrame.GetCurrentGroupsLogsFilter then
+                currentFilter = DifficultBulletinBoardMainFrame.GetCurrentGroupsLogsFilter()
+            end
+            DifficultBulletinBoardMessageProcessor.ApplyGroupsLogsFilter(currentFilter)
+        end
+    end
+end
+
+
+
+
+
+
+
+
+
+-- FIRST_EDIT: expose on mainFrame
+DifficultBulletinBoardMainFrame.RepackEntries = RepackEntries
+DifficultBulletinBoardMainFrame.ReflowTopicEntries = ReflowTopicEntries
+
+-- Public API: recalc all scroll ranges manually
+function DifficultBulletinBoardMainFrame.RefreshAllScrollRanges()
+    local scrollPairs = {
+        {sf=groupScrollFrame, sc=groupScrollChild},
+        {sf=groupsLogsScrollFrame, sc=groupsLogsScrollChild},
+        {sf=professionScrollFrame, sc=professionScrollChild},
+        {sf=hardcoreScrollFrame, sc=hardcoreScrollChild},
+    }
+    for _, info in ipairs(scrollPairs) do
+        if info.sf and info.sc then
+            local sb = getglobal(info.sf:GetName().."ScrollBar")
+            local scrollFrameHeight = info.sf:GetHeight()
+            local contentHeight = info.sc:GetHeight()
+            local actualMaxScroll = contentHeight - scrollFrameHeight
+            
+            -- Ensure minimum 25px scrollable content to prevent snap behavior
+            local finalHeight = contentHeight
+            if actualMaxScroll < 25 then
+                finalHeight = scrollFrameHeight + 25
+                info.sc:SetHeight(finalHeight)
+            end
+            
+            local maxScroll = finalHeight - scrollFrameHeight
+            if maxScroll < 0 then maxScroll = 0 end
+            sb:SetMinMaxValues(0, maxScroll)
+            if sb:GetValue() > maxScroll then sb:SetValue(maxScroll) end
+        end
     end
 end

@@ -16,6 +16,8 @@ DifficultBulletinBoardDefaults.defaultFilterMatchedMessages = "false"
 
 DifficultBulletinBoardDefaults.defaultHardcoreOnly = "false"
 
+DifficultBulletinBoardDefaults.defaultMessageExpirationTime = "300"
+
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {
