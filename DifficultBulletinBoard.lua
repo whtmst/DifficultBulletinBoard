@@ -50,7 +50,7 @@ function DifficultBulletinBoard_ToggleOptionFrame()
     if optionFrame then
         if optionFrame:IsShown() then
             if DifficultBulletinBoardVars.optionFrameSound == "true" then
-                PlaySound("igMainMenuClose");
+                PlaySound("igSpellBookClose");
             end
             -- Hide all dropdowns before hiding the frame
             DifficultBulletinBoardOptionFrame.HideAllDropdownMenus()
@@ -61,7 +61,7 @@ function DifficultBulletinBoard_ToggleOptionFrame()
             end
         else
             if DifficultBulletinBoardVars.optionFrameSound == "true" then
-                PlaySound("igMainMenuClose");
+                PlaySound("igSpellBookOpen");
             end
             optionFrame:Show()
             mainFrame:Hide()
