@@ -10,29 +10,36 @@
 - **Hardcore Messages**: Stay updated with hardcore-related events, such as deaths or level-ups.
 - **Hardcore-Only Chat Filter**: Show only messages aimed at hardcore characters.
 - **Blacklist Filter**: Hide all messages matching your blacklist.
+- **Expiration Date**: Set an expiration date to automatically delete old messages—or turn automatic deletion off entirely.
+- **Collapsible Topics**: Collapse topics to hide unwanted messages and keep your feed tidy.
 
 ### Group Finder
 
-![groups](https://github.com/user-attachments/assets/325837c4-466d-46ac-aacc-00002199cb67)
+![groups](https://github.com/user-attachments/assets/59403fa8-df0c-4136-9a40-8c0bc2c61e1b)
+
 
 
 ### Group Logs
 
-![groups logs](https://github.com/user-attachments/assets/9901b5fc-d7c7-402f-9d86-8599590859ac)
+![groups logs](https://github.com/user-attachments/assets/b1da8aba-0f01-48ff-8cdd-67d91b81d9c4)
+
 
 
 ### Profession Search
 
-![professions](https://github.com/user-attachments/assets/265c3f34-c1e7-4c76-83ce-5f260883cf29)
+![professions](https://github.com/user-attachments/assets/c2a1ed20-a78c-4485-bcc4-e32f6b2d6cac)
+
 
 
 ### Hardcore Messages
 
-![hardcore](https://github.com/user-attachments/assets/1559d54b-f3d4-4d00-9223-57739589c0db)
+![hardcore](https://github.com/user-attachments/assets/5c2a96c9-14d3-4c5f-a745-d96469043f3c)
+
 
 
 ## Settings
-![settings](https://github.com/user-attachments/assets/646d92ee-39e9-49ab-ba4b-33ef55bd757b)
+
+![settings](https://github.com/user-attachments/assets/b5cc8ec3-367e-4bb7-862e-4f966027ee49)
 
 
 
