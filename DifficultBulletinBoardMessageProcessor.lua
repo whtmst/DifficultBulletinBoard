@@ -296,7 +296,10 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOf
         firstFontString.icon:SetTexture(getClassIconFromClassName(class))
     end
 
-    -- Tooltip handlers are now dynamic and don't need manual updates
+    -- Show a RaidWarning for enabled notifications. dont show it for the Group Logs
+    if topic ~= "Group Logs" and DifficultBulletinBoard.notificationList[topic] == true then
+        RaidWarningFrame:AddMessage("DBB Notification: " .. message)
+    end
     
     -- Apply filter if this is a Groups Logs entry
     if topic == "Group Logs" and topicPlaceholders == groupsLogsPlaceholders then
@@ -412,7 +415,7 @@ local function analyzeChatMessage(channelName, characterName, chatMessage, words
                 if matchFound then break end
             end
             
-            if matchFound then break end
+            --if matchFound then break end --removed because it would skip remaining topics
         end
     end
     

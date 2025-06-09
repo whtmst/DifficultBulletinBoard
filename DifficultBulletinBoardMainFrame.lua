@@ -61,6 +61,8 @@ local hardcoreTopicPlaceholders = {}
 local hardcoreTopicHeaders = {}  -- registry for hardcore topic headers for dynamic reflow
 local hardcoreTopicCollapsed = {} -- track collapse state for each hardcore topic
 
+DifficultBulletinBoard.notificationList = {} --tracks which topic has notifications enabled
+
 -- Store current filter text globally
 local currentGroupsLogsFilter = ""
 
@@ -305,7 +307,7 @@ function DifficultBulletinBoardMainFrame.ReflowGroupsTab()
       local header = groupTopicHeaders[topic.name]
       if header then
         header:ClearAllPoints()
-        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 5, y)
+        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 15, y)
       end
       y = y - 20  -- space after header
       local placeholders = groupTopicPlaceholders[topic.name] or {}
@@ -390,7 +392,7 @@ function DifficultBulletinBoardMainFrame.ReflowProfessionsTab()
       local header = professionTopicHeaders[topic.name]
       if header then
         header:ClearAllPoints()
-        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 5, y)
+        header:SetPoint("TOPLEFT", cf, "TOPLEFT", 15, y)
       end
       y = y - 20  -- space after header
       local placeholders = professionTopicPlaceholders[topic.name] or {}
@@ -541,12 +543,7 @@ end
 
 -- Create topic list with name, message, and date columns
 -- Used for Groups, Groups Logs, and Professions tabs
-local function createTopicListWithNameMessageDateColumns(
-  contentFrame,
-  topicList,
-  topicPlaceholders,
-  numberOfPlaceholders
-)
+local function createTopicListWithNameMessageDateColumns(contentFrame, topicList, topicPlaceholders, numberOfPlaceholders)
   local yOffset = -3
   -- Store initial top offset to calculate dynamic height
   local initialYOffset = yOffset
@@ -659,6 +656,49 @@ local function createTopicListWithNameMessageDateColumns(
             header:SetTextColor(0.9, 0.9, 1.0, 1.0)
         end
     end)
+
+    if collapseTopicName ~= "Group Logs" then
+        local notificationButton = CreateFrame(
+            "Button",
+            "$parent_"..collapseTopicName.."NotificationButton",
+            contentFrame
+        )
+        notificationButton:SetWidth(20)
+        notificationButton:SetHeight(20)
+        notificationButton:SetPoint("LEFT", header, "LEFT", -18, 0)
+
+        -- now add your icon on the “ARTWORK” layer so it sits front-most
+        notificationButton.icon = notificationButton:CreateTexture(nil, "ARTWORK")
+        notificationButton.icon:SetAllPoints(notificationButton)
+        notificationButton.icon:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\bell")
+        notificationButton.icon:SetAlpha(0.3)
+
+        DifficultBulletinBoard.notificationList[collapseTopicName] = false --default to false
+
+        notificationButton:SetScript("OnClick", function()
+            if DifficultBulletinBoard.notificationList[collapseTopicName] == true then
+                notificationButton.icon:SetAlpha(0.3)
+            else
+                notificationButton.icon:SetAlpha(1)
+            end
+
+            DifficultBulletinBoard.notificationList[collapseTopicName] = not DifficultBulletinBoard.notificationList[collapseTopicName]
+        end)
+
+        notificationButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(notificationButton, "ANCHOR_RIGHT")
+            GameTooltip:SetText(
+                "Enabling the bell will show a notification if a new entry gets added to this topic.",
+                1, 1, 1, 1, true
+            )
+            GameTooltip:Show()
+        end)
+
+        -- OnLeave: hide tooltip
+        notificationButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+    end
     
     -- Calculate vertical offset for entries - add extra space for Group Logs tab
     local topicYOffset = yOffset - 20
