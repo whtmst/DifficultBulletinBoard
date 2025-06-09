@@ -643,11 +643,13 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
         end
         reflowFunction()
     end)
+
     -- Hover effect to indicate clickability
     headerButton:SetScript("OnEnter", function()
         -- Highlight header text on hover with pure white
         header:SetTextColor(1.0, 1.0, 1.0, 1.0)
     end)
+
     headerButton:SetScript("OnLeave", function()
         -- Revert header color based on collapse state
         if topicCollapsed[collapseTopicName] then
@@ -657,6 +659,7 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
         end
     end)
 
+    -- do not add notifications to the Group Logs. This wouldnt make sense imo
     if collapseTopicName ~= "Group Logs" then
         local notificationButton = CreateFrame(
             "Button",
@@ -667,7 +670,6 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
         notificationButton:SetHeight(20)
         notificationButton:SetPoint("LEFT", header, "LEFT", -18, 0)
 
-        -- now add your icon on the “ARTWORK” layer so it sits front-most
         notificationButton.icon = notificationButton:CreateTexture(nil, "ARTWORK")
         notificationButton.icon:SetAllPoints(notificationButton)
         notificationButton.icon:SetTexture("Interface\\AddOns\\DifficultBulletinBoard\\icons\\bell")
@@ -694,7 +696,6 @@ local function createTopicListWithNameMessageDateColumns(contentFrame, topicList
             GameTooltip:Show()
         end)
 
-        -- OnLeave: hide tooltip
         notificationButton:SetScript("OnLeave", function()
             GameTooltip:Hide()
         end)
