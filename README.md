@@ -12,6 +12,7 @@
 - **Blacklist Filter**: Hide all messages matching your blacklist.
 - **Expiration Date**: Set an expiration date to automatically delete old messages—or turn automatic deletion off entirely.
 - **Collapsible Topics**: Collapse topics to hide unwanted messages and keep your feed tidy.
+- **Notification System**: Be notified if an entry gets added to a specific topic.
 
 ### Group Finder
 
