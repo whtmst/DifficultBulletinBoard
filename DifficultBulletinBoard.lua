@@ -516,3 +516,19 @@ mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
 mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 mainFrame:SetScript("OnEvent", handleEvent)
 mainFrame:SetScript("OnUpdate", OnUpdate)
+
+--make frames closable by pressing ESC
+UIPanelWindows["DifficultBulletinBoardMainFrame"] = {
+  area = "center",
+  pushable = 0,
+  whileDead = true,
+}
+
+UIPanelWindows["DifficultBulletinBoardOptionFrame"] = {
+  area = "center",
+  pushable = 0,
+  whileDead = true,
+}
+
+tinsert(UISpecialFrames, "DifficultBulletinBoardMainFrame")
+tinsert(UISpecialFrames, "DifficultBulletinBoardOptionFrame")
