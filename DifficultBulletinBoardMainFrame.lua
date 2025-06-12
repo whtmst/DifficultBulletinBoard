@@ -241,16 +241,7 @@ end
 
 -- Robust tooltip helper function to handle common tooltip issues in Vanilla WoW
 function DifficultBulletinBoardMainFrame.ShowMessageTooltip(frame, message)
-    if not frame then
-        return
-    end
-    
-    if not message or message == "-" or message == "" then
-        return
-    end
-    
-    -- Check if GameTooltip exists
-    if not GameTooltip then
+    if not frame or not message or message == "-" or message == "" or not GameTooltip then
         return
     end
     
@@ -268,12 +259,15 @@ function DifficultBulletinBoardMainFrame.ShowMessageTooltip(frame, message)
     -- Set the text with word wrapping enabled
     GameTooltip:SetText(message, 1, 1, 1, 1, true)
     
+    --save the old font settings
+    local leftLine = GameTooltipTextLeft1
+    local oldR, oldG, oldB, oldA = GameTooltip:GetBackdropBorderColor()
+    local oldFontPath, oldFontSize, oldFontFlags = leftLine:GetFont()
+
     -- Ensure proper font and sizing for better readability using user's font size setting + 2
     if GameTooltipTextLeft1 and GameTooltipTextLeft1.SetFont then
         local tooltipFontSize = (DifficultBulletinBoardVars.fontSize or 12) + 2
-        --had to comment this out, because it permanently changed the tooltip
-        --TODO: find a way to restore tooltip font and size outside of DBB
-        --GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", tooltipFontSize, "")
+        GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", tooltipFontSize, "")
     end
     
     -- Set tooltip border color to match header color (light blue-white)
@@ -286,6 +280,21 @@ function DifficultBulletinBoardMainFrame.ShowMessageTooltip(frame, message)
     
     -- Show the tooltip
     GameTooltip:Show()
+
+    --swap in a temporary OnHide handler
+    local origOnHide = GameTooltip:GetScript("OnHide")
+    GameTooltip:SetScript("OnHide", function()
+        leftLine:SetFont(oldFontPath, oldFontSize, oldFontFlags)
+        this:SetBackdropBorderColor(oldR, oldG, oldB, oldA)
+        
+        --restore the original script
+        this:SetScript("OnHide", origOnHide)
+        
+        --call the original if it existed
+        if origOnHide then 
+            origOnHide() 
+        end
+    end)
 end
 
 -- Safe tooltip hide function
