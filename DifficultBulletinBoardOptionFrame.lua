@@ -426,6 +426,12 @@ local function showStyledTooltip(frame, text)
     -- Set the text with word wrapping enabled (white text)
     GameTooltip:SetText(text, 1, 1, 1, 1, true)
     
+
+    --save the old font settings
+    local leftLine = GameTooltipTextLeft1
+    local oldR, oldG, oldB, oldA = GameTooltip:GetBackdropBorderColor()
+    local oldFontPath, oldFontSize, oldFontFlags = leftLine:GetFont()
+
     -- Ensure proper font and sizing for better readability using user's font size setting + 2
     if GameTooltipTextLeft1 and GameTooltipTextLeft1.SetFont then
         local tooltipFontSize = (DifficultBulletinBoardVars.fontSize or 12) + 2
@@ -442,6 +448,21 @@ local function showStyledTooltip(frame, text)
     
     -- Show the tooltip
     GameTooltip:Show()
+
+    --swap in a temporary OnHide handler
+    local origOnHide = GameTooltip:GetScript("OnHide")
+    GameTooltip:SetScript("OnHide", function()
+        leftLine:SetFont(oldFontPath, oldFontSize, oldFontFlags)
+        this:SetBackdropBorderColor(oldR, oldG, oldB, oldA)
+        
+        --restore the original script
+        this:SetScript("OnHide", origOnHide)
+        
+        --call the original if it existed
+        if origOnHide then 
+            origOnHide() 
+        end
+    end)
 end
 
 -- Helper function to hide tooltips safely
