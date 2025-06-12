@@ -271,7 +271,9 @@ function DifficultBulletinBoardMainFrame.ShowMessageTooltip(frame, message)
     -- Ensure proper font and sizing for better readability using user's font size setting + 2
     if GameTooltipTextLeft1 and GameTooltipTextLeft1.SetFont then
         local tooltipFontSize = (DifficultBulletinBoardVars.fontSize or 12) + 2
-        GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", tooltipFontSize, "")
+        --had to comment this out, because it permanently changed the tooltip
+        --TODO: find a way to restore tooltip font and size outside of DBB
+        --GameTooltipTextLeft1:SetFont("Fonts\\ARIALN.TTF", tooltipFontSize, "")
     end
     
     -- Set tooltip border color to match header color (light blue-white)
