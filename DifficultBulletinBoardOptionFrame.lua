@@ -146,6 +146,29 @@ local optionFrameSoundDropDownOptionObject = {
     }
 }
 
+-- Option Data for Notification sound being played
+local notificationSoundDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Notification_Sound_Dropdown",
+    labelText = "Play Sound for Notifications:",
+    labelToolTip = "Enable or disable the sound that plays when a notification is shown for a matched message.",
+    items = {
+        { text = "Enable Sound", value = "true" },
+        { text = "Disable Sound", value = "false" }
+    }
+}
+
+-- Option data for the notification messages
+local notificationMessageDropDownOptionObject = {
+    frameName = "DifficultBulletinBoardOptionFrame_Notification_Message_Dropdown",
+    labelText = "Show Notification Messages:",
+    labelToolTip = "Choose how notifications are displayed when a matched message is found.",
+    items = {
+        { text = "Both Chat and On-Screen", value = "both" },
+        { text = "Chat Only", value = "chat" },
+        { text = "On-Screen Only", value = "onscreen" }
+    }
+}
+
 -- Option Data for the timestamp format
 local serverTimePositionDropDownOptionObject = {
     frameName = "DifficultBulletinBoardOptionFrame_Server_Time_Dropdown",
@@ -174,6 +197,8 @@ local serverTimePositionDropDown
 local timeFormatDropDown
 local mainFrameSoundDropDown
 local optionFrameSoundDropDown
+local notificationSoundDropDown
+local notificationMessageDropDown
 local filterMatchedMessagesDropDown
 local hardcoreOnlyDropDown
 local groupOptionInputBox
@@ -1321,6 +1346,7 @@ function DifficultBulletinBoardOptionFrame.InitializeTabContent()
     optionFrame.expirationTimeOptionInputBox = addInputBoxOptionToOptionFrame(messageExpirationTimeOptionObject, DifficultBulletinBoardVars.messageExpirationTime)
     optionFrame.serverTimePositionDropDown = addDropDownOptionToOptionFrame(serverTimePositionDropDownOptionObject, DifficultBulletinBoardVars.serverTimePosition)
     optionFrame.timeFormatDropDown = addDropDownOptionToOptionFrame(timeFormatDropDownOptionObject, DifficultBulletinBoardVars.timeFormat)
+	optionFrame.notificationMessageDropDown = addDropDownOptionToOptionFrame(notificationMessageDropDownOptionObject, DifficultBulletinBoardVars.notificationMessage)
     
     -- Filter Settings Section
     addSectionHeader("Filter Settings")
@@ -1331,6 +1357,7 @@ function DifficultBulletinBoardOptionFrame.InitializeTabContent()
     addSectionHeader("Audio Settings")
     optionFrame.mainFrameSoundDropDown = addDropDownOptionToOptionFrame(mainFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.mainFrameSound)
     optionFrame.optionFrameSoundDropDown = addDropDownOptionToOptionFrame(optionFrameSoundDropDownOptionObject, DifficultBulletinBoardVars.optionFrameSound)
+    optionFrame.notificationSoundDropDown = addDropDownOptionToOptionFrame(notificationSoundDropDownOptionObject, DifficultBulletinBoardVars.notificationSound)
     
     -- Store height for this tab
     DifficultBulletinBoardOptionFrame.tabHeights.general = math.abs(optionYOffset) + 35
@@ -1414,6 +1441,8 @@ function DifficultBulletinBoard_ResetVariablesAndReload()
 
     DifficultBulletinBoardSavedVariables.mainFrameSound = DifficultBulletinBoardDefaults.defaultMainFrameSound
     DifficultBulletinBoardSavedVariables.optionFrameSound = DifficultBulletinBoardDefaults.defaultOptionFrameSound
+    DifficultBulletinBoardSavedVariables.notificationSound = DifficultBulletinBoardDefaults.defaultNotificationSound
+	DifficultBulletinBoardSavedVariables.notificationMessage = DifficultBulletinBoardDefaults.defaultNotificationMessage
     -- Default message expiration time
     DifficultBulletinBoardSavedVariables.messageExpirationTime = DifficultBulletinBoardDefaults.defaultMessageExpirationTime
 
@@ -1437,6 +1466,8 @@ function DifficultBulletinBoard_SaveVariablesAndReload()
     DifficultBulletinBoardSavedVariables.hardcoreOnly = optionFrame.hardcoreOnlyDropDown and optionFrame.hardcoreOnlyDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultHardcoreOnly
     DifficultBulletinBoardSavedVariables.mainFrameSound = optionFrame.mainFrameSoundDropDown and optionFrame.mainFrameSoundDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultMainFrameSound
     DifficultBulletinBoardSavedVariables.optionFrameSound = optionFrame.optionFrameSoundDropDown and optionFrame.optionFrameSoundDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultOptionFrameSound
+    DifficultBulletinBoardSavedVariables.notificationSound = optionFrame.notificationSoundDropDown and optionFrame.notificationSoundDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultNotificationSound
+	DifficultBulletinBoardSavedVariables.notificationMessage = optionFrame.notificationMessageDropDown and optionFrame.notificationMessageDropDown:GetSelectedValue() or DifficultBulletinBoardDefaults.defaultNotificationMessage
     DifficultBulletinBoardSavedVariables.numberOfGroupPlaceholders = optionFrame.groupOptionInputBox and optionFrame.groupOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders
     DifficultBulletinBoardSavedVariables.numberOfProfessionPlaceholders = optionFrame.professionOptionInputBox and optionFrame.professionOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultNumberOfProfessionPlaceholders
     DifficultBulletinBoardSavedVariables.numberOfHardcorePlaceholders = optionFrame.hardcoreOptionInputBox and optionFrame.hardcoreOptionInputBox:GetText() or DifficultBulletinBoardDefaults.defaultNumberOfHardcorePlaceholders

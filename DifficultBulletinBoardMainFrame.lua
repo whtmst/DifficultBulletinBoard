@@ -1701,7 +1701,6 @@ local function updateButtonWidths()
 end
 
 function DifficultBulletinBoardMainFrame.InitializeMainFrame()
-    --call it once before OnUpdate so the time doesnt just magically appear
     DifficultBulletinBoardMainFrame.UpdateServerTime()
 
     -- Initialize the message processor with references to our placeholders
@@ -1910,36 +1909,6 @@ mainFrame:RegisterEvent("ADDON_LOADED")
 mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
 mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
 mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")
--- mainFrame:SetScript("OnUpdate", OnUpdate)  -- moved below after OnUpdate is defined
-
--- OnUpdate handler for regular tasks
-local function OnUpdate()
-    local currentTime = GetTime()
-    local deltaTime = currentTime - lastUpdateTime
-
-    -- Update only if at least 1 second has passed
-    if deltaTime >= 1 then
-        lastUpdateTime = currentTime
-
-        -- Update server time display
-        DifficultBulletinBoardMainFrame.UpdateServerTime()
-
-        -- Update elapsed times if that format is selected
-        if DifficultBulletinBoardVars.timeFormat == "elapsed" then
-            DifficultBulletinBoardMainFrame.UpdateElapsedTimes()
-        end
-
-        -- Auto-expire messages using configured expiration time
-        local expireSec = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
-        if expireSec and expireSec > 0 then
-            
-            DifficultBulletinBoard.ExpireMessages(expireSec)
-        end
-    end
-end
-
--- Now that OnUpdate is defined, register it to run each frame
-mainFrame:SetScript("OnUpdate", OnUpdate)
 
 
 

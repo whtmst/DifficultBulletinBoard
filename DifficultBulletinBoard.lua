@@ -287,10 +287,41 @@ function DifficultBulletinBoard_AddKeywordToBlacklist(keyword)
     DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB]|r Added keyword '" .. keyword .. "' to blacklist.")
 end
 
+-- Track messages processed to prevent duplicate processing within a short timeframe
+local recentlyProcessedMessages = {}
+local DUPLICATE_PREVENTION_WINDOW = 0.1 -- 100ms window
+
 -- Replacement for ChatFrame_OnEvent that implements message filtering
 function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     local name = arg2 or "empty_name"
     local message = arg1 or "empty_message"
+    
+    -- Initialize shouldFilter flag for this message
+    shouldFilter = false
+    
+    -- Create a unique identifier for this exact event call
+    local eventKey = event .. ":" .. name .. ":" .. message .. ":" .. tostring(arg9)
+    local currentTime = GetTime()
+    
+    -- Check if we've processed this exact event very recently
+    if recentlyProcessedMessages[eventKey] and 
+       recentlyProcessedMessages[eventKey] + DUPLICATE_PREVENTION_WINDOW > currentTime then
+        return -- Skip duplicate processing
+    end
+    
+    -- Mark this event as processed
+    recentlyProcessedMessages[eventKey] = currentTime
+    
+    -- Clean up old entries periodically
+    if math.random(1, 100) == 1 then -- 1% chance to clean up
+        local tempMessages = {}
+        for key, timestamp in pairs(recentlyProcessedMessages) do
+            if timestamp + DUPLICATE_PREVENTION_WINDOW > currentTime then
+                tempMessages[key] = timestamp
+            end
+        end
+        recentlyProcessedMessages = tempMessages
+    end
 
     -- This caused the CHAT_MSG_SYSTEM eventhandler to not work. 
     -- CHAT_MSG_SYSTEM messages do not contain a name (arg2) and therefore never pass this check.
@@ -334,6 +365,9 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
         end
         
         if hasMatchingKeyword then
+            -- Set shouldFilter flag for this message
+            shouldFilter = true
+            
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
                 lastFilteredMessages[messageKey] = GetTime()
@@ -352,15 +386,23 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     
     -- Only process chat channel messages
     if event == "CHAT_MSG_CHANNEL" then
-        -- Check if we've seen this message before
-        if not previousMessages[name] or previousMessages[name][1] ~= message or 
-           previousMessages[name][2] + 30 < GetTime() then
-            
-            -- Store the message with: [1]=content, [2]=timestamp, [3]=shouldFilter
-            previousMessages[name] = {message, GetTime(), false, arg9}
+        
+        -- Check if we've seen this specific message before (using message-specific key)
+         local messageSpecificKey = name .. ":" .. message
+         local currentTime = GetTime()
+         
+
+         
+         if not previousMessages[messageSpecificKey] or 
+            previousMessages[messageSpecificKey][2] + 60 < currentTime then
             
             -- Process with our addon's message handler
             lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(message, name, arg9)
+            
+            -- Store/update the message with: [1]=content, [2]=timestamp, [3]=shouldFilter
+            -- Always update timestamp when processing, whether new or repeat
+            previousMessages[messageSpecificKey] = {message, currentTime, shouldFilter}
+
             
             -- If matched and filtering enabled, mark for filtering
             if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
@@ -368,15 +410,23 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
                 if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
                     lastFilteredMessages[messageKey] = GetTime()
                 end
-                previousMessages[name][3] = true
+                -- Update the stored message to reflect that it was matched and filtered
+                previousMessages[messageSpecificKey][3] = "matched"
                 return -- Skip this message entirely
             end
         else
-            -- This is a repeat message we've seen recently
-            if previousMessages[name][3] then
-                -- It was marked for filtering
-                return -- Skip this message
-            end
+              -- This is a repeat message we've seen recently (within 60 seconds)
+              local timeSince = currentTime - previousMessages[messageSpecificKey][2]
+              local filterReason = previousMessages[messageSpecificKey][3]
+              if filterReason == true then
+                  -- It was blacklisted
+                  return -- Skip this message
+              elseif filterReason == "matched" then
+                  -- It was matched by addon filtering
+                  return -- Skip this message
+              end
+              -- Skip repeat messages within 60 seconds to prevent spam
+              return
         end
     end
     
@@ -427,6 +477,11 @@ local function OnUpdate()
     local currentTime = GetTime()
     local deltaTime = currentTime - lastUpdateTime
 
+    -- Process on-screen notification queue every frame for responsive display
+    if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue then
+        DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue()
+    end
+
     -- Update only if at least 1 second has passed
     if deltaTime >= 1 then
         -- Update the lastUpdateTime
@@ -448,9 +503,9 @@ local function OnUpdate()
         if currentTime - lastCleanupTime > 300 then
             lastCleanupTime = currentTime
             local tempMessages = {}
-            for sender, data in pairs(previousMessages) do
-                if data[2] + 60 > GetTime() then
-                    tempMessages[sender] = data
+            for messageKey, data in pairs(previousMessages) do
+                if data[2] + 120 > GetTime() then
+                    tempMessages[messageKey] = data
                 end
             end
             previousMessages = tempMessages

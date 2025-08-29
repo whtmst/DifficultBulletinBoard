@@ -18,6 +18,10 @@ DifficultBulletinBoardDefaults.defaultHardcoreOnly = "false"
 
 DifficultBulletinBoardDefaults.defaultMessageExpirationTime = "300"
 
+DifficultBulletinBoardDefaults.defaultNotificationSound = "true"
+
+DifficultBulletinBoardDefaults.defaultNotificationMessage = "both"
+
 DifficultBulletinBoardDefaults.defaultNumberOfGroupPlaceholders = 3
 
 DifficultBulletinBoardDefaults.defaultGroupTopics = {

@@ -20,6 +20,73 @@ local currentGroupsLogsFilter
 local MAX_GROUPS_LOGS_ENTRIES
 local RepackEntries
 local ReflowTopicEntries
+local notificationCache = {}
+local NOTIFICATION_CACHE_DURATION = 65 -- Set to 65 seconds to allow repeat notifications after 60s window
+
+-- On-screen notification queue system
+local onScreenQueue = {}
+local isDisplayingOnScreen = false
+local currentOnScreenMessage = nil
+local onScreenDisplayTime = 0
+local ON_SCREEN_DISPLAY_DURATION = 12 -- seconds to display each message
+
+-- Queue management functions
+local function AddToOnScreenQueue(message)
+    table.insert(onScreenQueue, message)
+end
+
+local function ProcessOnScreenQueue()
+    local currentTime = GetTime()
+    
+    -- If we're currently displaying a message, check if it's time to show the next one
+    if isDisplayingOnScreen then
+        local timeElapsed = currentTime - onScreenDisplayTime
+        if timeElapsed >= ON_SCREEN_DISPLAY_DURATION then
+            isDisplayingOnScreen = false
+            currentOnScreenMessage = nil
+        else
+            return -- Still displaying current message
+        end
+    end
+    
+    -- If queue has messages and we're not currently displaying, show next message
+    if table.getn(onScreenQueue) > 0 and not isDisplayingOnScreen then
+        local nextMessage = table.remove(onScreenQueue, 1) -- Remove first message from queue
+        -- Ensure RaidWarningFrame is visible and working
+        if RaidWarningFrame then
+            RaidWarningFrame:Show()
+            RaidWarningFrame:AddMessage(nextMessage)
+        end
+        isDisplayingOnScreen = true
+        currentOnScreenMessage = nextMessage
+        onScreenDisplayTime = currentTime
+    end
+end
+
+local function ClearOnScreenQueue()
+    onScreenQueue = {}
+    isDisplayingOnScreen = false
+    currentOnScreenMessage = nil
+end
+
+-- Expose queue processing function for external use
+function DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue()
+    ProcessOnScreenQueue()
+end
+
+-- Expose queue clearing function for external use
+function DifficultBulletinBoardMessageProcessor.ClearOnScreenQueue()
+    ClearOnScreenQueue()
+end
+
+-- Get queue status information
+function DifficultBulletinBoardMessageProcessor.GetOnScreenQueueStatus()
+    return {
+        queueLength = table.getn(onScreenQueue),
+        isDisplaying = isDisplayingOnScreen,
+        currentMessage = currentOnScreenMessage
+    }
+end
 
 -- Initialize function to receive references from main frame
 function DifficultBulletinBoardMessageProcessor.Initialize(placeholders, filter, maxEntries, helpers)
@@ -180,6 +247,44 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
 
     -- Tooltip handlers are now dynamic and don't need manual updates
     
+    -- Show a RaidWarning for enabled notifications. dont show it for the Group Logs
+    local notificationKey = name .. ":" .. message
+    local currentTime = GetTime()
+
+    -- Simple cache cleanup
+    for key, timestamp in pairs(notificationCache) do
+        if currentTime - timestamp > NOTIFICATION_CACHE_DURATION then
+            notificationCache[key] = nil
+        end
+    end
+    
+    -- Check cache to prevent spam
+    if not notificationCache[notificationKey] then
+        if topic ~= "Group Logs" and DifficultBulletinBoard.notificationList[topic] == true then
+            if DifficultBulletinBoardVars.notificationSound == "true" then
+                PlaySound("TellMessage")
+            end
+            
+            -- Handle notification display based on user preference
+            local notificationSetting = DifficultBulletinBoardVars.notificationMessage or "both"
+            
+            if notificationSetting == "both" then
+                -- Show both on-screen and chat notifications
+                AddToOnScreenQueue("DBB Notification: " .. message)
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB Notification]|r " .. "|Hplayer:" .. name .. "|h[" .. name .. "]|h" .. " :|cFFB2B2FF" .. message)
+            elseif notificationSetting == "onscreen" then
+                -- Show only on-screen notification
+                AddToOnScreenQueue("DBB Notification: " .. message)
+            elseif notificationSetting == "chat" then
+                -- Show only chat notification
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB Notification]|r " .. "|Hplayer:" .. name .. "|h[" .. name .. "]|h" .. " :|cFFB2B2FF" .. message)
+            end
+            
+            -- Add to cache to prevent spam
+            notificationCache[notificationKey] = currentTime
+        end
+    end
+    
     -- Apply filter if this is a Groups Logs entry
     if topic == "Group Logs" and topicPlaceholders == groupsLogsPlaceholders then
         local currentFilter = ""
@@ -201,7 +306,7 @@ end
 -- Helper function to format seconds into MM:SS
 local function secondsToMMSS(totalSeconds)
     local minutes = math.floor(totalSeconds / 60)
-    local seconds = totalSeconds - math.floor(totalSeconds / 60) * 60
+   local seconds = totalSeconds - math.floor(totalSeconds / 60) * 60
 
     -- Return "99:59" if minutes exceed 99
     if minutes > 99 then
@@ -292,13 +397,61 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOf
     firstFontString.creationTimestamp = date("%H:%M:%S")
     local class = DifficultBulletinBoardVars.GetPlayerClassFromDatabase(name)
     
-    if firstFontString.icon and type(firstFontString.icon.SetTexture) == "function" then
+	if firstFontString.icon and type(firstFontString.icon.SetTexture) == "function" then
         firstFontString.icon:SetTexture(getClassIconFromClassName(class))
     end
 
     -- Show a RaidWarning for enabled notifications. dont show it for the Group Logs
-    if topic ~= "Group Logs" and DifficultBulletinBoard.notificationList[topic] == true then
-        RaidWarningFrame:AddMessage("DBB Notification: " .. message)
+    local notificationKey = name .. ":" .. message
+    local currentTime = GetTime()
+
+    -- Simple cache cleanup
+    for key, timestamp in pairs(notificationCache) do
+        if currentTime - timestamp > NOTIFICATION_CACHE_DURATION then
+            notificationCache[key] = nil
+        end
+    end
+    
+    -- Check cache to prevent spam
+    if not notificationCache[notificationKey] then
+        if topic ~= "Group Logs" and DifficultBulletinBoard.notificationList[topic] == true then
+            if DifficultBulletinBoardVars.notificationSound == "true" then
+                PlaySound("TellMessage")
+            end
+            
+            -- Handle notification display based on user preference
+            local notificationSetting = DifficultBulletinBoardVars.notificationMessage or "both"
+            
+            if notificationSetting == "both" then
+                -- Show both on-screen and chat notifications
+                AddToOnScreenQueue("DBB Notification: " .. message)
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB Notification]|r " .. "|Hplayer:" .. name .. "|h[" .. name .. "]|h" .. " :|cFFB2B2FF" .. message)
+                -- Process queue only if not currently displaying a message
+                if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue then
+                    local status = DifficultBulletinBoardMessageProcessor.GetOnScreenQueueStatus()
+                    if not status.isDisplaying then
+                        DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue()
+                    end
+                end
+            elseif notificationSetting == "onscreen" then
+                -- Show only on-screen notification
+                AddToOnScreenQueue("DBB Notification: " .. message)
+                -- Process queue only if not currently displaying a message
+                if DifficultBulletinBoardMessageProcessor and DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue then
+                    local status = DifficultBulletinBoardMessageProcessor.GetOnScreenQueueStatus()
+                    if not status.isDisplaying then
+                        DifficultBulletinBoardMessageProcessor.ProcessOnScreenQueue()
+                    end
+                end
+            elseif notificationSetting == "chat" then
+                -- Show only chat notification
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00[DBB Notification]|r " .. "|Hplayer:" .. name .. "|h[" .. name .. "]|h" .. " :|cFFB2B2FF" .. message)
+            end
+            -- If notificationSetting == "none", show no notifications
+            
+            -- Add to cache
+            notificationCache[notificationKey] = currentTime
+        end
     end
     
     -- Apply filter if this is a Groups Logs entry
@@ -992,4 +1145,4 @@ function DifficultBulletinBoardMessageProcessor.ExpireMessages(seconds)
             ReflowTopicEntries(entries)
         end
     end
-end 
+end
