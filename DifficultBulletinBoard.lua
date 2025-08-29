@@ -306,6 +306,9 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     -- Check if we've processed this exact event very recently
     if recentlyProcessedMessages[eventKey] and 
        recentlyProcessedMessages[eventKey] + DUPLICATE_PREVENTION_WINDOW > currentTime then
+        -- For duplicate prevention, we still need to call the original handler
+        -- to ensure messages appear in all chat tabs
+        DifficultBulletinBoard.originalChatFrameOnEvent(event)
         return -- Skip duplicate processing
     end
     
@@ -337,7 +340,10 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     if lastFilteredMessages[messageKey] and lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT > GetTime() then
         -- We've already logged this message recently, skip logging again
         if previousMessages[name] and previousMessages[name][3] then
-            return -- Skip this message as it was marked for filtering
+            -- Only skip if filtering is enabled, otherwise let it through to chat
+            if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                return -- Skip this message as it was marked for filtering
+            end
         end
     end
     
@@ -380,7 +386,10 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
                 previousMessages[name] = {message, GetTime(), true, arg9}
             end
 
-            return -- Skip this message as it contains a blacklisted keyword
+            -- Only skip if filtering is enabled, otherwise let it through to chat
+            if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                return -- Skip this message as it contains a blacklisted keyword
+            end
         end
     end
     
@@ -412,7 +421,10 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
                 end
                 -- Update the stored message to reflect that it was matched and filtered
                 previousMessages[messageSpecificKey][3] = "matched"
-                return -- Skip this message entirely
+                -- Only skip if filtering is enabled, otherwise let it through to chat
+                if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                    return -- Skip this message entirely
+                end
             end
         else
               -- This is a repeat message we've seen recently (within 60 seconds)
@@ -420,37 +432,49 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
               local filterReason = previousMessages[messageSpecificKey][3]
               if filterReason == true then
                   -- It was blacklisted
-                  return -- Skip this message
+                  if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                      return -- Skip this message
+                  end
               elseif filterReason == "matched" then
                   -- It was matched by addon filtering
-                  return -- Skip this message
+                  if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                      return -- Skip this message
+                  end
               end
               -- Skip repeat messages within 60 seconds to prevent spam
-              return
+              if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                  return
+              end
         end
     end
     
     if event == "CHAT_MSG_SYSTEM" then
         lastMessageWasMatched = DifficultBulletinBoard.OnSystemMessage(message)
         
-        if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+        if lastMessageWasMatched then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
                 lastFilteredMessages[messageKey] = GetTime()
             end
-            return -- Skip this message
+            -- Only skip if filtering is enabled, otherwise let it through to chat
+            if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                return -- Skip this message
+            end
         end
     end
 
     if event == "CHAT_MSG_HARDCORE" then
         lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(message, name, "HC")
         
-        if lastMessageWasMatched and DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+        if lastMessageWasMatched then
             -- Only log if we haven't logged this message recently
             if not lastFilteredMessages[messageKey] or lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT <= GetTime() then
                 lastFilteredMessages[messageKey] = GetTime()
             end
-            return -- Skip this message
+            -- Only skip if filtering is enabled, otherwise let it through to chat
+            if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                return -- Skip this message
+            end
         end
     end
     
