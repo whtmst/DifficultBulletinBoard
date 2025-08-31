@@ -166,10 +166,34 @@ local function initializeAddon(event, arg1)
             DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DBB Error]|r Failed to initialize main frame - module not loaded properly.")
         end
         
-        -- Install ChatFrame_OnEvent hook (complete replacement)
+        -- Install ChatFrame_OnEvent hooks for all chat frames
         if not DifficultBulletinBoard.hookInstalled then
+            DifficultBulletinBoard.originalChatFrameHandlers = {}
+            
+            -- Hook all existing and active chat frames using GetChatWindowInfo
+            for i = 1, NUM_CHAT_WINDOWS or 7 do
+                local chatFrame = getglobal("ChatFrame" .. i)
+                if chatFrame then
+                    -- Check if this chat window is actually shown and configured
+                    local name, fontSize, r, g, b, alpha, shown, locked, docked, uninteractable = GetChatWindowInfo(i)
+                    if shown and shown == 1 then
+                        -- Store the original OnEvent handler for this specific chat frame
+                        DifficultBulletinBoard.originalChatFrameHandlers[i] = chatFrame:GetScript("OnEvent")
+                        
+                        -- Set our custom handler for this chat frame
+                        chatFrame:SetScript("OnEvent", function()
+                            DifficultBulletinBoard.hookedChatFrameOnEvent(event, chatFrame)
+                        end)
+                        
+                        -- Chat filtering hooked for ChatFrame
+                    end
+                end
+            end
+            
+            -- Also keep the global hook as fallback for any frames that might use it
             DifficultBulletinBoard.originalChatFrameOnEvent = ChatFrame_OnEvent
             ChatFrame_OnEvent = DifficultBulletinBoard.hookedChatFrameOnEvent
+            
             DifficultBulletinBoard.hookInstalled = true
         end
     end
@@ -291,8 +315,25 @@ end
 local recentlyProcessedMessages = {}
 local DUPLICATE_PREVENTION_WINDOW = 0.1 -- 100ms window
 
+-- Helper function to call the appropriate original chat frame handler
+local function callOriginalChatFrameHandler(event, chatFrame)
+    if chatFrame and DifficultBulletinBoard.originalChatFrameHandlers then
+        -- Find which chat frame this is and call its original handler
+        for i = 1, 7 do
+            if getglobal("ChatFrame" .. i) == chatFrame and DifficultBulletinBoard.originalChatFrameHandlers[i] then
+                DifficultBulletinBoard.originalChatFrameHandlers[i]()
+                return
+            end
+        end
+    end
+    
+    -- Fallback to global handler
+    DifficultBulletinBoard.originalChatFrameOnEvent(event)
+end
+
 -- Replacement for ChatFrame_OnEvent that implements message filtering
-function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
+-- Now supports both global calls and per-frame calls
+function DifficultBulletinBoard.hookedChatFrameOnEvent(event, chatFrame)
     local name = arg2 or "empty_name"
     local message = arg1 or "empty_message"
     
@@ -306,9 +347,30 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     -- Check if we've processed this exact event very recently
     if recentlyProcessedMessages[eventKey] and 
        recentlyProcessedMessages[eventKey] + DUPLICATE_PREVENTION_WINDOW > currentTime then
-        -- For duplicate prevention, we still need to call the original handler
-        -- to ensure messages appear in all chat tabs
-        DifficultBulletinBoard.originalChatFrameOnEvent(event)
+        -- For duplicate prevention, check if the message was previously filtered
+        local messageKey = name .. ":" .. message
+        local messageSpecificKey = name .. ":" .. message
+        
+        -- Check for blacklisted messages
+        if lastFilteredMessages[messageKey] and 
+           lastFilteredMessages[messageKey] + FILTER_LOG_TIMEOUT > currentTime then
+            -- Message was recently filtered by blacklist, apply the same filtering decision
+            if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                return -- Skip this duplicate message as it was filtered
+            end
+        end
+        
+        -- Check for addon-matched messages
+        if previousMessages[messageSpecificKey] and 
+           previousMessages[messageSpecificKey][3] == "matched" then
+            -- Message was matched by addon filtering, apply the same filtering decision
+            if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
+                return -- Skip this duplicate message as it was matched
+            end
+        end
+        
+        -- For non-filtered duplicates, call the original handler
+        callOriginalChatFrameHandler(event, chatFrame)
         return -- Skip duplicate processing
     end
     
@@ -479,17 +541,54 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event)
     end
     
     -- Call the original handler for non-filtered messages
-    DifficultBulletinBoard.originalChatFrameOnEvent(event)
+    callOriginalChatFrameHandler(event, chatFrame)
+end
+
+-- Function to re-hook chat frames when chat window configuration changes
+local function rehookChatFrames()
+    if not DifficultBulletinBoard.hookInstalled then
+        return
+    end
+    
+    -- Re-hook all existing and active chat frames using GetChatWindowInfo
+    for i = 1, NUM_CHAT_WINDOWS or 7 do
+        local chatFrame = getglobal("ChatFrame" .. i)
+        if chatFrame then
+            -- Check if this chat window is actually shown and configured
+            local name, fontSize, r, g, b, alpha, shown, locked, docked, uninteractable = GetChatWindowInfo(i)
+            if shown and shown == 1 then
+                -- Only hook if we haven't already hooked this frame
+                if not DifficultBulletinBoard.originalChatFrameHandlers[i] then
+                    -- Store the original OnEvent handler for this specific chat frame
+                    DifficultBulletinBoard.originalChatFrameHandlers[i] = chatFrame:GetScript("OnEvent")
+                    
+                    -- Set our custom handler for this chat frame
+                    chatFrame:SetScript("OnEvent", function()
+                        DifficultBulletinBoard.hookedChatFrameOnEvent(event, chatFrame)
+                    end)
+                    
+                    -- Chat filtering hooked for new ChatFrame
+                end
+            elseif DifficultBulletinBoard.originalChatFrameHandlers[i] then
+                -- If frame is no longer shown but we had it hooked, restore original handler
+                chatFrame:SetScript("OnEvent", DifficultBulletinBoard.originalChatFrameHandlers[i])
+                DifficultBulletinBoard.originalChatFrameHandlers[i] = nil
+                -- Chat filtering unhooked for hidden ChatFrame
+            end
+        end
+    end
 end
 
 -- Event handler for registered events
 local function handleEvent()
     if event == "ADDON_LOADED" then 
         initializeAddon(event, arg1)
+    elseif event == "UPDATE_CHAT_WINDOWS" then
+        -- Re-hook chat frames when chat window configuration changes
+        rehookChatFrames()
     end
 
     -- The message filtering is now handled by the hookedChatFrameOnEvent function
-    -- so we just need to handle the ADDON_LOADED event here
 end
 
 -- Initialize with the current server time
@@ -590,6 +689,7 @@ linkUpdateFrame:Show()
 
 -- Register events and set up script handlers
 mainFrame:RegisterEvent("ADDON_LOADED")
+mainFrame:RegisterEvent("UPDATE_CHAT_WINDOWS")
 mainFrame:RegisterEvent("CHAT_MSG_CHANNEL")
 mainFrame:RegisterEvent("CHAT_MSG_HARDCORE")
 mainFrame:RegisterEvent("CHAT_MSG_SYSTEM")

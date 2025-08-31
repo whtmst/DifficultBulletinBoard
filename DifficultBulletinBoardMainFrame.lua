@@ -1936,7 +1936,7 @@ local function RepackEntries(entries)
     for i, entry in ipairs(entries) do
         if i <= validCount then
             local data = validData[i]
-            if entry.nameButton and data.name then
+            if entry.nameButton and data.name and type(entry.nameButton.SetText) == "function" and type(entry.nameButton.Show) == "function" then
                 entry.nameButton:SetText(data.name)
                 entry.nameButton:Show()
             end
@@ -1958,7 +1958,7 @@ local function RepackEntries(entries)
                 end
             end
         else
-            if entry.nameButton then
+            if entry.nameButton and type(entry.nameButton.SetText) == "function" and type(entry.nameButton.Show) == "function" then
                 entry.nameButton:SetText("-")
                 entry.nameButton:Show()
             end

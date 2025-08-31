@@ -111,7 +111,7 @@ function DifficultBulletinBoardMessageProcessor.ApplyGroupsLogsFilter(searchText
         -- Process each entry
         for _, entry in ipairs(groupsLogsPlaceholders["Group Logs"]) do
             -- Check if this is a valid entry with name and message
-            if entry and entry.nameButton and entry.messageFontString then
+            if entry and entry.nameButton and entry.messageFontString and type(entry.nameButton.GetText) == "function" then
                 local name = entry.nameButton:GetText() or ""
                 local message = entry.messageFontString:GetText() or ""
                 
@@ -227,17 +227,29 @@ local function UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic, numberO
 
     -- Shift all entries down from index 1 to the updated entry's position
     for i = index, 2, -1 do
-        topicData[i].nameButton:SetText(topicData[i - 1].nameButton:GetText())
-        topicData[i].messageFontString:SetText(topicData[i - 1].messageFontString:GetText())
-        topicData[i].timeFontString:SetText(topicData[i - 1].timeFontString:GetText())
+        if topicData[i].nameButton and topicData[i-1].nameButton and type(topicData[i].nameButton.SetText) == "function" and type(topicData[i-1].nameButton.GetText) == "function" then
+            topicData[i].nameButton:SetText(topicData[i - 1].nameButton:GetText())
+        end
+        if topicData[i].messageFontString and topicData[i-1].messageFontString and type(topicData[i].messageFontString.SetText) == "function" and type(topicData[i-1].messageFontString.GetText) == "function" then
+            topicData[i].messageFontString:SetText(topicData[i - 1].messageFontString:GetText())
+        end
+        if topicData[i].timeFontString and topicData[i-1].timeFontString and type(topicData[i].timeFontString.SetText) == "function" and type(topicData[i-1].timeFontString.GetText) == "function" then
+            topicData[i].timeFontString:SetText(topicData[i - 1].timeFontString:GetText())
+        end
         topicData[i].creationTimestamp = topicData[i - 1].creationTimestamp
-        topicData[i].icon:SetTexture(topicData[i - 1].icon:GetTexture())
+        if topicData[i].icon and topicData[i-1].icon and type(topicData[i].icon.SetTexture) == "function" and type(topicData[i-1].icon.GetTexture) == "function" then
+            topicData[i].icon:SetTexture(topicData[i - 1].icon:GetTexture())
+        end
     end
 
     -- Place the updated entry's data at the top
-    topicData[1].nameButton:SetText(name)
+    if topicData[1].nameButton and type(topicData[1].nameButton.SetText) == "function" then
+        topicData[1].nameButton:SetText(name)
+    end
     -- Add this line to update hit rect for updated name
-    topicData[1].nameButton:SetHitRectInsets(0, -45, 0, 0)
+    if topicData[1].nameButton and type(topicData[1].nameButton.SetHitRectInsets) == "function" then
+        topicData[1].nameButton:SetHitRectInsets(0, -45, 0, 0)
+    end
     
     topicData[1].messageFontString:SetText("[" .. channelName .. "] " .. message or "No Message")
     topicData[1].timeFontString:SetText(timestamp)
@@ -383,7 +395,9 @@ local function AddNewTopicEntryAndShiftOthers(topicPlaceholders, topic, numberOf
     if firstFontString.nameButton and type(firstFontString.nameButton.SetText) == "function" then
         firstFontString.nameButton:SetText(name)
         -- Add this line to update hit rect for the new name
-        firstFontString.nameButton:SetHitRectInsets(0, -45, 0, 0)
+        if type(firstFontString.nameButton.SetHitRectInsets) == "function" then
+            firstFontString.nameButton:SetHitRectInsets(0, -45, 0, 0)
+        end
     end
     
     if firstFontString.messageFontString and type(firstFontString.messageFontString.SetText) == "function" then
@@ -910,7 +924,7 @@ function DifficultBulletinBoardMainFrame.RepackEntries(entries)
                 timeText = entry.timeFontString and entry.timeFontString:GetText() or "",
                 timestamp = entry.creationTimestamp
             }
-            if entry.nameButton then
+            if entry.nameButton and type(entry.nameButton.GetText) == "function" then
                 item.name = entry.nameButton:GetText()
             end
             if entry.icon then
@@ -923,7 +937,7 @@ function DifficultBulletinBoardMainFrame.RepackEntries(entries)
     for i, entry in ipairs(entries) do
         if i <= validCount then
             local data = validData[i]
-            if entry.nameButton and data.name then
+            if entry.nameButton and data.name and type(entry.nameButton.SetText) == "function" and type(entry.nameButton.Show) == "function" then
                 entry.nameButton:SetText(data.name)
                 entry.nameButton:Show()
             end
@@ -945,7 +959,7 @@ function DifficultBulletinBoardMainFrame.RepackEntries(entries)
                 end
             end
         else
-            if entry.nameButton then
+            if entry.nameButton and type(entry.nameButton.SetText) == "function" and type(entry.nameButton.Show) == "function" then
                 entry.nameButton:SetText("-")
                 entry.nameButton:Show()
             end
@@ -1008,11 +1022,19 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
                 local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
                 if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
-                    entry.nameButton:SetText("-")
-                    entry.messageFontString:SetText("-")
-                    entry.timeFontString:SetText("-")
+                    if entry.nameButton and type(entry.nameButton.SetText) == "function" then
+                        entry.nameButton:SetText("-")
+                    end
+                    if entry.messageFontString and type(entry.messageFontString.SetText) == "function" then
+                        entry.messageFontString:SetText("-")
+                    end
+                    if entry.timeFontString and type(entry.timeFontString.SetText) == "function" then
+                        entry.timeFontString:SetText("-")
+                    end
                     entry.creationTimestamp = nil
-                    if entry.icon then entry.icon:SetTexture(nil) end
+                    if entry.icon and type(entry.icon.SetTexture) == "function" then
+                        entry.icon:SetTexture(nil)
+                    end
                 else
                     local delta = calculateDelta(entry.creationTimestamp, currentTimeStr)
                     entry.timeFontString:SetText(delta)
@@ -1030,11 +1052,19 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
                 local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
                 if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
-                    entry.nameButton:SetText("-")
-                    entry.messageFontString:SetText("-")
-                    entry.timeFontString:SetText("-")
+                    if entry.nameButton and type(entry.nameButton.SetText) == "function" then
+                        entry.nameButton:SetText("-")
+                    end
+                    if entry.messageFontString and type(entry.messageFontString.SetText) == "function" then
+                        entry.messageFontString:SetText("-")
+                    end
+                    if entry.timeFontString and type(entry.timeFontString.SetText) == "function" then
+                        entry.timeFontString:SetText("-")
+                    end
                     entry.creationTimestamp = nil
-                    if entry.icon then entry.icon:SetTexture(nil) end
+                    if entry.icon and type(entry.icon.SetTexture) == "function" then
+                        entry.icon:SetTexture(nil)
+                    end
                 else
                     local delta = calculateDelta(entry.creationTimestamp, currentTimeStr)
                     entry.timeFontString:SetText(delta)
@@ -1051,11 +1081,19 @@ function DifficultBulletinBoardMessageProcessor.UpdateElapsedTimes()
                 if ageSeconds < 0 then ageSeconds = ageSeconds + 86400 end
                 local expirationTime = tonumber(DifficultBulletinBoardVars.messageExpirationTime)
                 if expirationTime and expirationTime > 0 and ageSeconds >= expirationTime then
-                    entry.nameButton:SetText("-")
-                    entry.messageFontString:SetText("-")
-                    entry.timeFontString:SetText("-")
+                    if entry.nameButton and type(entry.nameButton.SetText) == "function" then
+                        entry.nameButton:SetText("-")
+                    end
+                    if entry.messageFontString and type(entry.messageFontString.SetText) == "function" then
+                        entry.messageFontString:SetText("-")
+                    end
+                    if entry.timeFontString and type(entry.timeFontString.SetText) == "function" then
+                        entry.timeFontString:SetText("-")
+                    end
                     entry.creationTimestamp = nil
-                    if entry.icon then entry.icon:SetTexture(nil) end
+                    if entry.icon and type(entry.icon.SetTexture) == "function" then
+                        entry.icon:SetTexture(nil)
+                    end
                 else
                     local delta = calculateDelta(entry.creationTimestamp, currentTimeStr)
                     entry.timeFontString:SetText(delta)
