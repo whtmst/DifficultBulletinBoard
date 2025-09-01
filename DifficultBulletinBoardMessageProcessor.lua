@@ -559,7 +559,28 @@ local function analyzeChatMessage(channelName, characterName, chatMessage, words
 
             for _, tag in ipairs(topic.tags) do
                 for _, word in ipairs(words) do
-                    if word == string.lower(tag) then
+                    local lowerTag = string.lower(tag)
+                    local isMatch = false
+                    
+                    -- Exact match (original behavior)
+                    if word == lowerTag then
+                        isMatch = true
+                    else
+                        -- Loose match: check if word starts with tag followed by numbers
+                        -- e.g., "zg15" matches tag "zg"
+                        local tagLen = string.len(lowerTag)
+                        if string.len(word) > tagLen then
+                            local wordPrefix = string.sub(word, 1, tagLen)
+                            local wordSuffix = string.sub(word, tagLen + 1)
+                            
+                            -- Check if prefix matches tag and suffix contains only digits
+                            if wordPrefix == lowerTag and string.find(wordSuffix, "^%d+$") then
+                                isMatch = true
+                            end
+                        end
+                    end
+                    
+                    if isMatch then
                         local found, index = topicPlaceholdersContainsCharacterName(topicPlaceholders, topic.name, characterName)
                         if found then
                             UpdateTopicEntryAndPromoteToTop(topicPlaceholders, topic.name, numberOfPlaceholders, channelName, characterName, chatMessage, index)
@@ -599,7 +620,28 @@ local function analyzeSystemMessage(chatMessage, words, topicList, topicPlacehol
 
             for _, tag in ipairs(topic.tags) do
                 for _, word in ipairs(words) do
-                    if word == string.lower(tag) then
+                    local lowerTag = string.lower(tag)
+                    local isMatch = false
+                    
+                    -- Exact match (original behavior)
+                    if word == lowerTag then
+                        isMatch = true
+                    else
+                        -- Loose match: check if word starts with tag followed by numbers
+                        -- e.g., "zg15" matches tag "zg"
+                        local tagLen = string.len(lowerTag)
+                        if string.len(word) > tagLen then
+                            local wordPrefix = string.sub(word, 1, tagLen)
+                            local wordSuffix = string.sub(word, tagLen + 1)
+                            
+                            -- Check if prefix matches tag and suffix contains only digits
+                            if wordPrefix == lowerTag and string.find(wordSuffix, "^%d+$") then
+                                isMatch = true
+                            end
+                        end
+                    end
+                    
+                    if isMatch then
                         AddNewSystemTopicEntryAndShiftOthers(topicPlaceholders, topic.name, chatMessage)
 
                         matchFound = true -- Set the flag to true to break out of loops

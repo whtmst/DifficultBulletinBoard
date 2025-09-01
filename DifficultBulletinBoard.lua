@@ -214,7 +214,7 @@ local function messageContainsKeyword(message, keyword)
     lowerMessage = " " .. lowerMessage .. " "
     
     -- If keyword already contains punctuation, use more flexible matching for it
-    if string.find(lowerKeyword, "[.,!?;:\"']") then
+    if string.find(lowerKeyword, "[.,!?;:\"'%[%]<>]") then
         -- 1. Exact match with spaces (standard case)
         if string.find(lowerMessage, " " .. lowerKeyword .. " ", 1, true) then
             return true
@@ -231,7 +231,7 @@ local function messageContainsKeyword(message, keyword)
         end
         
         -- 4. With additional punctuation after (e.g. "members," followed by another punctuation)
-        if string.find(lowerMessage, " " .. lowerKeyword .. "[.,!?;:\"']", 1, false) then
+        if string.find(lowerMessage, " " .. lowerKeyword .. "[.,!?;:\"'%[%]<>]", 1, false) then
             return true
         end
         
@@ -247,7 +247,7 @@ local function messageContainsKeyword(message, keyword)
     end
     
     -- 2. Word followed by punctuation (catches "members," in text)
-    local punctuation = "[.,!?;:\"'%-%)]"
+    local punctuation = "[.,!?;:\"'%-%%)%[%]<>]"
     if string.find(lowerMessage, " " .. lowerKeyword .. punctuation, 1, false) then
         return true
     end
@@ -263,7 +263,7 @@ local function messageContainsKeyword(message, keyword)
     end
     
     -- 5. Word with opening punctuation before it (less common)
-    if string.find(lowerMessage, "[\"%('%-] *" .. lowerKeyword .. " ", 1, false) then
+    if string.find(lowerMessage, "[.,!?;:\"'%-%(%%%)%[%]<>] *" .. lowerKeyword .. " ", 1, false) then
         return true
     end
     
