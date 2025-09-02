@@ -210,64 +210,42 @@ local function messageContainsKeyword(message, keyword)
     local lowerMessage = string.lower(message)
     local lowerKeyword = string.lower(keyword)
     
-    -- Add spaces at beginning and end of message to help find boundaries
-    lowerMessage = " " .. lowerMessage .. " "
+    -- Define word boundary characters (space + specified punctuation)
+    local boundaries = " .,!?;:\"'%-()%[%]<>"
     
-    -- If keyword already contains punctuation, use more flexible matching for it
-    if string.find(lowerKeyword, "[.,!?;:\"'%[%]<>]") then
-        -- 1. Exact match with spaces (standard case)
-        if string.find(lowerMessage, " " .. lowerKeyword .. " ", 1, true) then
+    -- Find all occurrences of the keyword in the message
+    local startPos = 1
+    while true do
+        local foundStart, foundEnd = string.find(lowerMessage, lowerKeyword, startPos, true)
+        if not foundStart then
+            break
+        end
+        
+        -- Check character before the keyword (or start of string)
+        local charBefore = ""
+        if foundStart > 1 then
+            charBefore = string.sub(lowerMessage, foundStart - 1, foundStart - 1)
+        end
+        
+        -- Check character after the keyword (or end of string)
+        local charAfter = ""
+        if foundEnd < string.len(lowerMessage) then
+            charAfter = string.sub(lowerMessage, foundEnd + 1, foundEnd + 1)
+        end
+        
+        -- Check if both boundaries are valid (space, punctuation, or string boundary)
+        local validBefore = (foundStart == 1) or (string.find(boundaries, charBefore, 1, true) ~= nil)
+        local validAfter = (foundEnd == string.len(lowerMessage)) or (string.find(boundaries, charAfter, 1, true) ~= nil)
+        
+        if validBefore and validAfter then
             return true
         end
         
-        -- 2. At beginning of message
-        if string.find(lowerMessage, "^ " .. lowerKeyword, 1, true) then
-            return true
-        end
-        
-        -- 3. At end of message
-        if string.find(lowerMessage, " " .. lowerKeyword .. " $", 1, true) then
-            return true
-        end
-        
-        -- 4. With additional punctuation after (e.g. "members," followed by another punctuation)
-        if string.find(lowerMessage, " " .. lowerKeyword .. "[.,!?;:\"'%[%]<>]", 1, false) then
-            return true
-        end
-        
-        -- If we got here, no match found for the custom punctuated keyword
-        return false
+        -- Continue searching from the next position
+        startPos = foundStart + 1
     end
     
-    -- PATTERN MATCHING FOR REGULAR WORDS (without user-added punctuation)
-    
-    -- 1. Standard word match with spaces (most common case)
-    if string.find(lowerMessage, " " .. lowerKeyword .. " ", 1, true) then
-        return true
-    end
-    
-    -- 2. Word followed by punctuation (catches "members," in text)
-    local punctuation = "[.,!?;:\"'%-%%)%[%]<>]"
-    if string.find(lowerMessage, " " .. lowerKeyword .. punctuation, 1, false) then
-        return true
-    end
-    
-    -- 3. Word at start of message
-    if string.find(lowerMessage, "^ " .. lowerKeyword .. "[ " .. punctuation .. "]", 1, false) then
-        return true
-    end
-    
-    -- 4. Word at end of message with possible punctuation
-    if string.find(lowerMessage, " " .. lowerKeyword .. " $", 1, false) then
-        return true
-    end
-    
-    -- 5. Word with opening punctuation before it (less common)
-    if string.find(lowerMessage, "[.,!?;:\"'%-%(%%%)%[%]<>] *" .. lowerKeyword .. " ", 1, false) then
-        return true
-    end
-    
-    -- No whole word match found
+    -- No valid word boundary match found
     return false
 end
 
@@ -442,15 +420,19 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event, chatFrame)
             end
             
             -- Mark message as filtered in the previous messages tracker
+            local messageSpecificKey = name .. ":" .. message
+            local currentTime = GetTime()
+            previousMessages[messageSpecificKey] = {message, currentTime, true}
+            
             if previousMessages[name] then
                 previousMessages[name][3] = true
             else
                 previousMessages[name] = {message, GetTime(), true, arg9}
             end
 
-            -- Only skip if filtering is enabled, otherwise let it through to chat
+            -- Skip both chat display and addon processing for blacklisted messages
             if DifficultBulletinBoardVars.filterMatchedMessages == "true" then
-                return -- Skip this message as it contains a blacklisted keyword
+                return -- Skip this message entirely - no chat, no addon processing
             end
         end
     end
@@ -466,6 +448,15 @@ function DifficultBulletinBoard.hookedChatFrameOnEvent(event, chatFrame)
          
          if not previousMessages[messageSpecificKey] or 
             previousMessages[messageSpecificKey][2] + 60 < currentTime then
+            
+            -- Skip addon processing if message was blacklisted
+            if shouldFilter then
+                -- Store the blacklisted message but don't process it
+                previousMessages[messageSpecificKey] = {message, currentTime, true}
+                -- Call original handler for chat display (if filtering disabled)
+                callOriginalChatFrameHandler(event, chatFrame)
+                return
+            end
             
             -- Process with our addon's message handler
             lastMessageWasMatched = DifficultBulletinBoard.OnChatMessage(message, name, arg9)
